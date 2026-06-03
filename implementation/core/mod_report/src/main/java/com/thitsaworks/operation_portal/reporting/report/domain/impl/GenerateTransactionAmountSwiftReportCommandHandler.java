@@ -18,9 +18,13 @@ import java.util.Locale;
 public class GenerateTransactionAmountSwiftReportCommandHandler implements GenerateTransactionAmountSwiftReportCommand {
 
     private static final String DEFAULT_SETTLEMENT_DATE = "000000";
+
     private static final String DEFAULT_CURRENCY = "XXX";
+
     private static final String DEFAULT_RECEIVER_BIC = "UNKNOWNBIC";
+
     private static final String DEFAULT_SENDER_BLOCK = "{1:NULL}";
+
     private static final String DEFAULT_SENDER_BLOCK_PARTICIPANT_ID = "1111111111111111";
 
     private final JdbcTemplate jdbcTemplate;
@@ -164,18 +168,28 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
                                     .findFirst()
                                     .orElse(DEFAULT_SETTLEMENT_DATE);
 
-        String referenceNumber = "SETTL-Tnx-" + settlementId + "-" + settlementDate;
-        String receiverBic = this.normalizeSwiftCode(rows.get(0).participantSwiftCode(), rows.get(0).participantName());
+        String referenceNumber = settlementDate + "/" + settlementId;
+        String receiverBic = this.normalizeSwiftCode(rows.get(0)
+                                                         .participantSwiftCode(),
+                                                     rows.get(0)
+                                                         .participantName());
 
         StringBuilder swift = new StringBuilder(512);
-        swift.append(senderBlock).append("\n");
+        swift.append(senderBlock)
+             .append("\n");
         swift.append("{2:I971")
              .append(this.hasText(receiverBic) ? receiverBic : DEFAULT_RECEIVER_BIC)
              .append("N}")
              .append("\n");
-        swift.append("{3:{108:SETTL-TNX/").append(settlementId).append("}}").append("\n");
-        swift.append("{4:").append("\n");
-        swift.append(":20:").append(referenceNumber).append("\n");
+        swift.append("{3:{113:0010}{108:SETTL-TNX/")
+             .append(settlementId)
+             .append("}}")
+             .append("\n");
+        swift.append("{4:")
+             .append("\n");
+        swift.append(":20:")
+             .append(referenceNumber)
+             .append("\n");
 
         for (SwiftParticipantAmountRow row : rows) {
             String participantCode = this.normalizeSwiftCode(row.participantSwiftCode(), row.participantName());
@@ -183,12 +197,15 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
             String dcMark = this.debitCreditMark(row.amount());
             String amount = this.toSwiftAmount(row.amount());
 
-            swift.append(":25:").append(row.accountNumber()).append("\n");
+            swift.append(":25:")
+                 .append(row.accountNumber())
+                 .append("\n");
             swift.append(":62F:")
                  .append(dcMark)
                  .append(settlementDate)
                  .append(currency)
                  .append(amount)
+                 .append(",")
                  .append("\n");
         }
 
@@ -225,7 +242,10 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
             return DEFAULT_CURRENCY;
         }
 
-        String normalized = currencyId.trim().toUpperCase(Locale.ROOT);
+        String
+            normalized =
+            currencyId.trim()
+                      .toUpperCase(Locale.ROOT);
         return normalized.length() > 3 ? normalized.substring(0, 3) : normalized;
     }
 
@@ -236,21 +256,28 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
             return "UNKNOWN";
         }
 
-        String compact = base.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+        String
+            compact =
+            base.trim()
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]", "");
         return compact.isEmpty() ? "UNKNOWN" : compact;
     }
 
     private String debitCreditMark(BigDecimal amount) {
 
         if (amount == null) {
-            return "C";
+            return "D";
         }
-        return amount.signum() < 0 ? "D" : "C";
+        return amount.signum() < 0 ? "C" : "D";
     }
 
     private String toSwiftAmount(BigDecimal amount) {
 
-        BigDecimal value = amount == null ? BigDecimal.ZERO : amount.abs().stripTrailingZeros();
+        BigDecimal
+            value =
+            amount == null ? BigDecimal.ZERO : amount.abs()
+                                                     .stripTrailingZeros();
         String asPlain = value.toPlainString();
         return asPlain.replace('.', ',');
     }
@@ -266,4 +293,5 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
                                              BigDecimal amount,
                                              String accountNumber,
                                              String settlementDate) { }
+
 }
