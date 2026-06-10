@@ -177,7 +177,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
         StringBuilder swift = new StringBuilder(512);
         swift.append(senderBlock)
              .append("\n");
-        swift.append("{2:I971")
+        swift.append("{2:")
              .append(receiverBic)
              .append("N}")
              .append("\n");
