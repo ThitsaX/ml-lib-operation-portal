@@ -113,6 +113,7 @@ services:
       SETTLEMENT_ENDPOINT: https://google.com
       OPERATION_PORTAL_FRONTEND_ENDPOINT: https://google.com
       REPORT_PAGE_SIZE: 100000
+      RECEIVER_BIC: UNKNOWNBIC
 
 volumes:
   vault-data:
@@ -123,4 +124,3 @@ volumes:
 networks:
   operation-portal-network:
     driver: bridge
-

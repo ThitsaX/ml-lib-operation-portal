@@ -1,6 +1,7 @@
 package com.thitsaworks.operation_portal.reporting.report.domain.impl;
 
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
+import com.thitsaworks.operation_portal.reporting.report.ReportConfiguration;
 import com.thitsaworks.operation_portal.reporting.report.domain.GenerateTransactionAmountSwiftReportCommand;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
@@ -21,19 +22,21 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
 
     private static final String DEFAULT_CURRENCY = "XXX";
 
-    private static final String DEFAULT_RECEIVER_BIC = "UNKNOWNBIC";
-
     private static final String DEFAULT_SENDER_BLOCK = "{1:NULL}";
 
     private static final String DEFAULT_SENDER_BLOCK_PARTICIPANT_ID = "1111111111111111";
 
     private final JdbcTemplate jdbcTemplate;
 
+    private final ReportConfiguration.Settings reportSettings;
+
     @Autowired
     public GenerateTransactionAmountSwiftReportCommandHandler(
-        @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
+        @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate,
+        ReportConfiguration.Settings reportSettings) {
 
         this.jdbcTemplate = jdbcTemplate;
+        this.reportSettings = reportSettings;
     }
 
     @Override
@@ -169,16 +172,13 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
                                     .orElse(DEFAULT_SETTLEMENT_DATE);
 
         String referenceNumber = settlementDate + "/" + settlementId;
-        String receiverBic = this.normalizeSwiftCode(rows.get(0)
-                                                         .participantSwiftCode(),
-                                                     rows.get(0)
-                                                         .participantName());
+        String receiverBic = this.reportSettings.receiverBIC();
 
         StringBuilder swift = new StringBuilder(512);
         swift.append(senderBlock)
              .append("\n");
         swift.append("{2:I971")
-             .append(this.hasText(receiverBic) ? receiverBic : DEFAULT_RECEIVER_BIC)
+             .append(receiverBic)
              .append("N}")
              .append("\n");
         swift.append("{3:{113:0010}{108:SETTL-TNX/")
