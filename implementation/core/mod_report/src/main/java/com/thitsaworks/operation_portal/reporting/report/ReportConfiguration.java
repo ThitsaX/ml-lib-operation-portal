@@ -18,7 +18,7 @@ public class ReportConfiguration {
     @Bean
     public ReportConfiguration.Settings reportConfiguration() {
 
-        return new ReportConfiguration.Settings(System.getProperty("RECEIVERBIC"));
+        return new ReportConfiguration.Settings(System.getProperty("RECEIVER_BIC"));
 
     }
 
