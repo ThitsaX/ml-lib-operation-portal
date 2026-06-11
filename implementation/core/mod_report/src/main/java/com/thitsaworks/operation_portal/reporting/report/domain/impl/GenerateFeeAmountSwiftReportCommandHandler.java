@@ -2,7 +2,7 @@ package com.thitsaworks.operation_portal.reporting.report.domain.impl;
 
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
 import com.thitsaworks.operation_portal.reporting.report.ReportConfiguration;
-import com.thitsaworks.operation_portal.reporting.report.domain.GenerateTransactionAmountSwiftReportCommand;
+import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeAmountSwiftReportCommand;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +17,14 @@ import java.util.List;
 import java.util.Locale;
 
 @Service
-public class GenerateTransactionAmountSwiftReportCommandHandler implements GenerateTransactionAmountSwiftReportCommand {
+public class GenerateFeeAmountSwiftReportCommandHandler
+    implements GenerateFeeAmountSwiftReportCommand {
 
     private static final String DEFAULT_SETTLEMENT_DATE = "000000";
 
     private static final String DEFAULT_CURRENCY = "XXX";
+
+    private static final String DEFAULT_RECEIVER_BIC = "UNKNOWNBIC";
 
     private static final String DEFAULT_SENDER_BLOCK = "{1:NULL}";
 
@@ -34,7 +37,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
     private final ReportConfiguration.Settings reportSettings;
 
     @Autowired
-    public GenerateTransactionAmountSwiftReportCommandHandler(
+    public GenerateFeeAmountSwiftReportCommandHandler(
         @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate,
         ReportConfiguration.Settings reportSettings) {
 
@@ -43,7 +46,8 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
     }
 
     @Override
-    public Output execute(Input input) throws ReportException {
+    public GenerateFeeAmountSwiftReportCommand.Output execute(GenerateFeeAmountSwiftReportCommand.Input input)
+        throws ReportException {
 
         try {
             List<SwiftParticipantAmountRow> rows = this.jdbcTemplate.query(
@@ -134,8 +138,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
                         HAVING SUM(result.amount) <> 0
                     
                     ORDER BY result.participantSwiftCode ASC;
-                    """,
-                (rs, rowNum) -> new SwiftParticipantAmountRow(
+                    """, (rs, rowNum) -> new SwiftParticipantAmountRow(
                     rs.getString("participantName"),
                     rs.getString("participantSwiftCode"),
                     rs.getString("currencyId"),
@@ -166,15 +169,18 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
         }
     }
 
-    private String buildMt971Message(String settlementId, List<SwiftParticipantAmountRow> rows, String senderBlock) {
+    private String buildMt971Message(String settlementId,
+                                     List<SwiftParticipantAmountRow> rows,
+                                     String senderBlock) {
 
-        String settlementDate = rows.stream()
+        String settlementDate = rows
+                                    .stream()
                                     .map(SwiftParticipantAmountRow::settlementDate)
                                     .filter(this::hasText)
                                     .findFirst()
                                     .orElse(DEFAULT_SETTLEMENT_DATE);
 
-        String referenceNumber = settlementDate + "/" + this.calculateTransactionMtid(settlementId);
+        String referenceNumber = settlementDate + "/" + this.calculateFeeMtid(settlementId);
         String receiverBic = this.reportSettings.receiverBIC();
 
         StringBuilder swift = new StringBuilder(512);
@@ -184,32 +190,29 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
              .append(receiverBic)
              .append("N}")
              .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-TNX/")
-             .append(this.calculateTransactionMtid(settlementId))
+        swift.append("{3:{113:0010}{108:SETTL-FEE/")
+             .append(this.calculateFeeMtid(settlementId))
              .append("}}")
              .append("\n");
         swift.append("{4:")
              .append("\n");
         swift.append(":20:")
-             .append(referenceNumber)
-             .append("\n");
+             .append(referenceNumber).append("\n");
 
         for (SwiftParticipantAmountRow row : rows) {
-            String participantCode = this.normalizeSwiftCode(row.participantSwiftCode(), row.participantName());
             String currency = this.normalizeCurrency(row.currencyId());
             String dcMark = this.debitCreditMark(row.amount());
             String amount = this.toSwiftAmount(row.amount());
 
-            swift.append(":25:")
-                 .append(row.accountNumber())
-                 .append("\n");
-            swift.append(":62F:")
-                 .append(dcMark)
-                 .append(settlementDate)
-                 .append(currency)
-                 .append(amount)
-                 .append(",")
-                 .append("\n");
+            swift.append(":25:").append(row.accountNumber()).append("\n");
+            swift
+                .append(":62F:")
+                .append(dcMark)
+                .append(settlementDate)
+                .append(currency)
+                .append(amount)
+                .append(",")
+                .append("\n");
         }
 
         swift.append("-}");
@@ -224,8 +227,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
                 FROM operation_portal.tbl_liquidity_profile
                 WHERE participant_id = ?
                 LIMIT 1
-                """,
-            (rs, rowNum) -> rs.getString("account_number"),
+                """, (rs, rowNum) -> rs.getString("account_number"),
             DEFAULT_SENDER_BLOCK_PARTICIPANT_ID);
 
         if (senderBlocks == null || senderBlocks.isEmpty()) {
@@ -234,14 +236,14 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
 
         String senderBlock = senderBlocks.get(0);
         if (this.hasText(senderBlock)) {
-            return "{1:" + senderBlock + this.calculateTransactionMtid(settlementId) + "}";
+            return "{1:" + senderBlock + this.calculateFeeMtid(settlementId) + "}";
         }
         return DEFAULT_SENDER_BLOCK;
     }
 
-    private String calculateTransactionMtid(String settlementId) {
+    private String calculateFeeMtid(String settlementId) {
 
-        return this.formatMtid(new BigInteger(settlementId).multiply(BigInteger.TWO).subtract(BigInteger.ONE));
+        return this.formatMtid(new BigInteger(settlementId).multiply(BigInteger.TWO));
     }
 
     private String formatMtid(BigInteger mtid) {
@@ -259,10 +261,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
             return DEFAULT_CURRENCY;
         }
 
-        String
-            normalized =
-            currencyId.trim()
-                      .toUpperCase(Locale.ROOT);
+        String normalized = currencyId.trim().toUpperCase(Locale.ROOT);
         return normalized.length() > 3 ? normalized.substring(0, 3) : normalized;
     }
 
@@ -273,11 +272,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
             return "UNKNOWN";
         }
 
-        String
-            compact =
-            base.trim()
-                .toUpperCase(Locale.ROOT)
-                .replaceAll("[^A-Z0-9]", "");
+        String compact = base.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
         return compact.isEmpty() ? "UNKNOWN" : compact;
     }
 
@@ -291,10 +286,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
 
     private String toSwiftAmount(BigDecimal amount) {
 
-        BigDecimal
-            value =
-            amount == null ? BigDecimal.ZERO : amount.abs()
-                                                     .stripTrailingZeros();
+        BigDecimal value = amount == null ? BigDecimal.ZERO : amount.abs().stripTrailingZeros();
         String asPlain = value.toPlainString();
         return asPlain.replace('.', ',');
     }

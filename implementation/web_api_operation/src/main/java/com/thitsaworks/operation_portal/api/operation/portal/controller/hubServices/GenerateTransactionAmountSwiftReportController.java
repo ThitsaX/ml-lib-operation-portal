@@ -41,10 +41,9 @@ public class GenerateTransactionAmountSwiftReportController {
         throws DomainException, JsonProcessingException {
 
         LOG.info(
-            "Generate Settlement Bank Report : settlementId = [{}], currencyId = [{}], fileType = [{}], timezoneOffset = [{}]",
+            "Generate Transaction Amount Report : settlementId = [{}], currencyId = [{}], timezoneOffset = [{}]",
             settlementId,
             currencyId,
-
             timezoneOffset);
 
         String timezone = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
@@ -64,7 +63,7 @@ public class GenerateTransactionAmountSwiftReportController {
 
         var response = new Response(output.reportData());
 
-        LOG.info("Generate Transaction Detail Report Response : [{}]", response);
+        LOG.info("Generate Transaction Amount Report Response : [{}]", response);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
 
