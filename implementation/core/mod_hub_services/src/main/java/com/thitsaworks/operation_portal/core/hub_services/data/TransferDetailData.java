@@ -22,6 +22,10 @@ public record TransferDetailData(
 
         String payeeReceivedAmount,
 
+        String payerDfspFee,
+
+        String schemeFee,
+
         String payeeDfspFee,
 
         String payeeDfspCommission,

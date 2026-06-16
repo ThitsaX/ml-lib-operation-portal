@@ -41,6 +41,8 @@ public class TransferDetailDataMapper implements RowMapper<TransferDetailData> {
                 rs.getString("quoteAmount"),
                 rs.getString("transferAmount"),
                 rs.getString("payeeReceivedAmount"),
+                rs.getString("payerDfspFeeAmount"),
+                rs.getString("schemeFeeAmount"),
                 rs.getString("payeeDfspFeeAmount"),
                 rs.getString("payeeDfspCommissionAmount"),
                 rs.getString("submittedOnDate"),
