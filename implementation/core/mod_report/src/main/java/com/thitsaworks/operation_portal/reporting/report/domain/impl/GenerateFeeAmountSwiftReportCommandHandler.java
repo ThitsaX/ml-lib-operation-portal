@@ -143,7 +143,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                     rs.getBigDecimal("hubFee")),
                 input.settlementId());
 
-            List<SwiftParticipantAmountRow> rows = this.buildSwiftParticipantRows(feeRows, input);
+            List<SwiftParticipantFeeAmountRow> rows = this.buildSwiftParticipantFeeRows(feeRows, input);
 
             if (rows == null || rows.isEmpty()) {
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
@@ -160,14 +160,14 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         }
     }
 
-    private List<SwiftParticipantAmountRow> buildSwiftParticipantRows(List<DirectionalFeeRow> feeRows, Input input) {
+    private List<SwiftParticipantFeeAmountRow> buildSwiftParticipantFeeRows(List<DirectionalFeeRow> feeRows, Input input) {
 
         if (feeRows == null || feeRows.isEmpty()) {
             return List.of();
         }
 
         String settlementDate = this.resolveSettlementDate(input.settlementId(), input.timezone());
-        Map<ParticipantAmountKey, SwiftParticipantAmountRow> participantAmounts = new LinkedHashMap<>();
+        Map<ParticipantFeeAmountKey, SwiftParticipantFeeAmountRow> participantFeeAmounts = new LinkedHashMap<>();
 
         for (DirectionalFeeRow feeRow : feeRows) {
             if (!this.matchesCurrencyFilter(feeRow.currency(), input.currency())) {
@@ -177,58 +177,58 @@ public class GenerateFeeAmountSwiftReportCommandHandler
             BigDecimal payerFee = this.valueOrZero(feeRow.payerFee());
             BigDecimal hubFee = this.valueOrZero(feeRow.hubFee());
 
-            this.addParticipantAmount(
-                participantAmounts,
+            this.addParticipantFeeAmount(
+                participantFeeAmounts,
                 feeRow.payerDFSP(),
                 feeRow.currency(),
                 payerFee,
                 settlementDate);
-            this.addParticipantAmount(
-                participantAmounts,
+            this.addParticipantFeeAmount(
+                participantFeeAmounts,
                 HUB_PARTICIPANT_NAME,
                 feeRow.currency(),
                 hubFee,
                 settlementDate);
-            this.addParticipantAmount(
-                participantAmounts,
+            this.addParticipantFeeAmount(
+                participantFeeAmounts,
                 feeRow.payeeDFSP(),
                 feeRow.currency(),
                 payerFee.add(hubFee).negate(),
                 settlementDate);
         }
 
-        return participantAmounts.values()
+        return participantFeeAmounts.values()
                                  .stream()
-                                 .filter(row -> row.amount() != null && row.amount().signum() != 0)
-                                 .sorted(Comparator.comparing(SwiftParticipantAmountRow::accountNumber)
-                                                   .thenComparing(SwiftParticipantAmountRow::currencyId))
+                                 .filter(row -> row.feeAmount() != null && row.feeAmount().signum() != 0)
+                                 .sorted(Comparator.comparing(SwiftParticipantFeeAmountRow::accountNumber)
+                                                   .thenComparing(SwiftParticipantFeeAmountRow::currencyId))
                                  .toList();
     }
 
-    private void addParticipantAmount(Map<ParticipantAmountKey, SwiftParticipantAmountRow> participantAmounts,
-                                      String participantName,
-                                      String currencyId,
-                                      BigDecimal amount,
-                                      String settlementDate) {
+    private void addParticipantFeeAmount(Map<ParticipantFeeAmountKey, SwiftParticipantFeeAmountRow> participantFeeAmounts,
+                                         String participantName,
+                                         String currencyId,
+                                         BigDecimal feeAmount,
+                                         String settlementDate) {
 
-        if (!this.hasText(participantName) || amount == null || amount.signum() == 0) {
+        if (!this.hasText(participantName) || feeAmount == null || feeAmount.signum() == 0) {
             return;
         }
 
         ParticipantSettlementProfile profile = this.resolveParticipantSettlementProfile(participantName, currencyId);
-        ParticipantAmountKey key = new ParticipantAmountKey(
+        ParticipantFeeAmountKey key = new ParticipantFeeAmountKey(
             profile.participantName(),
             currencyId,
             profile.accountNumber(),
             settlementDate);
 
-        SwiftParticipantAmountRow current = participantAmounts.get(key);
-        BigDecimal currentAmount = current == null ? BigDecimal.ZERO : current.amount();
-        participantAmounts.put(
+        SwiftParticipantFeeAmountRow current = participantFeeAmounts.get(key);
+        BigDecimal currentFeeAmount = current == null ? BigDecimal.ZERO : current.feeAmount();
+        participantFeeAmounts.put(
             key,
-            new SwiftParticipantAmountRow(
+            new SwiftParticipantFeeAmountRow(
                 currencyId,
-                currentAmount.add(amount),
+                currentFeeAmount.add(feeAmount),
                 profile.accountNumber(),
                 settlementDate));
     }
@@ -321,12 +321,12 @@ public class GenerateFeeAmountSwiftReportCommandHandler
     }
 
     private String buildMt971Message(String settlementId,
-                                     List<SwiftParticipantAmountRow> rows,
+                                     List<SwiftParticipantFeeAmountRow> rows,
                                      String senderBlock) {
 
         String settlementDate = rows
                                     .stream()
-                                    .map(SwiftParticipantAmountRow::settlementDate)
+                                    .map(SwiftParticipantFeeAmountRow::settlementDate)
                                     .filter(this::hasText)
                                     .findFirst()
                                     .orElse(DEFAULT_SETTLEMENT_DATE);
@@ -341,7 +341,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
              .append(receiverBic)
              .append("}")
              .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-FEE/")
+        swift.append("{3:{113:0010}{108:SETTL-FEE:/")
              .append(this.calculateFeeMtid(settlementId))
              .append("}}")
              .append("\n");
@@ -350,10 +350,10 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         swift.append(":20:")
              .append(referenceNumber).append("\n");
 
-        for (SwiftParticipantAmountRow row : rows) {
+        for (SwiftParticipantFeeAmountRow row : rows) {
             String currency = this.normalizeCurrency(row.currencyId());
-            String dcMark = this.debitCreditMark(row.amount());
-            String amount = this.toSwiftAmount(row.amount());
+            String dcMark = this.debitCreditMark(row.feeAmount());
+            String feeAmount = this.toSwiftAmount(row.feeAmount());
 
             swift.append(":25:").append(row.accountNumber()).append("\n");
             swift
@@ -361,7 +361,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                 .append(dcMark)
                 .append(settlementDate)
                 .append(currency)
-                .append(amount)
+                .append(feeAmount)
                 .append(",")
                 .append("\n");
         }
@@ -416,17 +416,17 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         return normalized.length() > 3 ? normalized.substring(0, 3) : normalized;
     }
 
-    private String debitCreditMark(BigDecimal amount) {
+    private String debitCreditMark(BigDecimal feeAmount) {
 
-        if (amount == null) {
+        if (feeAmount == null) {
             return "D";
         }
-        return amount.signum() < 0 ? "C" : "D";
+        return feeAmount.signum() < 0 ? "D" : "C";
     }
 
-    private String toSwiftAmount(BigDecimal amount) {
+    private String toSwiftAmount(BigDecimal feeAmount) {
 
-        BigDecimal value = amount == null ? BigDecimal.ZERO : amount.abs().stripTrailingZeros();
+        BigDecimal value = feeAmount == null ? BigDecimal.ZERO : feeAmount.abs().stripTrailingZeros();
         String asPlain = value.toPlainString();
         return asPlain.replace('.', ',');
     }
@@ -436,10 +436,10 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         return value != null && !value.isBlank();
     }
 
-    private record SwiftParticipantAmountRow(String currencyId,
-                                             BigDecimal amount,
-                                             String accountNumber,
-                                             String settlementDate) { }
+    private record SwiftParticipantFeeAmountRow(String currencyId,
+                                                BigDecimal feeAmount,
+                                                String accountNumber,
+                                                String settlementDate) { }
 
     private record DirectionalFeeRow(String payerDFSP,
                                      String payeeDFSP,
@@ -450,9 +450,9 @@ public class GenerateFeeAmountSwiftReportCommandHandler
     private record ParticipantSettlementProfile(String participantName,
                                                 String accountNumber) { }
 
-    private record ParticipantAmountKey(String participantName,
-                                        String currencyId,
-                                        String accountNumber,
-                                        String settlementDate) { }
+    private record ParticipantFeeAmountKey(String participantName,
+                                           String currencyId,
+                                           String accountNumber,
+                                           String settlementDate) { }
 
 }

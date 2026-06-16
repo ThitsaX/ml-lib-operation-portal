@@ -184,7 +184,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
              .append(receiverBic)
              .append("}")
              .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-TNX/")
+        swift.append("{3:{113:0010}{108:SETTL-TNX:/")
              .append(this.calculateTransactionMtid(settlementId))
              .append("}}")
              .append("\n");
