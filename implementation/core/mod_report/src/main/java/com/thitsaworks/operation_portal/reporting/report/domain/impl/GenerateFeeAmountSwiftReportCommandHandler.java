@@ -31,8 +31,6 @@ public class GenerateFeeAmountSwiftReportCommandHandler
 
     private static final String DEFAULT_SENDER_BLOCK_PARTICIPANT_ID = "1111111111111111";
 
-    private static final String HUB_PARTICIPANT_NAME = "hub";
-
     private static final int MTID_MIN_LENGTH = 10;
 
     private final JdbcTemplate jdbcTemplate;
@@ -65,7 +63,24 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                       GROUP BY qe.quoteId
                     ),
                     settlement_transfers AS (
-                      SELECT DISTINCT tf.transferId
+                      SELECT DISTINCT
+                        tf.transferId,
+                        DATE_FORMAT(
+                          CASE
+                            WHEN SUBSTRING(?, 1, 1) = '-'
+                              THEN CONVERT_TZ(
+                                s.createdDate,
+                                '+00:00',
+                                CONCAT('-', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2))
+                              )
+                            ELSE CONVERT_TZ(
+                              s.createdDate,
+                              '+00:00',
+                              CONCAT('+', SUBSTRING(?, 1, 2), ':', SUBSTRING(?, 3, 2))
+                            )
+                          END,
+                          '%y%m%d'
+                        ) AS settlementDate
                       FROM settlement s
                       JOIN settlementSettlementWindow ssw
                         ON ssw.settlementId = s.settlementId
@@ -78,6 +93,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                         pPayer.name AS payerDFSP,
                         pPayee.name AS payeeDFSP,
                         q.currencyId AS currency,
+                        st.settlementDate,
                         COUNT(DISTINCT t.transferId) AS totalTransactions,
                         SUM(t.amount) AS totalAmount,
                         SUM(COALESCE(f.payerFee, 0)) AS payerFee,
@@ -115,12 +131,17 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                       GROUP BY
                         pPayer.name,
                         pPayee.name,
-                        q.currencyId
+                        q.currencyId,
+                        st.settlementDate
                     )
                     SELECT
                       d.payerDFSP,
+                      COALESCE(payer_parent_lp.account_number, payer_lp.account_number, '') AS payerAccountNumber,
                       d.payeeDFSP,
+                      COALESCE(payee_parent_lp.account_number, payee_lp.account_number, '') AS payeeAccountNumber,
+                      COALESCE(hub_parent_lp.account_number, hub_lp.account_number, '') AS hubAccountNumber,
                       d.currency,
+                      d.settlementDate,
                       d.totalTransactions,
                       d.totalAmount,
                       d.payerFee,
@@ -131,16 +152,61 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                       ON r.payerDFSP = d.payeeDFSP
                      AND r.payeeDFSP = d.payerDFSP
                      AND r.currency = d.currency
+                    LEFT JOIN operation_portal.tbl_participant payer_op
+                      ON payer_op.participant_name = d.payerDFSP
+                    LEFT JOIN operation_portal.tbl_participant payer_parent_op
+                      ON payer_parent_op.participant_name = payer_op.parent_participant_name
+                    LEFT JOIN operation_portal.tbl_liquidity_profile payer_lp
+                      ON payer_lp.participant_id = payer_op.participant_id
+                     AND payer_lp.currency = d.currency
+                     AND payer_lp.is_active = 1
+                    LEFT JOIN operation_portal.tbl_liquidity_profile payer_parent_lp
+                      ON payer_parent_lp.participant_id = payer_parent_op.participant_id
+                     AND payer_parent_lp.currency = d.currency
+                     AND payer_parent_lp.is_active = 1
+                    LEFT JOIN operation_portal.tbl_participant payee_op
+                      ON payee_op.participant_name = d.payeeDFSP
+                    LEFT JOIN operation_portal.tbl_participant payee_parent_op
+                      ON payee_parent_op.participant_name = payee_op.parent_participant_name
+                    LEFT JOIN operation_portal.tbl_liquidity_profile payee_lp
+                      ON payee_lp.participant_id = payee_op.participant_id
+                     AND payee_lp.currency = d.currency
+                     AND payee_lp.is_active = 1
+                    LEFT JOIN operation_portal.tbl_liquidity_profile payee_parent_lp
+                      ON payee_parent_lp.participant_id = payee_parent_op.participant_id
+                     AND payee_parent_lp.currency = d.currency
+                     AND payee_parent_lp.is_active = 1
+                    LEFT JOIN operation_portal.tbl_participant hub_op
+                      ON hub_op.participant_name = 'hub'
+                    LEFT JOIN operation_portal.tbl_participant hub_parent_op
+                      ON hub_parent_op.participant_name = hub_op.parent_participant_name
+                    LEFT JOIN operation_portal.tbl_liquidity_profile hub_lp
+                      ON hub_lp.participant_id = hub_op.participant_id
+                     AND hub_lp.currency = d.currency
+                     AND hub_lp.is_active = 1
+                    LEFT JOIN operation_portal.tbl_liquidity_profile hub_parent_lp
+                      ON hub_parent_lp.participant_id = hub_parent_op.participant_id
+                     AND hub_parent_lp.currency = d.currency
+                     AND hub_parent_lp.is_active = 1
                     ORDER BY
                       d.payerDFSP,
                       d.payeeDFSP,
                       d.currency;
                     """, (rs, rowNum) -> new DirectionalFeeRow(
                     rs.getString("payerDFSP"),
+                    rs.getString("payerAccountNumber"),
                     rs.getString("payeeDFSP"),
+                    rs.getString("payeeAccountNumber"),
+                    rs.getString("hubAccountNumber"),
                     rs.getString("currency"),
+                    rs.getString("settlementDate"),
                     rs.getBigDecimal("payerFee"),
                     rs.getBigDecimal("hubFee")),
+                input.timezone(),
+                input.timezone(),
+                input.timezone(),
+                input.timezone(),
+                input.timezone(),
                 input.settlementId());
 
             List<SwiftParticipantFeeAmountRow> rows = this.buildSwiftParticipantFeeRows(feeRows, input);
@@ -166,7 +232,6 @@ public class GenerateFeeAmountSwiftReportCommandHandler
             return List.of();
         }
 
-        String settlementDate = this.resolveSettlementDate(input.settlementId(), input.timezone());
         Map<ParticipantFeeAmountKey, SwiftParticipantFeeAmountRow> participantFeeAmounts = new LinkedHashMap<>();
 
         for (DirectionalFeeRow feeRow : feeRows) {
@@ -176,24 +241,27 @@ public class GenerateFeeAmountSwiftReportCommandHandler
 
             BigDecimal payerFee = this.valueOrZero(feeRow.payerFee());
             BigDecimal hubFee = this.valueOrZero(feeRow.hubFee());
+            String settlementDate = this.hasText(feeRow.settlementDate())
+                ? feeRow.settlementDate()
+                : DEFAULT_SETTLEMENT_DATE;
 
             this.addParticipantFeeAmount(
                 participantFeeAmounts,
-                feeRow.payerDFSP(),
                 feeRow.currency(),
                 payerFee,
+                feeRow.payerAccountNumber(),
                 settlementDate);
             this.addParticipantFeeAmount(
                 participantFeeAmounts,
-                HUB_PARTICIPANT_NAME,
                 feeRow.currency(),
                 hubFee,
+                feeRow.hubAccountNumber(),
                 settlementDate);
             this.addParticipantFeeAmount(
                 participantFeeAmounts,
-                feeRow.payeeDFSP(),
                 feeRow.currency(),
                 payerFee.add(hubFee).negate(),
+                feeRow.payeeAccountNumber(),
                 settlementDate);
         }
 
@@ -206,20 +274,18 @@ public class GenerateFeeAmountSwiftReportCommandHandler
     }
 
     private void addParticipantFeeAmount(Map<ParticipantFeeAmountKey, SwiftParticipantFeeAmountRow> participantFeeAmounts,
-                                         String participantName,
                                          String currencyId,
                                          BigDecimal feeAmount,
+                                         String accountNumber,
                                          String settlementDate) {
 
-        if (!this.hasText(participantName) || feeAmount == null || feeAmount.signum() == 0) {
+        if (feeAmount == null || feeAmount.signum() == 0) {
             return;
         }
 
-        ParticipantSettlementProfile profile = this.resolveParticipantSettlementProfile(participantName, currencyId);
         ParticipantFeeAmountKey key = new ParticipantFeeAmountKey(
-            profile.participantName(),
             currencyId,
-            profile.accountNumber(),
+            accountNumber,
             settlementDate);
 
         SwiftParticipantFeeAmountRow current = participantFeeAmounts.get(key);
@@ -229,83 +295,8 @@ public class GenerateFeeAmountSwiftReportCommandHandler
             new SwiftParticipantFeeAmountRow(
                 currencyId,
                 currentFeeAmount.add(feeAmount),
-                profile.accountNumber(),
+                accountNumber,
                 settlementDate));
-    }
-
-    private ParticipantSettlementProfile resolveParticipantSettlementProfile(String participantName, String currencyId) {
-
-        List<ParticipantSettlementProfile> profiles = this.jdbcTemplate.query(
-            """
-                SELECT
-                    COALESCE(op.parent_participant_name, op.participant_name, ?) AS participantName,
-                    COALESCE(parent_lp.account_number, lp.account_number, '') AS accountNumber
-                FROM operation_portal.tbl_participant op
-                LEFT JOIN operation_portal.tbl_participant parent_op
-                    ON parent_op.participant_name = op.parent_participant_name
-                LEFT JOIN operation_portal.tbl_liquidity_profile lp
-                    ON lp.participant_id = op.participant_id
-                   AND lp.currency = ?
-                   AND lp.is_active = 1
-                LEFT JOIN operation_portal.tbl_liquidity_profile parent_lp
-                    ON parent_lp.participant_id = parent_op.participant_id
-                   AND parent_lp.currency = ?
-                   AND parent_lp.is_active = 1
-                WHERE op.participant_name = ?
-                LIMIT 1
-            """,
-            (rs, rowNum) -> new ParticipantSettlementProfile(
-                rs.getString("participantName"),
-                rs.getString("accountNumber")),
-            participantName,
-            currencyId,
-            currencyId,
-            participantName);
-
-        if (profiles == null || profiles.isEmpty()) {
-            return new ParticipantSettlementProfile(participantName, "");
-        }
-
-        return profiles.get(0);
-    }
-
-    private String resolveSettlementDate(String settlementId, String timezone) {
-
-        List<String> settlementDates = this.jdbcTemplate.query(
-            """
-                SELECT DATE_FORMAT(
-                    CASE
-                        WHEN SUBSTRING(?, 1, 1) = '-'
-                            THEN CONVERT_TZ(
-                                s.createdDate,
-                                '+00:00',
-                                CONCAT('-', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2))
-                            )
-                        ELSE CONVERT_TZ(
-                            s.createdDate,
-                            '+00:00',
-                            CONCAT('+', SUBSTRING(?, 1, 2), ':', SUBSTRING(?, 3, 2))
-                        )
-                    END,
-                    '%y%m%d'
-                ) AS settlementDate
-                FROM settlement s
-                WHERE s.settlementId = ?
-                LIMIT 1
-                """,
-            (rs, rowNum) -> rs.getString("settlementDate"),
-            timezone,
-            timezone,
-            timezone,
-            timezone,
-            timezone,
-            settlementId);
-
-        if (settlementDates == null || settlementDates.isEmpty() || !this.hasText(settlementDates.get(0))) {
-            return DEFAULT_SETTLEMENT_DATE;
-        }
-
-        return settlementDates.get(0);
     }
 
     private boolean matchesCurrencyFilter(String rowCurrency, String inputCurrency) {
@@ -442,16 +433,16 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                                                 String settlementDate) { }
 
     private record DirectionalFeeRow(String payerDFSP,
+                                     String payerAccountNumber,
                                      String payeeDFSP,
+                                     String payeeAccountNumber,
+                                     String hubAccountNumber,
                                      String currency,
+                                     String settlementDate,
                                      BigDecimal payerFee,
                                      BigDecimal hubFee) { }
 
-    private record ParticipantSettlementProfile(String participantName,
-                                                String accountNumber) { }
-
-    private record ParticipantFeeAmountKey(String participantName,
-                                           String currencyId,
+    private record ParticipantFeeAmountKey(String currencyId,
                                            String accountNumber,
                                            String settlementDate) { }
 
