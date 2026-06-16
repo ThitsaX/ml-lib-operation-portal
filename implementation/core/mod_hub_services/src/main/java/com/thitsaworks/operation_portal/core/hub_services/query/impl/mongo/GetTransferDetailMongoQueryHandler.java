@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AddFieldsOperation;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationExpression;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.ConditionalOperators;
@@ -28,6 +29,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
@@ -133,7 +135,11 @@ public class GetTransferDetailMongoQueryHandler implements GetTransferDetailQuer
                              .as("transferAmount")
                              .and("transferTerms.payeeReceiveAmount.amount")
                              .as("payeeReceivedAmount")
-                             .and("transferTerms.payeeFspFee.amount")
+                             .and(getFeeAmountByType("payerFee"))
+                             .as("payerDfspFeeAmount")
+                             .and(getFeeAmountByType("schemeFee"))
+                             .as("schemeFeeAmount")
+                             .and(getFeeAmountByType("payeeFee"))
                              .as("payeeDfspFeeAmount")
                              .and("transferTerms.payeeFspCommission.amount")
                              .as("payeeDfspCommissionAmount")
@@ -223,6 +229,7 @@ public class GetTransferDetailMongoQueryHandler implements GetTransferDetailQuer
                                           money(d.get("quoteAmount")),
                                           money(d.get("transferAmount")),
                                           money(d.get("payeeReceivedAmount")),
+                money(d.get("payerDfspFeeAmount")), money(d.get("schemeFeeAmount")),
                                           money(d.get("payeeDfspFeeAmount")),
                                           money(d.get("payeeDfspCommissionAmount")),
                                           submittedOnDate,
@@ -279,6 +286,27 @@ public class GetTransferDetailMongoQueryHandler implements GetTransferDetailQuer
             }
         }
 
+    }
+
+    private AggregationExpression getFeeAmountByType(String feeType) {
+        return context -> new Document("$ifNull", Arrays.asList(
+            new Document("$first",
+                new Document("$map",
+                    new Document("input",
+                        new Document("$filter",
+                            new Document("input", "$quoteExtensionFees")
+                                .append("as", "fee")
+                                .append("cond",
+                                    new Document("$eq", Arrays.asList("$$fee.feeType", feeType))
+                                       )
+                        )
+                    )
+                        .append("as", "fee")
+                        .append("in", "$$fee.amount")
+                )
+            ),
+            0
+                                                               ));
     }
 
 }
