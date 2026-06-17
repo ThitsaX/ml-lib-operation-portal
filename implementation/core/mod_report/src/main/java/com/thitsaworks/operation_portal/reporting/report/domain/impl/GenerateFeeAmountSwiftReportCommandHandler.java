@@ -144,7 +144,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
                       d.settlementDate,
                       d.totalTransactions,
                       d.totalAmount,
-                      d.payerFee,
+                      GREATEST(d.payerFee - COALESCE(r.payerFee, 0), 0) AS payerFee,
                       GREATEST(d.payeeFee - COALESCE(r.payeeFee, 0), 0) AS payeeFee,
                       d.hubFee
                     FROM directional d
@@ -222,7 +222,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         } catch (ReportException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReportException(ReportErrors.SETTLEMENT_BANK_REPORT_FAILURE_EXCEPTION);
+            throw new ReportException(ReportErrors.FEE_AMOUNT_REPORT_FAILURE_EXCEPTION);
         }
     }
 

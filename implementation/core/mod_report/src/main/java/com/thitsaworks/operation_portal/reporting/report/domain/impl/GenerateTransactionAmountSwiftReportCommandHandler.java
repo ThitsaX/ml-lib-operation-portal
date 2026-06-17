@@ -162,7 +162,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
         } catch (ReportException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReportException(ReportErrors.SETTLEMENT_BANK_REPORT_FAILURE_EXCEPTION);
+            throw new ReportException(ReportErrors.TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION);
         }
     }
 
