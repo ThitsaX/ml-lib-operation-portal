@@ -13,6 +13,8 @@ public class ReportErrors {
     public static final ErrorMessage FEE_SETTLEMENT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("FEE_SETTLEMENT_REPORT_FAILURE_EXCEPTION", "Failed to extract fee settlement report.");
     public static final ErrorMessage STATEMENT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("STATEMENT_REPORT_FAILURE_EXCEPTION", "Failed to extract statement report.");
 
+    public static final ErrorMessage TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION", "Failed to extract transaction amount swift report.");
+    public static final ErrorMessage FEE_AMOUNT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("FEE_AMOUNT_REPORT_FAILURE_EXCEPTION", "Failed to extract fee amount swift report.");
     public static final ErrorMessage SETTLEMENT_BANK_REPORT_FAILURE_EXCEPTION = new ErrorMessage("SETTLEMENT_BANK_REPORT_FAILURE_EXCEPTION", "Failed to extract settlement bank report.");
     public static final ErrorMessage SETTLEMENT_BANK_USECASE_REPORT_FAILURE_EXCEPTION = new ErrorMessage("SETTLEMENT_BANK_USECASE_REPORT_FAILURE_EXCEPTION", "Failed to extract settlement bank report (use case).");
     public static final ErrorMessage FILE_FORMAT_NOT_ALLOWED_EXCEPTION = new ErrorMessage("FILE_FORMAT_NOT_ALLOWED_EXCEPTION", "The file format is required or the requested file format is not allowed.");

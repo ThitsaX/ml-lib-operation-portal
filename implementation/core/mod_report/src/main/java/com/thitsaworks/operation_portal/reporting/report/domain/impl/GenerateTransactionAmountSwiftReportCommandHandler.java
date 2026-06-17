@@ -162,7 +162,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
         } catch (ReportException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReportException(ReportErrors.SETTLEMENT_BANK_REPORT_FAILURE_EXCEPTION);
+            throw new ReportException(ReportErrors.TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION);
         }
     }
 
@@ -184,7 +184,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
              .append(receiverBic)
              .append("}")
              .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-TNX/")
+        swift.append("{3:{113:0010}{108:SETTL-TNX:/")
              .append(this.calculateTransactionMtid(settlementId))
              .append("}}")
              .append("\n");
