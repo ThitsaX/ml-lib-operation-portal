@@ -48,6 +48,13 @@ public class WebConfiguration implements WebMvcConfigurer {
             Integer.parseInt(System.getProperty("REPORT_PAGE_SIZE", "50000")));
     }
 
+    @Bean
+    public OperationPortalApiConfiguration.SupportCenterSettings supportCenterSettings() {
+
+        return new OperationPortalApiConfiguration.SupportCenterSettings(
+            System.getProperty("DISPUTE_URL", ""), System.getProperty("SERVICE_REQUEST_URL", ""));
+    }
+
     @Getter
     @Setter
     @AllArgsConstructor

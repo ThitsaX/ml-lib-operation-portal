@@ -12,6 +12,8 @@ java \
   "-DOPERATION_PORTAL_FRONTEND_ENDPOINT=${OPERATION_PORTAL_FRONTEND_ENDPOINT}" \
   "-DREPORT_PAGE_SIZE=${REPORT_PAGE_SIZE}" \
   "-DRECEIVER_BIC=${RECEIVER_BIC}" \
+  "-DDISPUTE_URL=${DISPUTE_URL}" \
+  "-DSERVICE_REQUEST_URL=${SERVICE_REQUEST_URL}" \
   -cp operation_api.jar:lib/* \
   com.thitsaworks.operation_portal.api.operation.portal.WebApiOperationPortalApplication
 ## Wait for any process to exit

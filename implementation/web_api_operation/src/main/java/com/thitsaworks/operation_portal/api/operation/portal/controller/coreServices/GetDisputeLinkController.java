@@ -2,6 +2,7 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.coreSer
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.thitsaworks.operation_portal.api.operation.portal.OperationPortalApiConfiguration;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,17 +16,16 @@ public class GetDisputeLinkController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GetDisputeLinkController.class);
 
-    private static final String DISPUTE_URL = "https://thitsa.atlassian.net/servicedesk/customer/portal/11/group/33/create/10549";
+    private final OperationPortalApiConfiguration.SupportCenterSettings supportCenterSettings;
 
     @GetMapping(value = "/secured/getDisputeLink")
     public ResponseEntity<Response> execute() {
-        return ResponseEntity.ok(new Response(DISPUTE_URL));
+
+        return ResponseEntity.ok(new Response(supportCenterSettings.DISPUTE_URL()));
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(
-            @JsonProperty("dispute") String ticketUrl
-    ) {
-    }
+    public record Response(@JsonProperty("dispute") String ticketUrl) { }
+
 }
 
