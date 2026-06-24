@@ -23,7 +23,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
 
     private static final String DEFAULT_CURRENCY = "XXX";
 
-    private static final String DEFAULT_SENDER_BLOCK = "{1:NULL}";
+    private static final String DEFAULT_SENDER_BLOCK = "{1:F01NULL}";
 
     private static final String DEFAULT_SENDER_BLOCK_PARTICIPANT_ID = "1111111111111111";
 
@@ -178,16 +178,13 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
         String receiverBic = this.reportSettings.receiverBIC();
 
         StringBuilder swift = new StringBuilder(512);
-        swift.append(senderBlock)
-             .append("\n");
+        swift.append(senderBlock);
         swift.append("{2:")
              .append(receiverBic)
-             .append("}")
-             .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-TNX:/")
+             .append("}");
+        swift.append("{3:{113:0010}{108:SETTL-TNX/")
              .append(this.calculateTransactionMtid(settlementId))
-             .append("}}")
-             .append("\n");
+             .append("}}");
         swift.append("{4:")
              .append("\n");
         swift.append(":20:")
@@ -195,7 +192,7 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
              .append("\n");
 
         for (SwiftParticipantAmountRow row : rows) {
-            String participantCode = this.normalizeSwiftCode(row.participantSwiftCode(), row.participantName());
+
             String currency = this.normalizeCurrency(row.currencyId());
             String dcMark = this.debitCreditMark(row.amount());
             String amount = this.toSwiftAmount(row.amount());
@@ -234,14 +231,25 @@ public class GenerateTransactionAmountSwiftReportCommandHandler implements Gener
 
         String senderBlock = senderBlocks.get(0);
         if (this.hasText(senderBlock)) {
-            return "{1:" + senderBlock + this.calculateTransactionMtid(settlementId) + "}";
+            return "{1:F01" + senderBlock + this.calculateTransactionMtid(settlementId) + "}";
         }
         return DEFAULT_SENDER_BLOCK;
     }
 
     private String calculateTransactionMtid(String settlementId) {
 
-        return this.formatMtid(new BigInteger(settlementId).multiply(BigInteger.TWO).subtract(BigInteger.ONE));
+        if (settlementId == null || settlementId.isBlank()) {
+            throw new IllegalArgumentException("Settlement ID cannot be null or empty.");
+        }
+
+        try {
+            return new BigInteger(settlementId)
+                       .multiply(BigInteger.TWO)
+                       .subtract(BigInteger.ONE)
+                       .toString();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Settlement ID must be a valid number: " + settlementId, e);
+        }
     }
 
     private String formatMtid(BigInteger mtid) {

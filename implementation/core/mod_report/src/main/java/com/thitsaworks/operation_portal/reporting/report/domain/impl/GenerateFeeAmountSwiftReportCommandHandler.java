@@ -27,7 +27,7 @@ public class GenerateFeeAmountSwiftReportCommandHandler
 
     private static final String DEFAULT_CURRENCY = "XXX";
 
-    private static final String DEFAULT_SENDER_BLOCK = "{1:NULL}";
+    private static final String DEFAULT_SENDER_BLOCK = "{1:F01NULL}";
 
     private static final String DEFAULT_SENDER_BLOCK_PARTICIPANT_ID = "1111111111111111";
 
@@ -326,16 +326,13 @@ public class GenerateFeeAmountSwiftReportCommandHandler
         String receiverBic = this.reportSettings.receiverBIC();
 
         StringBuilder swift = new StringBuilder(512);
-        swift.append(senderBlock)
-             .append("\n");
+        swift.append(senderBlock);
         swift.append("{2:")
              .append(receiverBic)
-             .append("}")
-             .append("\n");
-        swift.append("{3:{113:0010}{108:SETTL-FEE:/")
+             .append("}");
+        swift.append("{3:{113:0010}{108:SETTL-FEE/")
              .append(this.calculateFeeMtid(settlementId))
-             .append("}}")
-             .append("\n");
+             .append("}}");
         swift.append("{4:")
              .append("\n");
         swift.append(":20:")
@@ -378,14 +375,25 @@ public class GenerateFeeAmountSwiftReportCommandHandler
 
         String senderBlock = senderBlocks.get(0);
         if (this.hasText(senderBlock)) {
-            return "{1:" + senderBlock + this.calculateFeeMtid(settlementId) + "}";
+            return "{1:F01" + senderBlock + this.calculateFeeMtid(settlementId) + "}";
         }
         return DEFAULT_SENDER_BLOCK;
     }
 
     private String calculateFeeMtid(String settlementId) {
 
-        return this.formatMtid(new BigInteger(settlementId).multiply(BigInteger.TWO));
+        if (settlementId == null || settlementId.isBlank()) {
+            throw new IllegalArgumentException("Settlement ID cannot be null or empty.");
+        }
+
+        try {
+            return new BigInteger(settlementId)
+                       .multiply(BigInteger.TWO)
+                       .toString();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Settlement ID must be a valid number: " + settlementId, e);
+        }
+
     }
 
     private String formatMtid(BigInteger mtid) {
