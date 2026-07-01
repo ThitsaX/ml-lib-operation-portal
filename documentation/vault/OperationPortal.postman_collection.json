@@ -1,0 +1,545 @@
+{
+  "info": {
+    "_postman_id": "1d01e42d-3da1-4152-82b3-1457730e6d59",
+    "name": "OperationPortal",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51564919",
+    "_collection_link": "https://go.postman.co/collection/51564919-1d01e42d-3da1-4152-82b3-1457730e6d59?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Vault Settings",
+      "item": [
+        {
+          "name": "Portal Data",
+          "item": [
+            {
+              "name": "mysql/portal_data/write_db/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"url\": \"jdbc:mysql://localhost:3306/operation_portal\",\n        \"password\": \"123\",\n        \"username\": \"root\",\n        \"minPoolSize\": 10,\n        \"maxPoolSize\": 20\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/portal_data/write_db/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "portal_data",
+                    "write_db",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "mysql/portal_data/read_db/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"url\": \"jdbc:mysql://localhost:3306/operation_portal\",\n        \"password\": \"123\",\n        \"username\": \"root\",\n        \"minPoolSize\": 5,\n        \"maxPoolSize\": 10\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/portal_data/read_db/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "portal_data",
+                    "read_db",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "mysql/portal_data/flyway/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/core\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/operation_portal?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\"\r\n    }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/portal_data/flyway/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "portal_data",
+                    "flyway",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Hub Data",
+          "item": [
+            {
+              "name": "MongoDB",
+              "item": [
+                {
+                  "name": "mongo/hub_data/write_db/settings",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "X-VAULT-TOKEN",
+                        "value": "{{vault_token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"data\": {\n        \"uri\": \"mongodb://z3Xt6cl_4KcqzSZ3ANCC:qtlrdc71SOpmO_PljhRz@localhost:27017/?authSource=admin\",\n        \"database\": \"mojaloop\",       \n        \"minPoolSize\": 0,\n        \"maxPoolSize\": 10,\n        \"maxWaitMs\": 120000,\n        \"connectTimeoutMs\": 10000,\n        \"readTimeoutMs\": 0,\n        \"retryWrites\": false,\n        \"readPreference\": \"primary\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:8200/v1/operation_portal/data/mongo/hub_data/write_db/settings",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8200",
+                      "path": [
+                        "v1",
+                        "operation_portal",
+                        "data",
+                        "mongo",
+                        "hub_data",
+                        "write_db",
+                        "settings"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "mongo/hub_data/read_db/settings",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "X-VAULT-TOKEN",
+                        "value": "{{vault_token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"data\": {\n        \"uri\": \"mongodb://z3Xt6cl_4KcqzSZ3ANCC:qtlrdc71SOpmO_PljhRz@localhost:27017/?authSource=admin\",\n        \"database\": \"mojaloop\",       \n        \"minPoolSize\": 0,\n        \"maxPoolSize\": 10,\n        \"maxWaitMs\": 120000,\n        \"connectTimeoutMs\": 10000,\n        \"readTimeoutMs\": 0,\n        \"retryWrites\": false,\n        \"readPreference\": \"primary\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:8200/v1/operation_portal/data/mongo/hub_data/read_db/settings",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8200",
+                      "path": [
+                        "v1",
+                        "operation_portal",
+                        "data",
+                        "mongo",
+                        "hub_data",
+                        "read_db",
+                        "settings"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "mysql/hub_data/write_db/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"url\": \"jdbc:mysql://localhost:3306/central_ledger\",\n        \"password\": \"123\",\n        \"username\": \"root\",\n        \"minPoolSize\": 10,\n        \"maxPoolSize\": 20\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/hub_data/write_db/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "hub_data",
+                    "write_db",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "mysql/hub_data/read_db/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"url\": \"jdbc:mysql://localhost:3306/central_ledger\",\n        \"password\": \"123\",\n        \"username\": \"root\",\n        \"minPoolSize\": 5,\n        \"maxPoolSize\": 10\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/hub_data/read_db/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "hub_data",
+                    "read_db",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "mysql/hub_data/flyway/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/report\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/central_ledger?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\"\r\n    }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/mysql/hub_data/flyway/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "mysql",
+                    "hub_data",
+                    "flyway",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Redis",
+          "item": [
+            {
+              "name": "redis/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"redisUrl\": \"redis://localhost:6379\"\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/redis/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "redis",
+                    "settings"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "settings",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "X-VAULT-TOKEN",
+                        "value": "hvs.WJRD6crpVfPSXrEZMkAarFT8",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"data\": {\n        \"redisUrl\": \"redis://localhost:6379\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:8200/v1/operation_portal/data/redis/settings",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8200",
+                      "path": [
+                        "v1",
+                        "operation_portal",
+                        "data",
+                        "redis",
+                        "settings"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Strict-Transport-Security",
+                      "value": "max-age=31536000; includeSubDomains"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Jul 2025 11:03:32 GMT"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "276"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"request_id\": \"5a93f87a-3617-bc2a-f316-840ba554eed0\",\n    \"lease_id\": \"\",\n    \"renewable\": false,\n    \"lease_duration\": 0,\n    \"data\": {\n        \"created_time\": \"2025-07-02T11:03:32.917947Z\",\n        \"custom_metadata\": null,\n        \"deletion_time\": \"\",\n        \"destroyed\": false,\n        \"version\": 1\n    },\n    \"wrap_info\": null,\n    \"warnings\": null,\n    \"auth\": null\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Hub Services",
+          "item": [
+            {
+              "name": "settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "{{vault_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"data\": {\n        \"centralLedgerServiceEndpoint\": \"http://localhost:3001\",\n        \"centralSettlementServiceEndpoint\": \"http://localhost:3007\"\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8200/v1/operation_portal/data/hub_services/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8200",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "hub_services",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "S3",
+          "item": [
+            {
+              "name": "s3/settings",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-VAULT-TOKEN",
+                    "value": "hvs.qsowbcunmqqnwQ7UTZ9PXBuR",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {\n    \"enabled\": true,\n    \"bucket\": \"tw-mcix-test\",\n    \"accessKey\": \"xxx\",\n    \"secretKey\": \"xx\",\n    \"region\": \"ap-southeast-1\",\n    \"prefix\": \"reports/\",\n    \"endpoint\": \"\",\n    \"pathStyleAccess\": true,\n    \"presignedUrlLifetime\": \"PT24H\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8400/v1/operation_portal/data/s3/settings",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8400",
+                  "path": [
+                    "v1",
+                    "operation_portal",
+                    "data",
+                    "s3",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
