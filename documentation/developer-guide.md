@@ -272,18 +272,20 @@ This module has its own resource profiles:
 
 ## 7. First-time bootstrap API calls
 
-After Vault and the databases are ready, run the one-time bootstrap APIs in this order:
+After Vault and the databases are ready, and after the app is up for the first time, run the one-time bootstrap APIs in this order:
 
-1. `POST /secured/grantRoleActionList`
-2. `POST /secured/grantMenuActionList`
-3. `POST /secured/syncHubSettlementModelsToPortal`
+1. `POST /secured/syncHubSettlementModelsToPortal`
+2. `POST /secured/grantRoleActionList`
+3. `POST /secured/grantMenuActionList`
 
-The request payloads for the first two calls are stored in:
+The settlement-model sync pulls settlement models from Mojaloop's settlement API into the portal. The grant APIs then initialize role/action mapping and menu/action mapping.
+
+Grant menus and actions are described in `documentation/grants/`.
+
+The request payloads for the grant APIs are stored in:
 
 - `documentation/grants/GrantRoleActionList.txt`
 - `documentation/grants/GrantMenuActionList.txt`
-
-These calls initialize role/action mapping, menu/action mapping, and hub settlement model data inside the portal.
 
 ## 8. Code structure guide
 
@@ -412,4 +414,3 @@ The default web port is `8003`. Change `implementation/web_api_operation/src/mai
 - Redis port: `6379`
 - Operation Portal MySQL port: `3307`
 - Central Ledger MySQL port: `3308`
-
