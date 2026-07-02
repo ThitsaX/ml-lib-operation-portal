@@ -65,7 +65,10 @@ public class GenerateTransactionDetailReportPoiCommandHandler
         "Transfer Type",
         "Amount",
         "Payee Received Amount",
-        "Fee",
+        "Payer Fee",
+        "Payee Fee",
+        "Scheme Fee",
+        "Fee Exchange Rate",
         "Commission",
         "Currency",
         "Status"};
@@ -80,7 +83,10 @@ public class GenerateTransactionDetailReportPoiCommandHandler
         16,
         24,
         24,
-        18,
+        24,
+        24,
+        24,
+        24,
         18,
         18,
         18};
@@ -673,13 +679,16 @@ public class GenerateTransactionDetailReportPoiCommandHandler
 
     private TransactionDetailRow mapRow(ResultSet resultSet) throws SQLException {
 
-        return new TransactionDetailRow(
-            resultSet.getString("transferId"), resultSet.getString("transactionDate"),
-            resultSet.getString("senderDfspId"), resultSet.getString("senderDfspName"),
-            resultSet.getString("receiverDfspId"), resultSet.getString("receiverDfspName"),
-            resultSet.getString("transferType"), resultSet.getBigDecimal("amount"),
+        return new TransactionDetailRow(resultSet.getString("transferId"),
+            resultSet.getString("transactionDate"), resultSet.getString("senderDfspId"),
+            resultSet.getString("senderDfspName"), resultSet.getString("receiverDfspId"),
+            resultSet.getString("receiverDfspName"), resultSet.getString("transferType"),
+            resultSet.getBigDecimal("amount"),
             resultSet.getBigDecimal("payeeReceivedAmount"),
+            resultSet.getBigDecimal("payerDfspFeeAmount"),
             resultSet.getBigDecimal("payeeDfspFeeAmount"),
+            resultSet.getBigDecimal("schemeFeeAmount"),
+            resultSet.getString("feeExchangeRate"),
             resultSet.getBigDecimal("payeeDfspCommissionAmount"), resultSet.getString("currencyId"),
             resultSet.getString("status"));
     }
@@ -734,8 +743,10 @@ public class GenerateTransactionDetailReportPoiCommandHandler
               IFNULL(a.name, '') AS transferType,
               ROUND(qR.transferAmount, 2) AS amount,
               ROUND(qR.payeeReceiveAmount, 2) AS payeeReceivedAmount,
-              IF(qR.payeeFspFeeAmount IS NOT NULL, ROUND(qR.payeeFspFeeAmount, 2), NULL)
-                  AS payeeDfspFeeAmount,
+              ROUND(qe.payerFee,2) AS payerDfspFeeAmount,
+             ROUND(qe.payeeFee,2) AS payeeDfspFeeAmount,
+             ROUND(qe.schemeFee,2) AS schemeFeeAmount,
+             IFNULL(qe.exchangeRate,'-') AS feeExchangeRate,
               IF(qR.payeeFspCommissionAmount IS NOT NULL,
                  ROUND(qR.payeeFspCommissionAmount, 2), NULL) AS payeeDfspCommissionAmount,
               c.currencyId,
@@ -787,6 +798,17 @@ public class GenerateTransactionDetailReportPoiCommandHandler
               ON a.amountTypeId = q.amountTypeId
             INNER JOIN currency c
               ON c.currencyId = payercurrency.currencyId
+               LEFT JOIN (
+              					    SELECT
+              					        quoteResponseId,
+              					        MAX(CASE WHEN `key` = 'payerFee' THEN value END) AS payerFee,
+              					        MAX(CASE WHEN `key` = 'payeeFee' THEN value END) AS payeeFee,
+              					        MAX(CASE WHEN `key` = 'schemeFee' THEN value END) AS schemeFee,
+              					        MAX(CASE WHEN `key` = 'exchangeRate' THEN value END) AS exchangeRate
+              					    FROM quoteExtension
+              					    GROUP BY quoteResponseId
+              ) qe
+              ON qe.quoteResponseId = qR.quoteResponseId
             JOIN bounds b
             WHERE IFNULL(tss.createdDate, t.createdDate) BETWEEN b.startUtc AND b.endUtc
               AND (? = 'All' OR tst.enumeration = ?)
@@ -916,7 +938,10 @@ public class GenerateTransactionDetailReportPoiCommandHandler
                                         String transferType,
                                         BigDecimal amount,
                                         BigDecimal payeeReceivedAmount,
+                                        BigDecimal payerDfspFeeAmount,
                                         BigDecimal payeeDfspFeeAmount,
+                                        BigDecimal schemeFeeAmount,
+                                        String feeExchangeRate,
                                         BigDecimal payeeDfspCommissionAmount,
                                         String currencyId,
                                         String status) { }
