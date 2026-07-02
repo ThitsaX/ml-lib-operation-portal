@@ -3,6 +3,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.type.FileDownloadStatus;
 import com.thitsaworks.operation_portal.component.common.type.ReportType;
+import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
@@ -11,6 +12,7 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditC
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
+import com.thitsaworks.operation_portal.core.participant.query.UserQuery;
 import com.thitsaworks.operation_portal.core.reporting.download.request.ReportDownloadRequestManager;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
@@ -40,6 +42,8 @@ public class GenerateFeeSummaryReportHandler
 
     private final S3FileStorage s3FileStorage;
 
+    private final UserQuery userQuery;
+
     public GenerateFeeSummaryReportHandler(CreateInputAuditCommand createInputAuditCommand,
                                            CreateOutputAuditCommand createOutputAuditCommand,
                                            CreateExceptionAuditCommand createExceptionAuditCommand,
@@ -47,7 +51,8 @@ public class GenerateFeeSummaryReportHandler
                                            PrincipalCache principalCache,
                                            ActionAuthorizationManager actionAuthorizationManager,
                                            ReportDownloadRequestManager reportDownloadRequestManager,
-                                           S3FileStorage s3FileStorage) {
+                                           S3FileStorage s3FileStorage,
+                                           UserQuery userQuery) {
 
         super(
             createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
@@ -55,6 +60,7 @@ public class GenerateFeeSummaryReportHandler
 
         this.reportDownloadRequestManager = reportDownloadRequestManager;
         this.s3FileStorage = s3FileStorage;
+        this.userQuery = userQuery;
     }
 
     @Override
@@ -64,6 +70,9 @@ public class GenerateFeeSummaryReportHandler
         params.put("settlementId", input.settlementId());
         params.put("dfspId", ReportDownloadUtil.normalizeAllToken(input.fspId()));
         params.put("timezoneOffset", input.timezone());
+        params.put("loginDfspId", this.userQuery.get(new UserId(input.userId()))
+                                                .participantName()
+                                                .getValue());
 
         ReportDownloadRequestManager.CreateOrReuseResult result = this.reportDownloadRequestManager.createPendingOrReuse(
             ReportType.FEE_SETTLEMENT_SUMMARY, FILE_TYPE_XLSX, params);

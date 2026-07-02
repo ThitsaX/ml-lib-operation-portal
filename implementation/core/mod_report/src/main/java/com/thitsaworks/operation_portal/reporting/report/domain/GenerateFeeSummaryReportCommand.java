@@ -7,7 +7,8 @@ public interface GenerateFeeSummaryReportCommand {
     record Input(String settlementId,
                  String dfspId,
                  String timezone,
-                 String fileType) {
+                 String fileType,
+                 String loginDfspId) {
     }
 
     record Output(byte[] feeSummaryRptByte) { }

@@ -61,8 +61,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         "Currency"};
 
     private static final int[] SUMMARY_COLUMN_WIDTHS = {
-        45,
-        45,
+        42,
+        42,
         40,
         26,
         26,
@@ -93,18 +93,22 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
             }
 
-            List<FeeSummaryRow> feeSummaryRows = this.fetchFeeSummaryRows(input);
-            if (feeSummaryRows == null || feeSummaryRows.isEmpty()) {
+            List<FeeSummaryRow> netSummarySourceRows = this.fetchFeeSummaryRows(input);
+            if (netSummarySourceRows == null || netSummarySourceRows.isEmpty()) {
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
             }
 
             List<String> selectedParticipantNames = this.fetchSelectedParticipantNames(input.dfspId());
+            boolean hideTransactionDetails = this.shouldHideTransactionDetails(input);
+            List<FeeSummaryRow> transactionDetailRows = hideTransactionDetails ? List.of() :
+                netSummarySourceRows;
 
             return new Output(
                 this.exportXlsx(
                     input,
-                    feeSummaryRows,
-                    this.buildNetSummaryRows(feeSummaryRows, input.dfspId(), selectedParticipantNames)));
+                    transactionDetailRows,
+                    this.buildNetSummaryRows(
+                        netSummarySourceRows, input.dfspId(), selectedParticipantNames)));
 
         } catch (ReportException exception) {
             throw exception;
@@ -141,21 +145,25 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 sheet, rowIndex, "DFSP Name", input.dfspId(), metaLabelStyle, metaValueStyle);
             rowIndex++;
 
-            int columnHeaderRowIndex = rowIndex;
-            Row columnHeaderRow = sheet.createRow(rowIndex++);
-            for (int index = 0; index < SUMMARY_HEADERS.length; index++) {
-                Cell cell = columnHeaderRow.createCell(REPORT_START_COLUMN + index);
-                cell.setCellValue(SUMMARY_HEADERS[index]);
-                cell.setCellStyle(columnHeaderStyle);
+            int freezeRowIndex = rowIndex;
+            if (!feeSummaryRows.isEmpty()) {
+                Row columnHeaderRow = sheet.createRow(rowIndex++);
+                for (int index = 0; index < SUMMARY_HEADERS.length; index++) {
+                    Cell cell = columnHeaderRow.createCell(REPORT_START_COLUMN + index);
+                    cell.setCellValue(SUMMARY_HEADERS[index]);
+                    cell.setCellStyle(columnHeaderStyle);
+                }
+                freezeRowIndex = rowIndex;
+
+                for (FeeSummaryRow feeSummaryRow : feeSummaryRows) {
+                    this.writeSummaryDataRow(
+                        sheet.createRow(rowIndex++), feeSummaryRow, textCellStyle, integerCellStyle,
+                        amountCellStyle);
+                }
+
+                rowIndex++;
             }
 
-            for (FeeSummaryRow feeSummaryRow : feeSummaryRows) {
-                this.writeSummaryDataRow(
-                    sheet.createRow(rowIndex++), feeSummaryRow, textCellStyle, integerCellStyle,
-                    amountCellStyle);
-            }
-
-            rowIndex++;
             Row netSummaryTitleRow = sheet.createRow(rowIndex++);
             Cell netSummaryTitleCell = netSummaryTitleRow.createCell(REPORT_START_COLUMN);
             netSummaryTitleCell.setCellValue("Net Summary");
@@ -186,7 +194,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 sheet.setColumnWidth(index, SUMMARY_COLUMN_WIDTHS[index] * 256);
             }
 
-            sheet.createFreezePane(0, columnHeaderRowIndex + 1);
+            sheet.createFreezePane(0, freezeRowIndex);
 
             workbook.write(outputStream);
             workbook.dispose();
@@ -253,6 +261,14 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                          .toList();
     }
 
+    private boolean shouldHideTransactionDetails(Input input) {
+
+        return !this.isAllDfsp(input.dfspId()) &&
+            !this.isHubDfsp(input.loginDfspId()) &&
+            this.hasText(input.loginDfspId()) &&
+            !input.loginDfspId().equalsIgnoreCase(input.dfspId());
+    }
+
     private void addNetAmount(Map<NetSummaryKey, BigDecimal> netSummary,
                               String dfspName,
                               String currency,
@@ -281,28 +297,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             return List.of();
         }
 
-        return this.jdbcTemplate.query(
-            """
-                SELECT participant_name
-                FROM operation_portal.tbl_participant op
-                WHERE op.participant_name COLLATE utf8mb4_unicode_ci = ?
-                   OR (
-                     op.parent_participant_name COLLATE utf8mb4_unicode_ci = ?
-                     AND EXISTS (
-                       SELECT 1
-                       FROM operation_portal.tbl_participant selected_op
-                       WHERE selected_op.participant_name COLLATE utf8mb4_unicode_ci = ?
-                         AND (
-                           selected_op.parent_participant_name IS NULL
-                           OR selected_op.parent_participant_name = ''
-                         )
-                     )
-                   )
-                """,
-            (rs, rowNum) -> rs.getString("participant_name"),
-            dfspId,
-            dfspId,
-            dfspId);
+        return List.of(dfspId);
     }
 
     private FeeSummaryRow mapFeeSummaryRow(ResultSet resultSet) throws SQLException {
@@ -329,31 +324,6 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         return """
             WITH report_filter AS (
               SELECT ? AS dfspId
-            ),
-            selected_dfsp AS (
-              SELECT op.participant_name, op.parent_participant_name
-              FROM operation_portal.tbl_participant op
-              JOIN report_filter rf
-              WHERE op.participant_name COLLATE utf8mb4_unicode_ci = rf.dfspId COLLATE utf8mb4_unicode_ci
-            ),
-            selected_participants AS (
-              SELECT op.participant_name
-              FROM operation_portal.tbl_participant op
-              JOIN report_filter rf
-              LEFT JOIN selected_dfsp selected
-                ON selected.participant_name COLLATE utf8mb4_unicode_ci =
-                   rf.dfspId COLLATE utf8mb4_unicode_ci
-              WHERE rf.dfspId <> 'All'
-                AND (
-                  op.participant_name COLLATE utf8mb4_unicode_ci = rf.dfspId COLLATE utf8mb4_unicode_ci
-                  OR (
-                    op.parent_participant_name COLLATE utf8mb4_unicode_ci = rf.dfspId COLLATE utf8mb4_unicode_ci
-                    AND (
-                      selected.parent_participant_name IS NULL
-                      OR selected.parent_participant_name = ''
-                    )
-                  )
-                )
             ),
             fee_per_quote AS (
               SELECT
@@ -416,8 +386,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               ON f.quoteId = q.quoteId
             WHERE
               (SELECT dfspId FROM report_filter) = 'All'
-              OR pPayer.name IN (SELECT participant_name FROM selected_participants)
-              OR pPayee.name IN (SELECT participant_name FROM selected_participants)
+              OR pPayer.name COLLATE utf8mb4_unicode_ci =
+                 (SELECT dfspId FROM report_filter) COLLATE utf8mb4_unicode_ci
+              OR pPayee.name COLLATE utf8mb4_unicode_ci =
+                 (SELECT dfspId FROM report_filter) COLLATE utf8mb4_unicode_ci
             GROUP BY
               pPayer.name,
               pPayee.name,
@@ -583,6 +555,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private boolean isAllDfsp(String dfspId) {
 
         return !this.hasText(dfspId) || "All".equalsIgnoreCase(dfspId);
+    }
+
+    private boolean isHubDfsp(String dfspId) {
+
+        return "Hub".equalsIgnoreCase(dfspId);
     }
 
     private Set<String> normalizedParticipantNames(List<String> participantNames) {

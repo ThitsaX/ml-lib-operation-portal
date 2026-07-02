@@ -43,9 +43,11 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
         String dfspId = this.reportGeneratorSupport.normalizeAllToken(
             this.reportGeneratorSupport.requireParam(params, "dfspId"));
         String timezoneOffset = params.getOrDefault("timezoneOffset", "+0000");
+        String loginDfspId = params.getOrDefault("loginDfspId", dfspId);
 
         GenerateFeeSummaryReportCommand.Output output = this.generateFeeSummaryReportCommand.execute(
-            new GenerateFeeSummaryReportCommand.Input(settlementId, dfspId, timezoneOffset, fileType));
+            new GenerateFeeSummaryReportCommand.Input(
+                settlementId, dfspId, timezoneOffset, fileType, loginDfspId));
 
         return new ReportGeneratedFile(output.feeSummaryRptByte(), FILE_TYPE_XLSX);
     }
