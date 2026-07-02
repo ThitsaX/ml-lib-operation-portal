@@ -372,7 +372,10 @@ public class GenerateTransactionDetailReportPoiCommandHandler
             row.transferType(),
             this.amountText(row.amount()),
             this.amountText(row.payeeReceivedAmount()),
+            this.amountOrDashText(row.payerDfspFeeAmount()),
             this.amountOrDashText(row.payeeDfspFeeAmount()),
+            this.amountOrDashText(row.schemeFeeAmount()),
+            row.feeExchangeRate(),
             this.amountOrDashText(row.payeeDfspCommissionAmount()),
             row.currencyId(),
             row.status()};
@@ -393,13 +396,20 @@ public class GenerateTransactionDetailReportPoiCommandHandler
         this.writeAmountCell(row, 7, data.amount(), amountCellStyle);
         this.writeAmountCell(row, 8, data.payeeReceivedAmount(), amountCellStyle);
         this.writeAmountOrDashCell(
-            row, 9, data.payeeDfspFeeAmount(), amountCellStyle,
+            row, 9, data.payerDfspFeeAmount(), amountCellStyle,
             amountCellStyle);
         this.writeAmountOrDashCell(
-            row, 10, data.payeeDfspCommissionAmount(), amountCellStyle,
+            row, 10, data.payeeDfspFeeAmount(), amountCellStyle,
             amountCellStyle);
-        this.writeTextCell(row, 11, data.currencyId(), textCellStyle);
-        this.writeTextCell(row, 12, data.status(), textCellStyle);
+        this.writeAmountOrDashCell(
+            row, 11, data.schemeFeeAmount(), amountCellStyle,
+            amountCellStyle);
+        this.writeTextCell(row, 12, data.feeExchangeRate(), amountCellStyle);
+        this.writeAmountOrDashCell(
+            row, 13, data.payeeDfspCommissionAmount(), amountCellStyle,
+            amountCellStyle);
+        this.writeTextCell(row, 14, data.currencyId(), textCellStyle);
+        this.writeTextCell(row, 15, data.status(), textCellStyle);
     }
 
     private void streamRows(Input input, TransactionDetailRowConsumer consumer) {
