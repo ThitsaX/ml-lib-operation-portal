@@ -8,7 +8,9 @@ import com.thitsaworks.operation_portal.reporting.report.exception.ReportExcepti
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
@@ -42,8 +44,6 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
     private static final int DEFAULT_ROW_WINDOW = 200;
 
-    private static final String DEFAULT_DFSP_ID = "ALL";
-
     private static final int REPORT_START_ROW = 0;
 
     private static final int REPORT_START_COLUMN = 0;
@@ -61,20 +61,21 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         "Currency"};
 
     private static final int[] SUMMARY_COLUMN_WIDTHS = {
-        22,
-        22,
-        22,
-        20,
-        20,
-        18,
-        18,
-        18,
-        18,
-        14};
+        45,
+        45,
+        40,
+        26,
+        26,
+        24,
+        26,
+        26,
+        26,
+        18};
 
     private static final String[] NET_SUMMARY_HEADERS = {
         "DFSP Name",
-        "Settlement Amount"};
+        "Settlement Amount",
+        "Currency"};
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -88,18 +89,22 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     public Output execute(Input input) throws ReportException {
 
         try {
+            if (!"xlsx".equalsIgnoreCase(input.fileType())) {
+                throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+            }
+
             List<FeeSummaryRow> feeSummaryRows = this.fetchFeeSummaryRows(input);
             if (feeSummaryRows == null || feeSummaryRows.isEmpty()) {
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
             }
 
-            List<String> selectedParticipantNames = this.fetchSelectedParticipantNames(DEFAULT_DFSP_ID);
+            List<String> selectedParticipantNames = this.fetchSelectedParticipantNames(input.dfspId());
 
             return new Output(
                 this.exportXlsx(
                     input,
                     feeSummaryRows,
-                    this.buildNetSummaryRows(feeSummaryRows, DEFAULT_DFSP_ID, selectedParticipantNames)));
+                    this.buildNetSummaryRows(feeSummaryRows, input.dfspId(), selectedParticipantNames)));
 
         } catch (ReportException exception) {
             throw exception;
@@ -132,11 +137,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             rowIndex = this.writeHeaderRow(
                 sheet, rowIndex, "Settlement ID", input.settlementId(), metaLabelStyle,
                 metaValueStyle);
-            sheet.getRow(REPORT_START_ROW).setHeightInPoints(30.75F);
             rowIndex = this.writeHeaderRow(
-                sheet, rowIndex, "DFSP Name", DEFAULT_DFSP_ID, metaLabelStyle, metaValueStyle);
+                sheet, rowIndex, "DFSP Name", input.dfspId(), metaLabelStyle, metaValueStyle);
             rowIndex++;
 
+            int columnHeaderRowIndex = rowIndex;
             Row columnHeaderRow = sheet.createRow(rowIndex++);
             for (int index = 0; index < SUMMARY_HEADERS.length; index++) {
                 Cell cell = columnHeaderRow.createCell(REPORT_START_COLUMN + index);
@@ -160,7 +165,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             for (int index = 0; index < NET_SUMMARY_HEADERS.length; index++) {
                 Cell cell = netSummaryHeaderRow.createCell(REPORT_START_COLUMN + index);
                 cell.setCellValue(NET_SUMMARY_HEADERS[index]);
-                cell.setCellStyle(textCellStyle);
+                cell.setCellStyle(columnHeaderStyle);
             }
 
             for (NetSummaryRow netSummaryRow : netSummaryRows) {
@@ -168,6 +173,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 this.writeTextCell(row, REPORT_START_COLUMN, netSummaryRow.dfspName(), textCellStyle);
                 this.writeAmountCell(
                     row, REPORT_START_COLUMN + 1, netSummaryRow.settlementAmount(), amountCellStyle);
+                this.writeTextCell(row, REPORT_START_COLUMN + 2, netSummaryRow.currency(), textCellStyle);
             }
 
             rowIndex++;
@@ -179,6 +185,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             for (int index = 0; index < SUMMARY_COLUMN_WIDTHS.length; index++) {
                 sheet.setColumnWidth(index, SUMMARY_COLUMN_WIDTHS[index] * 256);
             }
+
+            sheet.createFreezePane(0, columnHeaderRowIndex + 1);
 
             workbook.write(outputStream);
             workbook.dispose();
@@ -211,7 +219,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                                                     String dfspId,
                                                     List<String> selectedParticipantNames) {
 
-        Map<String, BigDecimal> netSummary = new LinkedHashMap<>();
+        Map<NetSummaryKey, BigDecimal> netSummary = new LinkedHashMap<>();
         boolean allDfsp = this.isAllDfsp(dfspId);
         Set<String> selectedParticipants = this.normalizedParticipantNames(selectedParticipantNames);
 
@@ -221,33 +229,41 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             BigDecimal receiverSettlementAmount = payerFee.add(schemeFee).negate();
 
             if (allDfsp || this.containsParticipant(selectedParticipants, row.senderDfsp())) {
-                this.addNetAmount(netSummary, row.senderDfsp(), payerFee);
+                this.addNetAmount(netSummary, row.senderDfsp(), row.currency(), payerFee);
             }
 
             if (allDfsp) {
-                this.addNetAmount(netSummary, "Hub", schemeFee);
+                this.addNetAmount(netSummary, "Hub", row.currency(), schemeFee);
             }
 
             if (allDfsp || this.containsParticipant(selectedParticipants, row.receiverDfsp())) {
-                this.addNetAmount(netSummary, row.receiverDfsp(), receiverSettlementAmount);
+                this.addNetAmount(
+                    netSummary, row.receiverDfsp(), row.currency(), receiverSettlementAmount);
             }
         }
 
         return netSummary.entrySet()
                          .stream()
                          .filter(entry -> entry.getValue().signum() != 0)
-                         .map(entry -> new NetSummaryRow(entry.getKey(), entry.getValue()))
-                         .sorted(Comparator.comparing(NetSummaryRow::dfspName, this::compareNetSummaryNames))
+                         .map(entry -> new NetSummaryRow(
+                             entry.getKey().dfspName(), entry.getValue(), entry.getKey().currency()))
+                         .sorted(Comparator
+                             .comparing(NetSummaryRow::dfspName, this::compareNetSummaryNames)
+                             .thenComparing(NetSummaryRow::currency, String.CASE_INSENSITIVE_ORDER))
                          .toList();
     }
 
-    private void addNetAmount(Map<String, BigDecimal> netSummary, String dfspName, BigDecimal amount) {
+    private void addNetAmount(Map<NetSummaryKey, BigDecimal> netSummary,
+                              String dfspName,
+                              String currency,
+                              BigDecimal amount) {
 
-        if (!this.hasText(dfspName) || amount == null || amount.signum() == 0) {
+        if (!this.hasText(dfspName) || !this.hasText(currency) || amount == null ||
+                amount.signum() == 0) {
             return;
         }
 
-        netSummary.merge(dfspName, amount, BigDecimal::add);
+        netSummary.merge(new NetSummaryKey(dfspName, currency), amount, BigDecimal::add);
     }
 
     private List<FeeSummaryRow> fetchFeeSummaryRows(Input input) {
@@ -255,7 +271,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         return this.jdbcTemplate.query(
             this.feeSummaryQuery(),
             (rs, rowNum) -> this.mapFeeSummaryRow(rs),
-            DEFAULT_DFSP_ID,
+            input.dfspId(),
             input.settlementId());
     }
 
@@ -498,8 +514,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private CellStyle columnHeaderStyle(SXSSFWorkbook workbook) {
 
         CellStyle style = workbook.createCellStyle();
-        style.cloneStyleFrom(this.textCellStyle(workbook));
-        style.setFont(this.boldAptosNarrowFont(workbook));
+        style.cloneStyleFrom(this.metaLabelStyle(workbook));
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         return style;
     }
 
@@ -538,16 +557,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private org.apache.poi.ss.usermodel.Font reportDataFont(org.apache.poi.ss.usermodel.Workbook workbook) {
 
         var font = workbook.createFont();
-        font.setFontName("Aptos Narrow");
+        font.setFontName("Calibri");
         font.setFontHeightInPoints((short) 11);
-        return font;
-    }
-
-    private org.apache.poi.ss.usermodel.Font boldAptosNarrowFont(
-        org.apache.poi.ss.usermodel.Workbook workbook) {
-
-        var font = this.reportDataFont(workbook);
-        font.setBold(true);
         return font;
     }
 
@@ -611,6 +622,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                                  BigDecimal totalSchemeFee,
                                  String currency) { }
 
+    private record NetSummaryKey(String dfspName,
+                                 String currency) { }
+
     private record NetSummaryRow(String dfspName,
-                                 BigDecimal settlementAmount) { }
+                                 BigDecimal settlementAmount,
+                                 String currency) { }
 }

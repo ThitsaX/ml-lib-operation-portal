@@ -3,6 +3,7 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.hubServ
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.TimeZoneOffsetFormater;
@@ -27,15 +28,17 @@ public class GenerateFeeSummaryReportController {
 
     private final GenerateFeeSummaryReport generateFeeSummaryReport;
 
+    private final ObjectMapper objectMapper;
+
     @PostMapping("/secured/generateFeeSummaryReport")
     public ResponseEntity<Response> execute(@RequestParam("settlementId") String settlementId,
-                                            @RequestParam("currencyId") String currencyId,
+                                            @RequestParam("dfspId") String dfspId,
                                             @RequestParam("timezoneOffset") String timezoneOffset)
         throws DomainException, JsonProcessingException {
 
         LOG.info(
-            "Generate Fee Summary Report : settlementId = [{}], currencyId = [{}], timezoneOffset = [{}]",
-            settlementId, currencyId, timezoneOffset);
+            "Generate Fee Summary Report : settlementId = [{}], dfspId = [{}], timezoneOffset = [{}]",
+            settlementId, dfspId, timezoneOffset);
 
         String timezone = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
 
@@ -46,17 +49,24 @@ public class GenerateFeeSummaryReportController {
 
         GenerateFeeSummaryReport.Output output = this.generateFeeSummaryReport.execute(
             new GenerateFeeSummaryReport.Input(
-                settlementId, currencyId, timezone,
+                settlementId, dfspId, timezone,
                 userContext.userId().getId()));
 
-        var response = new Response(output.reportData());
+        var response = new Response(
+            output.requestId().getEntityId().toString(),
+            output.status().name(),
+            output.fileUrl(),
+            output.paramsSignature());
 
-        LOG.info("Generate Fee Summary Report Response : [{}]", response);
+        LOG.info("Generate Fee Summary Report Response : [{}]", this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("rptByte") byte[] feeSummaryReportByte)
+    public record Response(@JsonProperty("requestId") String requestId,
+                           @JsonProperty("status") String status,
+                           @JsonProperty("fileUrl") String fileUrl,
+                           @JsonProperty("paramsSignature") String paramsSignature)
         implements Serializable { }
 }

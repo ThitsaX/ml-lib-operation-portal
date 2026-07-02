@@ -1,12 +1,19 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
+import com.thitsaworks.operation_portal.component.common.identifier.ReportDownloadRequestId;
+import com.thitsaworks.operation_portal.component.common.type.FileDownloadStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 public interface GenerateFeeSummaryReport
     extends UseCase<GenerateFeeSummaryReport.Input, GenerateFeeSummaryReport.Output> {
 
-    record Input(String settlementId, String currencyId, String timezone, Long userId) { }
+    record Input(String settlementId, String fspId, String timezone, Long userId) { }
 
-    record Output(byte[] reportData) { }
+    record Output(ReportDownloadRequestId requestId,
+                  FileDownloadStatus status,
+                  String fileUrl,
+                  String fileKey,
+                  String paramsSignature) { }
 
 }
+

@@ -447,6 +447,8 @@ public class ReportGeneratorHandler implements ReportGenerator {
             case SETTLEMENT_STATEMENT ->
                 "DFSPSettlementStatementReport-" + timestamp + "." + extension;
             case SETTLEMENT_SUMMARY -> "DFSPSettlementReport-" + timestamp + "." + extension;
+
+            case FEE_SETTLEMENT_SUMMARY -> "FeeSettlementSummaryReport-" + timestamp + "." + extension;
         };
     }
 

@@ -5,8 +5,9 @@ import com.thitsaworks.operation_portal.reporting.report.exception.ReportExcepti
 public interface GenerateFeeSummaryReportCommand {
 
     record Input(String settlementId,
-                 String currency,
-                 String timezone) {
+                 String dfspId,
+                 String timezone,
+                 String fileType) {
     }
 
     record Output(byte[] feeSummaryRptByte) { }

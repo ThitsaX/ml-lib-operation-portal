@@ -1,23 +1,29 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.type.FileDownloadStatus;
+import com.thitsaworks.operation_portal.component.common.type.ReportType;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
-import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSummaryReportCommand;
+import com.thitsaworks.operation_portal.core.reporting.download.request.ReportDownloadRequestManager;
+import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
+import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GenerateFeeSummaryReport;
+import com.thitsaworks.operation_portal.usecase.util.ReportDownloadUtil;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.net.ConnectException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @ActionMetadata(category = ActionCategory.REPORTING)
@@ -28,7 +34,11 @@ public class GenerateFeeSummaryReportHandler
     private static final Logger LOG = LoggerFactory.getLogger(
         GenerateFeeSummaryReportHandler.class);
 
-    private final GenerateFeeSummaryReportCommand generateFeeSummaryReportCommand;
+    private static final String FILE_TYPE_XLSX = "xlsx";
+
+    private final ReportDownloadRequestManager reportDownloadRequestManager;
+
+    private final S3FileStorage s3FileStorage;
 
     public GenerateFeeSummaryReportHandler(CreateInputAuditCommand createInputAuditCommand,
                                            CreateOutputAuditCommand createOutputAuditCommand,
@@ -36,26 +46,53 @@ public class GenerateFeeSummaryReportHandler
                                            ObjectMapper objectMapper,
                                            PrincipalCache principalCache,
                                            ActionAuthorizationManager actionAuthorizationManager,
-                                           GenerateFeeSummaryReportCommand generateFeeSummaryReportCommand) {
+                                           ReportDownloadRequestManager reportDownloadRequestManager,
+                                           S3FileStorage s3FileStorage) {
 
         super(
             createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
             objectMapper, principalCache, actionAuthorizationManager);
 
-        this.generateFeeSummaryReportCommand = generateFeeSummaryReportCommand;
+        this.reportDownloadRequestManager = reportDownloadRequestManager;
+        this.s3FileStorage = s3FileStorage;
     }
 
     @Override
-    protected Output onExecute(Input input)
-        throws DomainException, ConnectException, JsonProcessingException {
+    protected Output onExecute(Input input) throws DomainException {
 
-        GenerateFeeSummaryReportCommand.Output output = this.generateFeeSummaryReportCommand.execute(
-            new GenerateFeeSummaryReportCommand.Input(
-                input.settlementId(),
-                input.currencyId(),
-                input.timezone()));
+        Map<String, String> params = new HashMap<>();
+        params.put("settlementId", input.settlementId());
+        params.put("dfspId", ReportDownloadUtil.normalizeAllToken(input.fspId()));
+        params.put("timezoneOffset", input.timezone());
 
-        return new GenerateFeeSummaryReport.Output(output.feeSummaryRptByte());
+        ReportDownloadRequestManager.CreateOrReuseResult result = this.reportDownloadRequestManager.createPendingOrReuse(
+            ReportType.FEE_SETTLEMENT_SUMMARY, FILE_TYPE_XLSX, params);
+
+        String fileKey = result.request().fileUrl();
+        String fileUrl = null;
+
+        if (FileDownloadStatus.READY.equals(result.request().status()) && fileKey != null &&
+                !fileKey.isBlank()) {
+
+            try {
+                fileUrl = this.s3FileStorage.generatePreSignedDownloadUrl(fileKey);
+            } catch (Exception e) {
+                LOG.warn(
+                    "Failed to generate pre-signed URL for requestId [{}]: [{}]",
+                    result.request().requestId().getEntityId(), e.getMessage());
+            }
+        }
+
+        if (FileDownloadStatus.FAILED.equals(result.request().status())) {
+            throw new ReportException(
+                ReportDownloadUtil.resolveFailedError(
+                    result.request().errorMessage(),
+                    ReportErrors.FEE_SUMMARY_REPORT_FAILURE_EXCEPTION));
+        }
+
+        return new Output(
+            result.request().requestId(), result.request().status(), fileUrl, fileKey,
+            result.paramsSignature());
     }
 
 }
