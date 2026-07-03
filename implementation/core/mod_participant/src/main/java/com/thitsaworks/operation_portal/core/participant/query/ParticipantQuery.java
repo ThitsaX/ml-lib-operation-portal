@@ -20,6 +20,11 @@ public interface ParticipantQuery {
     List<ParticipantData> getSponsoredParticipantList(ParticipantId participantId)
         throws ParticipantException;
 
+    List<ParticipantData> getParticipantListIncludingSponsoredParticipants(ParticipantId participantId)
+        throws ParticipantException;
+
+    boolean isDirectParticipant(ParticipantId participantId) throws ParticipantException;
+
     Optional<ParticipantData> get(String participantName);
 
 }
