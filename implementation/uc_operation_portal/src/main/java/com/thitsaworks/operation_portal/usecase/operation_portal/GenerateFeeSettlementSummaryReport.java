@@ -4,8 +4,8 @@ import com.thitsaworks.operation_portal.component.common.identifier.ReportDownlo
 import com.thitsaworks.operation_portal.component.common.type.FileDownloadStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-public interface GenerateFeeSummaryReport
-    extends UseCase<GenerateFeeSummaryReport.Input, GenerateFeeSummaryReport.Output> {
+public interface GenerateFeeSettlementSummaryReport
+    extends UseCase<GenerateFeeSettlementSummaryReport.Input, GenerateFeeSettlementSummaryReport.Output> {
 
     record Input(String settlementId, String fspId, String timezone, Long userId) { }
 
@@ -16,4 +16,3 @@ public interface GenerateFeeSummaryReport
                   String paramsSignature) { }
 
 }
-

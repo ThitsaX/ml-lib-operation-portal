@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.TimeZoneOffsetFormater;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GenerateFeeSummaryReport;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GenerateFeeSettlementSummaryReport;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,22 +22,22 @@ import java.io.Serializable;
 
 @RestController
 @RequiredArgsConstructor
-public class GenerateFeeSummaryReportController {
+public class GenerateFeeSettlementSummaryReportController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GenerateFeeSummaryReportController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GenerateFeeSettlementSummaryReportController.class);
 
-    private final GenerateFeeSummaryReport generateFeeSummaryReport;
+    private final GenerateFeeSettlementSummaryReport generateFeeSettlementSummaryReport;
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/secured/generateFeeSummaryReport")
+    @PostMapping("/secured/generateFeeSettlementSummaryReport")
     public ResponseEntity<Response> execute(@RequestParam("settlementId") String settlementId,
                                             @RequestParam("dfspId") String dfspId,
                                             @RequestParam("timezoneOffset") String timezoneOffset)
         throws DomainException, JsonProcessingException {
 
         LOG.info(
-            "Generate Fee Summary Report : settlementId = [{}], dfspId = [{}], timezoneOffset = [{}]",
+            "Generate Fee Settlement Summary Report : settlementId = [{}], dfspId = [{}], timezoneOffset = [{}]",
             settlementId, dfspId, timezoneOffset);
 
         String timezone = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
@@ -47,8 +47,8 @@ public class GenerateFeeSummaryReportController {
                                                     .getAuthentication()
                                                     .getDetails();
 
-        GenerateFeeSummaryReport.Output output = this.generateFeeSummaryReport.execute(
-            new GenerateFeeSummaryReport.Input(
+        GenerateFeeSettlementSummaryReport.Output output = this.generateFeeSettlementSummaryReport.execute(
+            new GenerateFeeSettlementSummaryReport.Input(
                 settlementId, dfspId, timezone,
                 userContext.userId().getId()));
 
@@ -58,7 +58,7 @@ public class GenerateFeeSummaryReportController {
             output.fileUrl(),
             output.paramsSignature());
 
-        LOG.info("Generate Fee Summary Report Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info("Generate Fee Settlement Summary Report Response : [{}]", this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

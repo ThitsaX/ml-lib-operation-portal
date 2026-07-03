@@ -1,9 +1,9 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.FileDownloadStatus;
 import com.thitsaworks.operation_portal.component.common.type.ReportType;
-import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
@@ -17,7 +17,7 @@ import com.thitsaworks.operation_portal.core.reporting.download.request.ReportDo
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GenerateFeeSummaryReport;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GenerateFeeSettlementSummaryReport;
 import com.thitsaworks.operation_portal.usecase.util.ReportDownloadUtil;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.slf4j.Logger;
@@ -29,12 +29,12 @@ import java.util.Map;
 
 @Service
 @ActionMetadata(category = ActionCategory.REPORTING)
-public class GenerateFeeSummaryReportHandler
-    extends OperationPortalAuditableUseCase<GenerateFeeSummaryReport.Input, GenerateFeeSummaryReport.Output>
-    implements GenerateFeeSummaryReport {
+public class GenerateFeeSettlementSummaryReportHandler
+    extends OperationPortalAuditableUseCase<GenerateFeeSettlementSummaryReport.Input, GenerateFeeSettlementSummaryReport.Output>
+    implements GenerateFeeSettlementSummaryReport {
 
     private static final Logger LOG = LoggerFactory.getLogger(
-        GenerateFeeSummaryReportHandler.class);
+        GenerateFeeSettlementSummaryReportHandler.class);
 
     private static final String FILE_TYPE_XLSX = "xlsx";
 
@@ -44,15 +44,15 @@ public class GenerateFeeSummaryReportHandler
 
     private final UserQuery userQuery;
 
-    public GenerateFeeSummaryReportHandler(CreateInputAuditCommand createInputAuditCommand,
-                                           CreateOutputAuditCommand createOutputAuditCommand,
-                                           CreateExceptionAuditCommand createExceptionAuditCommand,
-                                           ObjectMapper objectMapper,
-                                           PrincipalCache principalCache,
-                                           ActionAuthorizationManager actionAuthorizationManager,
-                                           ReportDownloadRequestManager reportDownloadRequestManager,
-                                           S3FileStorage s3FileStorage,
-                                           UserQuery userQuery) {
+    public GenerateFeeSettlementSummaryReportHandler(CreateInputAuditCommand createInputAuditCommand,
+                                                     CreateOutputAuditCommand createOutputAuditCommand,
+                                                     CreateExceptionAuditCommand createExceptionAuditCommand,
+                                                     ObjectMapper objectMapper,
+                                                     PrincipalCache principalCache,
+                                                     ActionAuthorizationManager actionAuthorizationManager,
+                                                     ReportDownloadRequestManager reportDownloadRequestManager,
+                                                     S3FileStorage s3FileStorage,
+                                                     UserQuery userQuery) {
 
         super(
             createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
@@ -68,7 +68,7 @@ public class GenerateFeeSummaryReportHandler
 
         Map<String, String> params = new HashMap<>();
         params.put("settlementId", input.settlementId());
-        params.put("dfspId", ReportDownloadUtil.normalizeAllToken(input.fspId()));
+        params.put("dfspId", this.normalizeAllToken(input.fspId()));
         params.put("timezoneOffset", input.timezone());
         params.put("loginDfspId", this.userQuery.get(new UserId(input.userId()))
                                                 .participantName()
@@ -96,12 +96,21 @@ public class GenerateFeeSummaryReportHandler
             throw new ReportException(
                 ReportDownloadUtil.resolveFailedError(
                     result.request().errorMessage(),
-                    ReportErrors.FEE_SUMMARY_REPORT_FAILURE_EXCEPTION));
+                    ReportErrors.FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION));
         }
 
         return new Output(
             result.request().requestId(), result.request().status(), fileUrl, fileKey,
             result.paramsSignature());
+    }
+
+    private String normalizeAllToken(String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return "ALL";
+        }
+
+        return "all".equalsIgnoreCase(value.trim()) ? "ALL" : value.trim();
     }
 
 }
