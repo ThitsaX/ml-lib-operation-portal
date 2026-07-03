@@ -220,6 +220,14 @@ The main runtime expects Vault settings to be reachable through environment or J
 
 From `implementation/`, build with Maven:
 
+To generate or refresh license headers after changing the `license-header` file:
+
+```bash
+mvn license:format
+```
+
+Then run the regular build:
+
 ```bash
 mvn clean test
 ```
