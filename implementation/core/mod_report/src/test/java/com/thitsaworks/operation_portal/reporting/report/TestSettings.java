@@ -13,9 +13,9 @@ public class TestSettings {
     @Qualifier(PersistenceQualifiers.Hub.READ_SETTINGS)
     public HubDataSourceConfiguration.Settings reportingDataSourceConfigurationReadDbSettings() {
 
-        return new HubDataSourceConfiguration.Settings("jdbc:mysql://localhost:3306/central_ledger",
-                                                       "root",
-                                                       "password",
+        return new HubDataSourceConfiguration.Settings("jdbc:mysql://example.com:1234/central_ledger",
+                                                       "example-user",
+                                                       "example-password",
                                                        1,
                                                        5);
     }
@@ -24,9 +24,9 @@ public class TestSettings {
     @Qualifier(PersistenceQualifiers.Hub.WRITE_SETTINGS)
     public HubDataSourceConfiguration.Settings reportingDataSourceConfigurationWriteDbSettings() {
 
-        return new HubDataSourceConfiguration.Settings("jdbc:mysql://localhost:3306/central_ledger",
-                                                       "root",
-                                                       "password",
+        return new HubDataSourceConfiguration.Settings("jdbc:mysql://example.com:1234/central_ledger",
+                                                       "example-user",
+                                                       "example-password",
                                                        10,
                                                        20);
     }

@@ -21,8 +21,8 @@ public class ParticipantAccountBalanceUT {
     public void getParticipantAccountBalance() throws Exception {
 
         var participantHubClient = new ParticipantHubClient(new HubServicesConfiguration.Settings(
-                "http://localhost:52202",
-                "http://localhost:52721/v2/"));
+                "http://example.com:1234",
+                "http://example.com:1234/v2/"));
 
         GetParticipantAccountBalance.Request request = new GetParticipantAccountBalance.Request("wallet1");
 

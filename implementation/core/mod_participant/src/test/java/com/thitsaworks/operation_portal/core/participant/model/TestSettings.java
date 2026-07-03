@@ -12,9 +12,9 @@ public class TestSettings {
     @Qualifier(PersistenceQualifiers.Hub.READ_SETTINGS)
     public HubDataSourceConfiguration.Settings reportingDataSourceConfigurationReadDbSettings() {
 
-        return new HubDataSourceConfiguration.Settings("jdbc:mysql://localhost:3306/operation_portal",
-                                                       "root",
-                                                       "password",
+        return new HubDataSourceConfiguration.Settings("jdbc:mysql://example.com:1234/operation_portal",
+                                                       "example-user",
+                                                       "example-password",
                                                        0,
                                                        5);
     }
@@ -23,9 +23,9 @@ public class TestSettings {
     @Qualifier(PersistenceQualifiers.Hub.WRITE_SETTINGS)
     public HubDataSourceConfiguration.Settings reportingDataSourceConfigurationWriteDbSettings() {
 
-        return new HubDataSourceConfiguration.Settings("jdbc:mysql://localhost:3306/operation_portal",
-                                                       "root",
-                                                       "password",
+        return new HubDataSourceConfiguration.Settings("jdbc:mysql://example.com:1234/operation_portal",
+                                                       "example-user",
+                                                       "example-password",
                                                        0,
                                                        5);
     }
@@ -33,7 +33,7 @@ public class TestSettings {
     @Bean
     public RedisConfiguration.Settings redisConfigurationSettings(Vault vault) {
 
-        return new RedisConfiguration.Settings("redis://localhost:6379");
+        return new RedisConfiguration.Settings("redis://example.com:1234");
     }
 
 }

@@ -21,6 +21,6 @@ public class JasyptCryptoUnitTest extends EnvAwareUnitTest {
     @Test
     public void encrypt(){
 
-        LOG.info("{}",this.jasyptCrypto.encrypt("hvs.twmiEOLjzdDYcGZdSeWzQhXP"));
+        LOG.info("{}", this.jasyptCrypto.encrypt("example-secret-1234"));
     }
 }

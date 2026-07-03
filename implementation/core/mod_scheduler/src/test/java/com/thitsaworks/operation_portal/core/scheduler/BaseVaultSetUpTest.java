@@ -8,7 +8,7 @@ public abstract class BaseVaultSetUpTest {
     public static void beforeAll() {
 
         System.setProperty("VAULT_ADDR", "http://127.0.0.1:8200");
-        System.setProperty("VAULT_TOKEN", "hvs.z4P2pTKxAP8tOAdkI5z8i7Mt");
+        System.setProperty("VAULT_TOKEN", "example-token");
         System.setProperty("ENGINE_PATH", "operation_portal");
 
 //        DatabaseMigration.migrate(CoreDataSourceConfiguration.FLYWAY_MIGRATION,
