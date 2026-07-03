@@ -586,7 +586,7 @@
                 <version>${spotless.version}</version>
                 <configuration>
                     <java>
-                        <licenseHeaderFile>${maven.multiModuleProjectDirectory}/license-header</licenseHeaderFile>
+                        <licenseHeaderFile>${project.parent.basedir}/license-header</licenseHeaderFile>
                     </java>
                 </configuration>
             </plugin>
@@ -595,7 +595,7 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <version>4.6</version>
                 <configuration>
-                    <header>${maven.multiModuleProjectDirectory}/license-header</header>
+                    <header>${project.parent.basedir}/license-header</header>
                     <mapping>
                         <java>SLASHSTAR_STYLE</java>
                     </mapping>
