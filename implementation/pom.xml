@@ -586,7 +586,7 @@
                 <version>${spotless.version}</version>
                 <configuration>
                     <java>
-                        <licenseHeaderFile>${project.parent.basedir}/license-header</licenseHeaderFile>
+                        <licenseHeaderFile>${project.basedir}/license-header</licenseHeaderFile>
                     </java>
                 </configuration>
             </plugin>
@@ -594,26 +594,19 @@
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
                 <version>4.6</version>
+
                 <configuration>
-                    <header>${project.parent.basedir}/license-header</header>
+                    <header>${maven.multiModuleProjectDirectory}/license-header</header>
+
                     <mapping>
                         <java>SLASHSTAR_STYLE</java>
                     </mapping>
+
                     <includes>
                         <include>src/main/java/**/*.java</include>
                         <include>src/test/java/**/*.java</include>
                     </includes>
-                    <strictCheck>true</strictCheck>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>license-format</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
