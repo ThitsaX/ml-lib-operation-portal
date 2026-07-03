@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -100,6 +101,38 @@ public class ParticipantJpaQueryHandler implements ParticipantQuery {
         return participants.stream()
                            .map(ParticipantData::new)
                            .toList();
+
+    }
+
+    @Override
+    public List<ParticipantData> getParticipantListIncludingSponsoredParticipants(ParticipantId participantId)
+        throws ParticipantException {
+
+        ParticipantData participantData = this.get(participantId);
+
+        BooleanExpression predicate = this.participant.parentParticipantName.eq(participantData.participantName()
+                                                                                                .getValue());
+
+        List<Participant> participants = (List<Participant>) this.participantRepository.findAll(predicate);
+
+        List<ParticipantData> participantDataList = new ArrayList<>();
+        participantDataList.add(participantData);
+        participantDataList.addAll(participants.stream()
+                                               .map(ParticipantData::new)
+                                               .toList());
+
+        return participantDataList;
+
+    }
+
+    @Override
+    public boolean isDirectParticipant(ParticipantId participantId) throws ParticipantException {
+
+        ParticipantData participantData = this.get(participantId);
+
+        return participantData.parentParticipantName() == null ||
+                   participantData.parentParticipantName()
+                                  .isBlank();
 
     }
 
