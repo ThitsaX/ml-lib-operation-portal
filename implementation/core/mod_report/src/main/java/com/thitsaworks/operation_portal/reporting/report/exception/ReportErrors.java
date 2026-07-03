@@ -11,6 +11,10 @@ public class ReportErrors {
     public static final ErrorMessage SETTLEMENT_AUDIT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("SETTLEMENT_AUDIT_REPORT_FAILURE_EXCEPTION", "Failed to extract settlement audit report.");
     public static final ErrorMessage SETTLEMENT_DETAIL_REPORT_FAILURE_EXCEPTION = new ErrorMessage("SETTLEMENT_DETAIL_REPORT_FAILURE_EXCEPTION", "Failed to extract settlement detail report.");
     public static final ErrorMessage FEE_SETTLEMENT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("FEE_SETTLEMENT_REPORT_FAILURE_EXCEPTION", "Failed to extract fee settlement report.");
+    public static final ErrorMessage FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION =
+        new ErrorMessage(
+            "FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION",
+            "Failed to extract fee settlement summary report.");
     public static final ErrorMessage STATEMENT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("STATEMENT_REPORT_FAILURE_EXCEPTION", "Failed to extract statement report.");
 
     public static final ErrorMessage TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION", "Failed to extract transaction amount swift report.");
