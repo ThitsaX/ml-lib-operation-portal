@@ -1,0 +1,694 @@
+/*
+ * Copyright (c) 2024-2026 ThitsaWorks Pte. Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.thitsaworks.operation_portal.reporting.report.domain.impl;
+
+import com.thitsaworks.operation_portal.component.misc.annotation.NoLogging;
+import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
+import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSummaryReportCommand;
+import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
+import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@NoLogging
+public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummaryReportCommand {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GenerateFeeSummaryReportCommandHandler.class);
+
+    private static final int DEFAULT_ROW_WINDOW = 200;
+
+    private static final int REPORT_START_ROW = 0;
+
+    private static final int REPORT_START_COLUMN = 0;
+
+    private static final String[] SUMMARY_HEADERS = {
+        "Sender DFSP",
+        "Receiver DFSP",
+        "Fee Policy",
+        "Total Transactions",
+        "Total Amount",
+        "Total Fee",
+        "Total Payer Fee",
+        "Total Payee Fee",
+        "Total Scheme Fee",
+        "Currency"};
+
+    private static final int[] SUMMARY_COLUMN_WIDTHS = {
+        40,
+        40,
+        40,
+        26,
+        26,
+        24,
+        26,
+        26,
+        26,
+        18};
+
+    private static final String[] BALANCE_SUMMARY_HEADERS = {
+        "DFSP Name",
+        "Fund In",
+        "Fund Out",
+        "Currency"};
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public GenerateFeeSummaryReportCommandHandler(
+        @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
+
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public Output execute(Input input) throws ReportException {
+
+        try {
+            if (!"xlsx".equalsIgnoreCase(input.fileType())) {
+                throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+            }
+
+            List<FeeSummaryRow> rows = this.fetchFeeSummaryRows(input);
+            if (rows == null || rows.isEmpty()) {
+                throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+            }
+
+            return new Output(this.exportXlsx(input, rows));
+
+        } catch (ReportException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            LOG.error("Error generating fee summary report", exception);
+            throw new ReportException(ReportErrors.FEE_SUMMARY_REPORT_FAILURE_EXCEPTION);
+        }
+    }
+
+    @Override
+    public Output exportAll(Input input, int totalRowCount, int pageSize) throws ReportException {
+
+        return this.execute(new Input(
+            input.startDate(),
+            input.endDate(),
+            input.dfspId(),
+            input.timezone(),
+            input.fileType(),
+            input.loginDfspId(),
+            null,
+            null));
+    }
+
+    @Override
+    public int countRows(CountInput input) {
+
+        Integer rowCount = this.jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM (" + this.feeSummaryQuery(false) + ") x",
+            this.countParams(input),
+            Integer.class);
+
+        return rowCount == null ? 0 : rowCount;
+    }
+
+    private List<FeeSummaryRow> fetchFeeSummaryRows(Input input) {
+
+        if (input.limit() == null) {
+            return this.jdbcTemplate.query(
+                this.feeSummaryQuery(false),
+                (rs, rowNum) -> this.mapFeeSummaryRow(rs),
+                this.queryParams(input));
+        }
+
+        return this.jdbcTemplate.query(
+            this.feeSummaryQuery(true),
+            (rs, rowNum) -> this.mapFeeSummaryRow(rs),
+            this.queryParams(input));
+    }
+
+    private Object[] countParams(CountInput input) {
+
+        return this.queryParams(
+            new Input(
+                input.startDate(),
+                input.endDate(),
+                input.dfspId(),
+                input.timezone(),
+                "xlsx",
+                null));
+    }
+
+    private FeeSummaryRow mapFeeSummaryRow(ResultSet resultSet) throws SQLException {
+
+        BigDecimal payerFee = resultSet.getBigDecimal("totalPayerFee");
+        BigDecimal payeeFee = resultSet.getBigDecimal("totalPayeeFee");
+        BigDecimal schemeFee = resultSet.getBigDecimal("totalSchemeFee");
+
+        return new FeeSummaryRow(
+            resultSet.getString("senderDFSP"),
+            resultSet.getString("receiverDFSP"),
+            resultSet.getString("feePolicy"),
+            resultSet.getLong("totalTransactions"),
+            resultSet.getBigDecimal("totalAmount"),
+            this.valueOrZero(payerFee).add(this.valueOrZero(payeeFee)).add(this.valueOrZero(schemeFee)),
+            payerFee,
+            payeeFee,
+            schemeFee,
+            resultSet.getString("currency"));
+    }
+
+    private String feeSummaryQuery(boolean paged) {
+
+        String query = """
+            WITH bounds_base AS (
+              SELECT
+                CASE WHEN SUBSTRING(?, 1, 1) = '-' THEN
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT(SUBSTRING(?, 1, 3), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                ELSE
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT('+', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                END AS startUtc,
+                CASE WHEN SUBSTRING(?, 1, 1) = '-' THEN
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT(SUBSTRING(?, 1, 3), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                ELSE
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT('+', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                END AS endUtc
+            ),
+            fee_per_quote AS (
+              SELECT
+                qe.quoteId,
+                MAX(CASE WHEN qe.key = 'feePolicy' THEN qe.value END) AS feePolicy,
+                MAX(CASE WHEN qe.key = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayerFee,
+                MAX(CASE WHEN qe.key = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayeeFee,
+                MAX(CASE WHEN qe.key = 'schemeFee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalSchemeFee
+              FROM quoteExtension qe
+              GROUP BY qe.quoteId
+            ),
+            sender_receiver AS (
+              SELECT
+                qp.quoteId,
+                MAX(CASE WHEN pt.name = 'PAYER' THEN p.name END) AS senderDFSP,
+                MAX(CASE WHEN pt.name = 'PAYEE' THEN p.name END) AS receiverDFSP
+              FROM quoteParty qp
+              JOIN partyType pt
+                ON pt.partyTypeId = qp.partyTypeId
+              LEFT JOIN participant p
+                ON p.participantId = qp.participantId
+              GROUP BY qp.quoteId
+            ),
+            latest_tsc AS (
+              SELECT tsc1.*
+              FROM transferStateChange tsc1
+              JOIN (
+                SELECT transferId, MAX(transferStateChangeId) AS maxId
+                FROM transferStateChange
+                GROUP BY transferId
+              ) mx
+                ON mx.transferId = tsc1.transferId
+               AND mx.maxId = tsc1.transferStateChangeId
+            )
+            SELECT
+              sr.senderDFSP AS senderDFSP,
+              sr.receiverDFSP AS receiverDFSP,
+              f.feePolicy AS feePolicy,
+              COUNT(DISTINCT q.quoteId) AS totalTransactions,
+              SUM(q.amount) AS totalAmount,
+              SUM(
+                COALESCE(f.totalPayerFee, 0) +
+                COALESCE(f.totalPayeeFee, 0) +
+                COALESCE(f.totalSchemeFee, 0)
+              ) AS totalFee,
+              SUM(COALESCE(f.totalPayerFee, 0)) AS totalPayerFee,
+              SUM(COALESCE(f.totalPayeeFee, 0)) AS totalPayeeFee,
+              SUM(COALESCE(f.totalSchemeFee, 0)) AS totalSchemeFee,
+              q.currencyId AS currency
+            FROM quote q
+            JOIN transfer t
+              ON t.transferId = q.transactionReferenceId
+            JOIN latest_tsc tsc
+              ON tsc.transferId = t.transferId
+            JOIN bounds_base b
+              ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
+            JOIN sender_receiver sr
+              ON sr.quoteId = q.quoteId
+            LEFT JOIN fee_per_quote f
+              ON f.quoteId = q.quoteId
+            WHERE
+              ? = 'ALL'
+              OR sr.senderDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+              OR sr.receiverDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+            GROUP BY
+              sr.senderDFSP,
+              sr.receiverDFSP,
+              f.feePolicy,
+              q.currencyId
+            ORDER BY
+              sr.senderDFSP,
+              sr.receiverDFSP,
+              f.feePolicy,
+              q.currencyId
+            """;
+
+        return paged ? query + " LIMIT ? OFFSET ?" : query;
+    }
+
+    private Object[] queryParams(Input input) {
+
+        String dfspId = this.normalizeAllToken(input.dfspId());
+        String timezone = this.normalizeTimezone(input.timezone());
+        Object[] baseParams = {
+            timezone,
+            input.startDate(),
+            timezone,
+            timezone,
+            input.startDate(),
+            timezone,
+            timezone,
+            timezone,
+            input.endDate(),
+            timezone,
+            timezone,
+            input.endDate(),
+            timezone,
+            timezone,
+            dfspId,
+            dfspId,
+            dfspId
+        };
+
+        if (input.limit() == null) {
+            return baseParams;
+        }
+
+        Object[] pagedParams = new Object[baseParams.length + 2];
+        System.arraycopy(baseParams, 0, pagedParams, 0, baseParams.length);
+        pagedParams[baseParams.length] = input.limit();
+        pagedParams[baseParams.length + 1] = input.offset() == null ? 0 : input.offset();
+        return pagedParams;
+    }
+
+    private byte[] exportXlsx(Input input, List<FeeSummaryRow> rows) throws IOException {
+
+        Path tempFile = Files.createTempFile("fee-summary-", ".xlsx");
+
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(DEFAULT_ROW_WINDOW);
+             OutputStream outputStream = Files.newOutputStream(tempFile)) {
+
+            workbook.setCompressTempFiles(true);
+            Sheet sheet = workbook.createSheet("FeeSummaryReport");
+
+            CellStyle metaLabelStyle = this.metaLabelStyle(workbook);
+            CellStyle metaValueStyle = this.metaValueStyle(workbook);
+            CellStyle columnHeaderStyle = this.columnHeaderStyle(workbook);
+            CellStyle textCellStyle = this.textCellStyle(workbook);
+            CellStyle integerCellStyle = this.integerCellStyle(workbook);
+            CellStyle amountCellStyle = this.amountCellStyle(workbook);
+            CellStyle sectionTitleStyle = this.sectionTitleStyle(workbook);
+
+            int rowIndex = REPORT_START_ROW;
+            rowIndex = this.writeHeaderRow(
+                sheet, rowIndex, "Start Date", input.startDate(), metaLabelStyle, metaValueStyle);
+            rowIndex = this.writeHeaderRow(
+                sheet, rowIndex, "End Date", input.endDate(), metaLabelStyle, metaValueStyle);
+            rowIndex = this.writeHeaderRow(
+                sheet, rowIndex, "DFSP Name", this.normalizeAllToken(input.dfspId()), metaLabelStyle,
+                metaValueStyle);
+            rowIndex++;
+
+            Row columnHeaderRow = sheet.createRow(rowIndex++);
+            for (int index = 0; index < SUMMARY_HEADERS.length; index++) {
+                Cell cell = columnHeaderRow.createCell(REPORT_START_COLUMN + index);
+                cell.setCellValue(SUMMARY_HEADERS[index]);
+                cell.setCellStyle(columnHeaderStyle);
+            }
+
+            int freezeRowIndex = rowIndex;
+            for (FeeSummaryRow rowData : rows) {
+                this.writeSummaryDataRow(
+                    sheet.createRow(rowIndex++), rowData, textCellStyle, integerCellStyle, amountCellStyle);
+            }
+
+            rowIndex++;
+            Row summaryTitleRow = sheet.createRow(rowIndex++);
+            Cell summaryTitleCell = summaryTitleRow.createCell(REPORT_START_COLUMN);
+            summaryTitleCell.setCellValue("Summary");
+            summaryTitleCell.setCellStyle(sectionTitleStyle);
+
+            Row balanceHeaderRow = sheet.createRow(rowIndex++);
+            for (int index = 0; index < BALANCE_SUMMARY_HEADERS.length; index++) {
+                Cell cell = balanceHeaderRow.createCell(REPORT_START_COLUMN + index);
+                cell.setCellValue(BALANCE_SUMMARY_HEADERS[index]);
+                cell.setCellStyle(columnHeaderStyle);
+            }
+
+            for (BalanceSummaryRow balanceSummaryRow : this.buildBalanceSummaryRows(rows)) {
+                this.writeBalanceSummaryRow(
+                    sheet.createRow(rowIndex++), balanceSummaryRow, textCellStyle, amountCellStyle);
+            }
+
+            for (int index = 0; index < SUMMARY_COLUMN_WIDTHS.length; index++) {
+                sheet.setColumnWidth(index, SUMMARY_COLUMN_WIDTHS[index] * 256);
+            }
+
+            sheet.createFreezePane(0, freezeRowIndex);
+
+            workbook.write(outputStream);
+            workbook.dispose();
+            return Files.readAllBytes(tempFile);
+
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    private int writeHeaderRow(Sheet sheet,
+                               int rowIndex,
+                               String label,
+                               String value,
+                               CellStyle labelStyle,
+                               CellStyle valueStyle) {
+
+        Row row = sheet.createRow(rowIndex++);
+        Cell labelCell = row.createCell(REPORT_START_COLUMN);
+        labelCell.setCellValue(label);
+        labelCell.setCellStyle(labelStyle);
+
+        Cell valueCell = row.createCell(REPORT_START_COLUMN + 1);
+        valueCell.setCellValue(value == null ? "" : value);
+        valueCell.setCellStyle(valueStyle);
+        return rowIndex;
+    }
+
+    private void writeSummaryDataRow(Row row,
+                                     FeeSummaryRow data,
+                                     CellStyle textCellStyle,
+                                     CellStyle integerCellStyle,
+                                     CellStyle amountCellStyle) {
+
+        this.writeTextCell(row, REPORT_START_COLUMN, data.senderDfsp(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 1, data.receiverDfsp(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 2, data.feePolicy(), textCellStyle);
+        this.writeIntegerCell(row, REPORT_START_COLUMN + 3, data.totalTransactions(), integerCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 4, data.totalAmount(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 5, data.totalFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 6, data.totalPayerFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 7, data.totalPayeeFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 8, data.totalSchemeFee(), amountCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 9, data.currency(), textCellStyle);
+    }
+
+    private void writeBalanceSummaryRow(Row row,
+                                        BalanceSummaryRow data,
+                                        CellStyle textCellStyle,
+                                        CellStyle amountCellStyle) {
+
+        this.writeTextCell(row, REPORT_START_COLUMN, data.dfspName(), textCellStyle);
+        this.writeBalanceAmountCell(row, REPORT_START_COLUMN + 1, data.fundIn(), amountCellStyle);
+        this.writeBalanceAmountCell(row, REPORT_START_COLUMN + 2, data.fundOut(), amountCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 3, data.currency(), textCellStyle);
+    }
+
+    private List<BalanceSummaryRow> buildBalanceSummaryRows(List<FeeSummaryRow> rows) {
+
+        Map<BalanceSummaryKey, BigDecimal> balances = new LinkedHashMap<>();
+        for (FeeSummaryRow row : rows) {
+            BigDecimal payerFee = this.valueOrZero(row.totalPayerFee());
+            BigDecimal payeeFee = this.valueOrZero(row.totalPayeeFee());
+            BigDecimal schemeFee = this.valueOrZero(row.totalSchemeFee());
+
+            this.addBalanceAmount(
+                balances, row.senderDfsp(), row.currency(), payeeFee.subtract(payerFee.add(schemeFee)));
+            this.addBalanceAmount(balances, row.receiverDfsp(), row.currency(), payeeFee);
+            this.addBalanceAmount(balances, "hub", row.currency(), schemeFee);
+        }
+
+        return balances.entrySet()
+                       .stream()
+                       .filter(entry -> entry.getValue().signum() != 0)
+                       .map(entry -> this.toBalanceSummaryRow(entry.getKey(), entry.getValue()))
+                       .sorted(Comparator
+                           .comparing(BalanceSummaryRow::dfspName, this::compareSummaryNames)
+                           .thenComparing(BalanceSummaryRow::currency, String.CASE_INSENSITIVE_ORDER))
+                       .toList();
+    }
+
+    private void addBalanceAmount(Map<BalanceSummaryKey, BigDecimal> balances,
+                                  String dfspName,
+                                  String currency,
+                                  BigDecimal amount) {
+
+        if (dfspName == null || dfspName.isBlank() || currency == null || currency.isBlank() ||
+                amount == null || amount.signum() == 0) {
+            return;
+        }
+
+        balances.merge(new BalanceSummaryKey(dfspName, currency), amount, BigDecimal::add);
+    }
+
+    private BalanceSummaryRow toBalanceSummaryRow(BalanceSummaryKey key, BigDecimal balance) {
+
+        if (balance.signum() > 0) {
+            return new BalanceSummaryRow(key.dfspName(), balance, null, key.currency());
+        }
+
+        return new BalanceSummaryRow(key.dfspName(), null, balance.abs(), key.currency());
+    }
+
+    private int compareSummaryNames(String left, String right) {
+
+        boolean leftScheme = "hub".equalsIgnoreCase(left);
+        boolean rightScheme = "hub".equalsIgnoreCase(right);
+        if (leftScheme && !rightScheme) {
+            return 1;
+        }
+        if (!leftScheme && rightScheme) {
+            return -1;
+        }
+        return String.CASE_INSENSITIVE_ORDER.compare(left, right);
+    }
+
+    private void writeTextCell(Row row, int columnIndex, String value, CellStyle style) {
+
+        Cell cell = row.createCell(columnIndex);
+        cell.setCellValue(value == null ? "" : value);
+        cell.setCellStyle(style);
+    }
+
+    private void writeIntegerCell(Row row, int columnIndex, Long value, CellStyle style) {
+
+        Cell cell = row.createCell(columnIndex);
+        if (value != null) {
+            cell.setCellValue(value);
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private void writeAmountCell(Row row, int columnIndex, BigDecimal value, CellStyle style) {
+
+        Cell cell = row.createCell(columnIndex);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private void writeBalanceAmountCell(Row row, int columnIndex, BigDecimal value, CellStyle style) {
+
+        Cell cell = row.createCell(columnIndex);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
+        } else {
+            cell.setCellValue("-");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private CellStyle metaLabelStyle(SXSSFWorkbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.MEDIUM);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.MEDIUM);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
+
+        var font = workbook.createFont();
+        font.setFontName("Calibri");
+        font.setFontHeightInPoints((short) 11);
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
+
+    private CellStyle metaValueStyle(SXSSFWorkbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.metaLabelStyle(workbook));
+        style.setBorderLeft(BorderStyle.THIN);
+
+        var font = workbook.createFont();
+        font.setFontName("Calibri");
+        font.setFontHeightInPoints((short) 11);
+        font.setBold(false);
+        style.setFont(font);
+        return style;
+    }
+
+    private CellStyle columnHeaderStyle(SXSSFWorkbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.metaLabelStyle(workbook));
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    private CellStyle sectionTitleStyle(SXSSFWorkbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.textCellStyle(workbook));
+        var font = workbook.createFont();
+        font.setFontName("Calibri");
+        font.setFontHeightInPoints((short) 11);
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
+
+    private CellStyle textCellStyle(org.apache.poi.ss.usermodel.Workbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setWrapText(true);
+        style.setFont(this.reportDataFont(workbook));
+        return style;
+    }
+
+    private CellStyle integerCellStyle(org.apache.poi.ss.usermodel.Workbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.textCellStyle(workbook));
+        style.setAlignment(HorizontalAlignment.RIGHT);
+        style.setDataFormat(workbook.createDataFormat().getFormat("#,##0"));
+        return style;
+    }
+
+    private CellStyle amountCellStyle(org.apache.poi.ss.usermodel.Workbook workbook) {
+
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.textCellStyle(workbook));
+        style.setAlignment(HorizontalAlignment.RIGHT);
+        style.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
+        return style;
+    }
+
+    private org.apache.poi.ss.usermodel.Font reportDataFont(org.apache.poi.ss.usermodel.Workbook workbook) {
+
+        var font = workbook.createFont();
+        font.setFontName("Calibri");
+        font.setFontHeightInPoints((short) 11);
+        return font;
+    }
+
+    private String normalizeAllToken(String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return "ALL";
+        }
+
+        return "all".equalsIgnoreCase(value.trim()) ? "ALL" : value.trim();
+    }
+
+    private String normalizeTimezone(String value) {
+
+        if (value == null || value.isBlank() || "0000".equals(value.trim())) {
+            return "+0000";
+        }
+
+        String trimmedValue = value.trim();
+        return trimmedValue.startsWith("+") || trimmedValue.startsWith("-") ? trimmedValue : "+" + trimmedValue;
+    }
+
+    private BigDecimal valueOrZero(BigDecimal value) {
+
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private record FeeSummaryRow(String senderDfsp,
+                                 String receiverDfsp,
+                                 String feePolicy,
+                                 Long totalTransactions,
+                                 BigDecimal totalAmount,
+                                 BigDecimal totalFee,
+                                 BigDecimal totalPayerFee,
+                                 BigDecimal totalPayeeFee,
+                                 BigDecimal totalSchemeFee,
+                                 String currency) { }
+
+    private record BalanceSummaryKey(String dfspName,
+                                     String currency) { }
+
+    private record BalanceSummaryRow(String dfspName,
+                                     BigDecimal fundIn,
+                                     BigDecimal fundOut,
+                                     String currency) { }
+}
