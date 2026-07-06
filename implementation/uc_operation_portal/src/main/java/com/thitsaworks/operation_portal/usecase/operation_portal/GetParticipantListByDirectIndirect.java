@@ -28,6 +28,7 @@ public interface GetParticipantListByDirectIndirect
     record Output(List<ParticipantInfo> participantInfoList) {
 
         public record ParticipantInfo(ParticipantId participantId,
+                                      int dfspId,
                                       String participantName,
                                       String participantDescription,
                                       String logoFileType,

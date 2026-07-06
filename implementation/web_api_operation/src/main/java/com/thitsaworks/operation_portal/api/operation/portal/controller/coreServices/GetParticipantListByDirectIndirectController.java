@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,7 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetParticipantListByDirectIndirectController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GetParticipantListByDirectIndirectController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(
+        GetParticipantListByDirectIndirectController.class);
 
     private final GetParticipantListByDirectIndirect getParticipantListByDirectIndirect;
 
@@ -47,27 +49,26 @@ public class GetParticipantListByDirectIndirectController {
     @GetMapping(value = "/secured/getParticipantListByDirectIndirect")
     public ResponseEntity<Response> execute() throws DomainException, JsonProcessingException {
 
-        var output = this.getParticipantListByDirectIndirect.execute(new GetParticipantListByDirectIndirect.Input());
+        var output = this.getParticipantListByDirectIndirect.execute(
+            new GetParticipantListByDirectIndirect.Input());
 
         List<Response.ParticipantInfo> participantInfoList = new ArrayList<>();
 
         for (var participantInfo : output.participantInfoList()) {
-            participantInfoList.add(new Response.ParticipantInfo(participantInfo.participantId()
-                                                                                .getId()
-                                                                                .toString(),
-                                                                 participantInfo.participantName(),
-                                                                 participantInfo.participantDescription(),
-                                                                 participantInfo.logoFileType(),
-                                                                 participantInfo.logo() == null ? null :
-                                                                     Base64.getEncoder()
-                                                                           .encodeToString(
-                                                                               participantInfo.logo())));
+            participantInfoList.add(new Response.ParticipantInfo(
+                participantInfo.participantId().getId().toString(), participantInfo.dfspId(),
+                participantInfo.participantName(), participantInfo.participantDescription(),
+                participantInfo.logoFileType(), participantInfo.logo() == null ? null : Base64
+                                                                                            .getEncoder()
+                                                                                            .encodeToString(
+                                                                                                participantInfo.logo())));
         }
 
         var response = new Response(participantInfoList);
 
-        LOG.info("Get Participant List By Direct Indirect Response : [{}]",
-                 this.objectMapper.writeValueAsString(response));
+        LOG.info(
+            "Get Participant List By Direct Indirect Response : [{}]",
+            this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
 
@@ -79,10 +80,12 @@ public class GetParticipantListByDirectIndirectController {
 
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record ParticipantInfo(@JsonProperty("participantId") String participantId,
+                                      @JsonProperty("dfspId") int dfspId,
                                       @JsonProperty("participantName") String participantName,
                                       @JsonProperty("participantDescription") String participantDescription,
                                       @JsonProperty("logoFileType") String logoFileType,
-                                      @JsonProperty("logo") String logoBase64) implements Serializable { }
+                                      @JsonProperty("logo") String logoBase64)
+            implements Serializable { }
 
     }
 
