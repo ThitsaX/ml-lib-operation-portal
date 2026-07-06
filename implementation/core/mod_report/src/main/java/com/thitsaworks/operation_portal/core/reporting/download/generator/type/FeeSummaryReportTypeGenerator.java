@@ -21,7 +21,7 @@ import com.thitsaworks.operation_portal.core.reporting.download.generator.Report
 import com.thitsaworks.operation_portal.core.reporting.download.generator.ReportTypeGenerator;
 import com.thitsaworks.operation_portal.core.reporting.download.generator.support.ReportGeneratorSupport;
 import com.thitsaworks.operation_portal.core.reporting.download.model.ReportDownloadRequest;
-import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSettlementSummaryReportCommand;
+import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSummaryReportCommand;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import lombok.RequiredArgsConstructor;
@@ -37,15 +37,17 @@ import java.util.zip.ZipOutputStream;
 
 @Component
 @RequiredArgsConstructor
-class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
+class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FeeSettlementSummaryReportTypeGenerator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeeSummaryReportTypeGenerator.class);
 
     private static final String FILE_TYPE_XLSX = "xlsx";
 
+    private static final String FILE_TYPE_PDF = "pdf";
+
     private static final int MAX_ROWS_PER_REPORT_FILE = 500_000;
 
-    private final GenerateFeeSettlementSummaryReportCommand generateFeeSettlementSummaryReportCommand;
+    private final GenerateFeeSummaryReportCommand generateFeeSummaryReportCommand;
 
     private final ReportGeneratorSupport reportGeneratorSupport;
 
@@ -54,7 +56,7 @@ class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
     @Override
     public ReportType reportType() {
 
-        return ReportType.FEE_SETTLEMENT_SUMMARY;
+        return ReportType.FEE_SUMMARY;
     }
 
     @Override
@@ -62,32 +64,34 @@ class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
         throws ReportException, IOException {
 
         String fileType = this.reportGeneratorSupport.fileType(request.getFileType());
-        if (!FILE_TYPE_XLSX.equals(fileType)) {
+        if (!FILE_TYPE_XLSX.equals(fileType) && !FILE_TYPE_PDF.equals(fileType)) {
             throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
         }
 
-        String settlementId = this.reportGeneratorSupport.requireParam(params, "settlementId");
+        String startDate = this.reportGeneratorSupport.requireParam(params, "startDate");
+        String endDate = this.reportGeneratorSupport.requireParam(params, "endDate");
         String dfspId = this.reportGeneratorSupport.normalizeAllToken(
             this.reportGeneratorSupport.requireParam(params, "dfspId"));
         String timezoneOffset = params.getOrDefault("timezoneOffset", "+0000");
         String loginDfspId = params.getOrDefault("loginDfspId", dfspId);
 
         int pageSize = this.settings.reportPageSize();
-        int totalRowCount = this.generateFeeSettlementSummaryReportCommand.countRows(
-            new GenerateFeeSettlementSummaryReportCommand.CountInput(settlementId, dfspId));
-        GenerateFeeSettlementSummaryReportCommand.Input input =
-            new GenerateFeeSettlementSummaryReportCommand.Input(
-                settlementId, dfspId, timezoneOffset, fileType, loginDfspId);
+        int totalRowCount = this.generateFeeSummaryReportCommand.countRows(
+            new GenerateFeeSummaryReportCommand.CountInput(startDate, endDate, dfspId, timezoneOffset));
+        GenerateFeeSummaryReportCommand.Input input =
+            new GenerateFeeSummaryReportCommand.Input(
+                startDate, endDate, dfspId, timezoneOffset, fileType, loginDfspId);
 
         if (totalRowCount <= pageSize) {
-            GenerateFeeSettlementSummaryReportCommand.Output output =
-                this.generateFeeSettlementSummaryReportCommand.execute(input);
+            GenerateFeeSummaryReportCommand.Output output =
+                this.generateFeeSummaryReportCommand.execute(input);
 
-            return new ReportGeneratedFile(output.feeSettlementSummaryRptByte(), FILE_TYPE_XLSX);
+            return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
         }
 
         if (totalRowCount > MAX_ROWS_PER_REPORT_FILE) {
-            return this.generateSplitZip(settlementId,
+            return this.generateSplitZip(startDate,
+                                         endDate,
                                          dfspId,
                                          timezoneOffset,
                                          fileType,
@@ -96,13 +100,14 @@ class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
                                          pageSize);
         }
 
-        GenerateFeeSettlementSummaryReportCommand.Output output =
-            this.generateFeeSettlementSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
+        GenerateFeeSummaryReportCommand.Output output =
+            this.generateFeeSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
 
-        return new ReportGeneratedFile(output.feeSettlementSummaryRptByte(), FILE_TYPE_XLSX);
+        return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
     }
 
-    private ReportGeneratedFile generateSplitZip(String settlementId,
+    private ReportGeneratedFile generateSplitZip(String startDate,
+                                                 String endDate,
                                                  String dfspId,
                                                  String timezoneOffset,
                                                  String fileType,
@@ -117,28 +122,23 @@ class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
             for (int offset = 0; offset < totalRowCount; offset += MAX_ROWS_PER_REPORT_FILE) {
                 int rowsInPart = Math.min(MAX_ROWS_PER_REPORT_FILE, totalRowCount - offset);
 
-                GenerateFeeSettlementSummaryReportCommand.Output partOutput =
-                    this.generateFeeSettlementSummaryReportCommand.exportAll(
-                        new GenerateFeeSettlementSummaryReportCommand.Input(
-                            settlementId,
-                            dfspId,
-                            timezoneOffset,
-                            fileType,
-                            loginDfspId,
-                            offset,
-                            rowsInPart),
-                        rowsInPart,
-                        pageSize);
+                GenerateFeeSummaryReportCommand.Output partOutput =
+                    this.generateFeeSummaryReportCommand.exportAll(new GenerateFeeSummaryReportCommand.Input(
+                        startDate,
+                        endDate,
+                        dfspId,
+                        timezoneOffset,
+                        fileType,
+                        loginDfspId,
+                        offset,
+                        rowsInPart), rowsInPart, pageSize);
 
-                String entryName = "fee_settlement_summary_part_" + partNumber + "." + fileType;
+                String entryName = "fee_summary_part_" + partNumber + "." + fileType;
                 ZipEntry entry = new ZipEntry(entryName);
                 zipOutputStream.putNextEntry(entry);
-                zipOutputStream.write(partOutput.feeSettlementSummaryRptByte());
+                zipOutputStream.write(partOutput.feeSummaryRptByte());
                 zipOutputStream.closeEntry();
-                LOGGER.info(
-                    "Generated fee settlement summary report part [{}] with [{}] rows",
-                    partNumber,
-                    rowsInPart);
+                LOGGER.info("Generated fee summary report part [{}] with [{}] rows", partNumber, rowsInPart);
                 partNumber++;
             }
 

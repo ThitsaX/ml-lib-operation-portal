@@ -463,6 +463,7 @@ public class ReportGeneratorHandler implements ReportGenerator {
                 "DFSPSettlementStatementReport-" + timestamp + "." + extension;
             case SETTLEMENT_SUMMARY -> "DFSPSettlementReport-" + timestamp + "." + extension;
 
+            case FEE_SUMMARY -> "FeeSummaryReport-" + timestamp + "." + extension;
             case FEE_SETTLEMENT_SUMMARY -> "FeeSettlementSummaryReport-" + timestamp + "." + extension;
         };
     }

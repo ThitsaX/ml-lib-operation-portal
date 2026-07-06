@@ -30,6 +30,7 @@ public class ReportErrors {
         new ErrorMessage(
             "FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION",
             "Failed to extract fee settlement summary report.");
+    public static final ErrorMessage FEE_SUMMARY_REPORT_FAILURE_EXCEPTION = new ErrorMessage("FEE_SUMMARY_REPORT_FAILURE_EXCEPTION", "Failed to extract fee summary report.");
     public static final ErrorMessage STATEMENT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("STATEMENT_REPORT_FAILURE_EXCEPTION", "Failed to extract statement report.");
 
     public static final ErrorMessage TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION = new ErrorMessage("TRANSACTION_AMOUNT_REPORT_FAILURE_EXCEPTION", "Failed to extract transaction amount swift report.");
