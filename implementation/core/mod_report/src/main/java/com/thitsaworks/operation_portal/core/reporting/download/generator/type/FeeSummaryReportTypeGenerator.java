@@ -25,18 +25,27 @@ import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSumma
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Component
 @RequiredArgsConstructor
 class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeeSummaryReportTypeGenerator.class);
+
     private static final String FILE_TYPE_XLSX = "xlsx";
 
     private static final String FILE_TYPE_PDF = "pdf";
+
+    private static final int MAX_ROWS_PER_REPORT_FILE = 500_000;
 
     private final GenerateFeeSummaryReportCommand generateFeeSummaryReportCommand;
 
@@ -73,17 +82,69 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
             new GenerateFeeSummaryReportCommand.Input(
                 startDate, endDate, dfspId, timezoneOffset, fileType, loginDfspId);
 
-        if (totalRowCount > pageSize) {
+        if (totalRowCount <= pageSize) {
             GenerateFeeSummaryReportCommand.Output output =
-                this.generateFeeSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
+                this.generateFeeSummaryReportCommand.execute(input);
 
             return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
         }
 
+        if (totalRowCount > MAX_ROWS_PER_REPORT_FILE) {
+            return this.generateSplitZip(startDate,
+                                         endDate,
+                                         dfspId,
+                                         timezoneOffset,
+                                         fileType,
+                                         loginDfspId,
+                                         totalRowCount,
+                                         pageSize);
+        }
+
         GenerateFeeSummaryReportCommand.Output output =
-            this.generateFeeSummaryReportCommand.execute(input);
+            this.generateFeeSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
 
         return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
+    }
+
+    private ReportGeneratedFile generateSplitZip(String startDate,
+                                                 String endDate,
+                                                 String dfspId,
+                                                 String timezoneOffset,
+                                                 String fileType,
+                                                 String loginDfspId,
+                                                 int totalRowCount,
+                                                 int pageSize) throws ReportException, IOException {
+
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+
+            int partNumber = 1;
+            for (int offset = 0; offset < totalRowCount; offset += MAX_ROWS_PER_REPORT_FILE) {
+                int rowsInPart = Math.min(MAX_ROWS_PER_REPORT_FILE, totalRowCount - offset);
+
+                GenerateFeeSummaryReportCommand.Output partOutput =
+                    this.generateFeeSummaryReportCommand.exportAll(new GenerateFeeSummaryReportCommand.Input(
+                        startDate,
+                        endDate,
+                        dfspId,
+                        timezoneOffset,
+                        fileType,
+                        loginDfspId,
+                        offset,
+                        rowsInPart), rowsInPart, pageSize);
+
+                String entryName = "fee_summary_part_" + partNumber + "." + fileType;
+                ZipEntry entry = new ZipEntry(entryName);
+                zipOutputStream.putNextEntry(entry);
+                zipOutputStream.write(partOutput.feeSummaryRptByte());
+                zipOutputStream.closeEntry();
+                LOGGER.info("Generated fee summary report part [{}] with [{}] rows", partNumber, rowsInPart);
+                partNumber++;
+            }
+
+            zipOutputStream.finish();
+            return new ReportGeneratedFile(byteArrayOutputStream.toByteArray(), "zip");
+        }
     }
 
 }

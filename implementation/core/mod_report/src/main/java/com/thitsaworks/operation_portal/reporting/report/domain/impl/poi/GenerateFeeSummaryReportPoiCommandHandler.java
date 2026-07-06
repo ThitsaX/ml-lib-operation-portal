@@ -183,8 +183,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             input.timezone(),
             input.fileType(),
             input.loginDfspId(),
-            null,
-            null));
+            input.offset(),
+            input.limit()));
     }
 
     @Override
@@ -584,12 +584,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
         Map<BalanceSummaryKey, BigDecimal> balances = new LinkedHashMap<>();
         for (FeeSummaryRow row : rows) {
-            BigDecimal payerFee = this.valueOrZero(row.totalPayerFee());
             BigDecimal payeeFee = this.valueOrZero(row.totalPayeeFee());
             BigDecimal schemeFee = this.valueOrZero(row.totalSchemeFee());
+            BigDecimal payerFundOut = payeeFee.add(schemeFee);
 
-            this.addBalanceAmount(
-                balances, row.senderDfsp(), row.currency(), payeeFee.subtract(payerFee.add(schemeFee)));
+            this.addBalanceAmount(balances, row.senderDfsp(), row.currency(), payerFundOut.negate());
             this.addBalanceAmount(balances, row.receiverDfsp(), row.currency(), payeeFee);
             this.addBalanceAmount(balances, "hub", row.currency(), schemeFee);
         }

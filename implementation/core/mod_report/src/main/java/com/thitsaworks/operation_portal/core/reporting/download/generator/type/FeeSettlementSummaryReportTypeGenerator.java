@@ -25,16 +25,25 @@ import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSettl
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Component
 @RequiredArgsConstructor
 class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeeSettlementSummaryReportTypeGenerator.class);
+
     private static final String FILE_TYPE_XLSX = "xlsx";
+
+    private static final int MAX_ROWS_PER_REPORT_FILE = 500_000;
 
     private final GenerateFeeSettlementSummaryReportCommand generateFeeSettlementSummaryReportCommand;
 
@@ -70,17 +79,72 @@ class FeeSettlementSummaryReportTypeGenerator implements ReportTypeGenerator {
             new GenerateFeeSettlementSummaryReportCommand.Input(
                 settlementId, dfspId, timezoneOffset, fileType, loginDfspId);
 
-        if (totalRowCount > pageSize) {
+        if (totalRowCount <= pageSize) {
             GenerateFeeSettlementSummaryReportCommand.Output output =
-                this.generateFeeSettlementSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
+                this.generateFeeSettlementSummaryReportCommand.execute(input);
 
             return new ReportGeneratedFile(output.feeSettlementSummaryRptByte(), FILE_TYPE_XLSX);
         }
 
+        if (totalRowCount > MAX_ROWS_PER_REPORT_FILE) {
+            return this.generateSplitZip(settlementId,
+                                         dfspId,
+                                         timezoneOffset,
+                                         fileType,
+                                         loginDfspId,
+                                         totalRowCount,
+                                         pageSize);
+        }
+
         GenerateFeeSettlementSummaryReportCommand.Output output =
-            this.generateFeeSettlementSummaryReportCommand.execute(input);
+            this.generateFeeSettlementSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
 
         return new ReportGeneratedFile(output.feeSettlementSummaryRptByte(), FILE_TYPE_XLSX);
+    }
+
+    private ReportGeneratedFile generateSplitZip(String settlementId,
+                                                 String dfspId,
+                                                 String timezoneOffset,
+                                                 String fileType,
+                                                 String loginDfspId,
+                                                 int totalRowCount,
+                                                 int pageSize) throws ReportException, IOException {
+
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+
+            int partNumber = 1;
+            for (int offset = 0; offset < totalRowCount; offset += MAX_ROWS_PER_REPORT_FILE) {
+                int rowsInPart = Math.min(MAX_ROWS_PER_REPORT_FILE, totalRowCount - offset);
+
+                GenerateFeeSettlementSummaryReportCommand.Output partOutput =
+                    this.generateFeeSettlementSummaryReportCommand.exportAll(
+                        new GenerateFeeSettlementSummaryReportCommand.Input(
+                            settlementId,
+                            dfspId,
+                            timezoneOffset,
+                            fileType,
+                            loginDfspId,
+                            offset,
+                            rowsInPart),
+                        rowsInPart,
+                        pageSize);
+
+                String entryName = "fee_settlement_summary_part_" + partNumber + "." + fileType;
+                ZipEntry entry = new ZipEntry(entryName);
+                zipOutputStream.putNextEntry(entry);
+                zipOutputStream.write(partOutput.feeSettlementSummaryRptByte());
+                zipOutputStream.closeEntry();
+                LOGGER.info(
+                    "Generated fee settlement summary report part [{}] with [{}] rows",
+                    partNumber,
+                    rowsInPart);
+                partNumber++;
+            }
+
+            zipOutputStream.finish();
+            return new ReportGeneratedFile(byteArrayOutputStream.toByteArray(), "zip");
+        }
     }
 
 }
