@@ -190,11 +190,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     @Override
     public int countRows(CountInput input) {
 
-        Integer rowCount = this.jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM (" + this.feeSummaryQuery(false) + ") x",
-            this.countParams(input),
-            Integer.class);
-
+        Integer rowCount = this.countFeeSummaryRows(
+            input.startDate(), input.endDate(), input.dfspId(), input.timezone());
         return rowCount == null ? 0 : rowCount;
     }
 
@@ -213,16 +210,22 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             this.queryParams(input));
     }
 
-    private Object[] countParams(CountInput input) {
+    private Integer countFeeSummaryRows(String startDate,
+                                        String endDate,
+                                        String dfspId,
+                                        String timezone) {
 
-        return this.queryParams(
-            new Input(
-                input.startDate(),
-                input.endDate(),
-                input.dfspId(),
-                input.timezone(),
-                "xlsx",
-                null));
+        return this.jdbcTemplate.queryForObject(
+            this.feeSummaryCountQuery(),
+            this.queryParams(
+                new Input(
+                    startDate,
+                    endDate,
+                    dfspId,
+                    timezone,
+                    "xlsx",
+                    null)),
+            Integer.class);
     }
 
     private FeeSummaryRow mapFeeSummaryRow(ResultSet resultSet) throws SQLException {
@@ -272,28 +275,133 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                     '+00:00')
                 END AS endUtc
             ),
-            fee_per_quote AS (
-              SELECT
-                qe.quoteId,
-                MAX(CASE WHEN qe.key = 'feePolicyTierName' THEN qe.value END) AS feePolicy,
-                MAX(CASE WHEN qe.key = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayerFee,
-                MAX(CASE WHEN qe.key = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayeeFee,
-                MAX(CASE WHEN qe.key = 'schemeFee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalSchemeFee
-              FROM quoteExtension qe
-               WHERE qe.`key` IN ('payerFee', 'payeeFee', 'schemeFee', 'feePolicyTierName')
-              GROUP BY qe.quoteId
+            latest_tsc AS (
+              SELECT tsc1.*
+              FROM transferStateChange tsc1
+              JOIN (
+                SELECT transferId, MAX(transferStateChangeId) AS maxId
+                FROM transferStateChange
+                GROUP BY transferId
+              ) mx
+                ON mx.transferId = tsc1.transferId
+               AND mx.maxId = tsc1.transferStateChangeId
             ),
-            sender_receiver AS (
+            transferList AS (
+              SELECT t.transferId
+              FROM transfer t
+              INNER JOIN latest_tsc tsc
+                ON t.transferId = tsc.transferId
+              INNER JOIN bounds_base b
+                ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
+              WHERE tsc.transferStateId = 'COMMITTED'
+            )
+            SELECT
+              rs.payerFSP AS senderDFSP,
+              rs.payeeFSP AS receiverDFSP,
+              rs.feePolicy AS feePolicy,
+              COUNT(DISTINCT rs.quoteId) AS totalTransactions,
+              SUM(rs.amount) AS totalAmount,
+              SUM(
+                rs.totalPayerFee +
+                rs.totalPayeeFee +
+                rs.totalSchemeFee
+              ) AS totalFee,
+              SUM(rs.totalPayerFee) AS totalPayerFee,
+              SUM(rs.totalPayeeFee) AS totalPayeeFee,
+              SUM(rs.totalSchemeFee) AS totalSchemeFee,
+              rs.currencyId AS currency
+            FROM (
               SELECT
-                qp.quoteId,
-                MAX(CASE WHEN pt.name = 'PAYER' THEN p.name END) AS senderDFSP,
-                MAX(CASE WHEN pt.name = 'PAYEE' THEN p.name END) AS receiverDFSP
-              FROM quoteParty qp
-              JOIN partyType pt
-                ON pt.partyTypeId = qp.partyTypeId
-              LEFT JOIN participant p
-                ON p.participantId = qp.participantId
-              GROUP BY qp.quoteId
+                q.quoteId,
+                prp.name AS payerFSP,
+                pep.name AS payeeFSP,
+                MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
+                q.amount,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayerFee,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayeeFee,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalSchemeFee,
+                q.currencyId
+              FROM quote q
+              LEFT JOIN quoteExtension qe
+                ON q.quoteId = qe.quoteId
+               AND LOWER(qe.`key`) IN ('payerfee', 'payeefee', 'schemefee', 'feepolicytiername')
+              INNER JOIN quoteParty prqp
+                ON q.quoteId = prqp.quoteId
+               AND prqp.partyTypeId = (
+                  SELECT pt.partyTypeId
+                  FROM partyType pt
+                  WHERE pt.name = 'PAYER'
+               )
+              INNER JOIN participant prp
+                ON prqp.participantId = prp.participantId
+              INNER JOIN quoteParty peqp
+                ON q.quoteId = peqp.quoteId
+               AND peqp.partyTypeId = (
+                  SELECT pt.partyTypeId
+                  FROM partyType pt
+                  WHERE pt.name = 'PAYEE'
+               )
+              INNER JOIN participant pep
+                ON peqp.participantId = pep.participantId
+              WHERE EXISTS (
+                SELECT transferId
+                FROM transferList tl
+                WHERE tl.transferId = q.transactionReferenceId
+              )
+                AND (
+                  ? = 'ALL'
+                  OR prp.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                  OR pep.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                )
+              GROUP BY
+                q.quoteId,
+                payerFSP,
+                payeeFSP,
+                q.amount,
+                q.currencyId
+            ) rs
+            GROUP BY
+              rs.payerFSP,
+              rs.payeeFSP,
+              rs.feePolicy,
+              rs.currencyId
+            ORDER BY
+              rs.payerFSP,
+              rs.payeeFSP,
+              rs.feePolicy,
+              rs.currencyId
+            """;
+
+        return paged ? query + " LIMIT ? OFFSET ?" : query;
+    }
+
+    private String feeSummaryCountQuery() {
+
+        return """
+            WITH bounds_base AS (
+              SELECT
+                CASE WHEN SUBSTRING(?, 1, 1) = '-' THEN
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT(SUBSTRING(?, 1, 3), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                ELSE
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT('+', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                END AS startUtc,
+                CASE WHEN SUBSTRING(?, 1, 1) = '-' THEN
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT(SUBSTRING(?, 1, 3), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                ELSE
+                  CONVERT_TZ(
+                    STR_TO_DATE(SUBSTRING(REPLACE(REPLACE(?, 'T', ' '), 'Z', ''), 1, 19), '%Y-%m-%d %H:%i:%s'),
+                    CONCAT('+', SUBSTRING(?, 2, 2), ':', SUBSTRING(?, 4, 2)),
+                    '+00:00')
+                END AS endUtc
             ),
             latest_tsc AS (
               SELECT tsc1.*
@@ -305,49 +413,76 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               ) mx
                 ON mx.transferId = tsc1.transferId
                AND mx.maxId = tsc1.transferStateChangeId
+            ),
+            transferList AS (
+              SELECT t.transferId
+              FROM transfer t
+              INNER JOIN latest_tsc tsc
+                ON t.transferId = tsc.transferId
+              INNER JOIN bounds_base b
+                ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
+              WHERE tsc.transferStateId = 'COMMITTED'
             )
-            SELECT
-              sr.senderDFSP AS senderDFSP,
-              sr.receiverDFSP AS receiverDFSP,
-              f.feePolicy AS feePolicy,
-              COUNT(DISTINCT q.quoteId) AS totalTransactions,
-              SUM(q.amount) AS totalAmount,
-              SUM(
-                COALESCE(f.totalPayerFee, 0) +
-                COALESCE(f.totalPayeeFee, 0) +
-                COALESCE(f.totalSchemeFee, 0)
-              ) AS totalFee,
-              SUM(COALESCE(f.totalPayerFee, 0)) AS totalPayerFee,
-              SUM(COALESCE(f.totalPayeeFee, 0)) AS totalPayeeFee,
-              SUM(COALESCE(f.totalSchemeFee, 0)) AS totalSchemeFee,
-              q.currencyId AS currency
-            FROM quote q
-            JOIN transfer t
-              ON t.transferId = q.transactionReferenceId
-            JOIN latest_tsc tsc
-              ON tsc.transferId = t.transferId
-            JOIN bounds_base b
-              ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
-            JOIN sender_receiver sr
-              ON sr.quoteId = q.quoteId
-            LEFT JOIN fee_per_quote f
-              ON f.quoteId = q.quoteId
-            WHERE
-              tsc.transferStateId = 'COMMITTED'
-              AND ((? = 'All') OR (sr.receiverDFSP = ? OR sr.senderDFSP = ?))
-            GROUP BY
-              sr.senderDFSP,
-              sr.receiverDFSP,
-              f.feePolicy,
-              q.currencyId
-            ORDER BY
-              sr.senderDFSP,
-              sr.receiverDFSP,
-              f.feePolicy,
-              q.currencyId
+            SELECT COUNT(*) FROM (
+              SELECT
+                1
+              FROM (
+                SELECT
+                  q.quoteId,
+                  prp.name AS payerFSP,
+                  pep.name AS payeeFSP,
+                  MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
+                  q.amount,
+                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayerFee,
+                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayeeFee,
+                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalSchemeFee,
+                  q.currencyId
+                FROM quote q
+                LEFT JOIN quoteExtension qe
+                  ON q.quoteId = qe.quoteId
+                 AND LOWER(qe.`key`) IN ('payerfee', 'payeefee', 'schemefee', 'feepolicytiername')
+                INNER JOIN quoteParty prqp
+                  ON q.quoteId = prqp.quoteId
+                 AND prqp.partyTypeId = (
+                    SELECT pt.partyTypeId
+                    FROM partyType pt
+                    WHERE pt.name = 'PAYER'
+                 )
+                INNER JOIN participant prp
+                  ON prqp.participantId = prp.participantId
+                INNER JOIN quoteParty peqp
+                  ON q.quoteId = peqp.quoteId
+                 AND peqp.partyTypeId = (
+                    SELECT pt.partyTypeId
+                    FROM partyType pt
+                    WHERE pt.name = 'PAYEE'
+                 )
+                INNER JOIN participant pep
+                  ON peqp.participantId = pep.participantId
+                WHERE EXISTS (
+                  SELECT transferId
+                  FROM transferList tl
+                  WHERE tl.transferId = q.transactionReferenceId
+                )
+                  AND (
+                    ? = 'ALL'
+                    OR prp.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                    OR pep.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                  )
+                GROUP BY
+                  q.quoteId,
+                  payerFSP,
+                  payeeFSP,
+                  q.amount,
+                  q.currencyId
+              ) rs
+              GROUP BY
+                rs.payerFSP,
+                rs.payeeFSP,
+                rs.feePolicy,
+                rs.currencyId
+            ) x
             """;
-
-        return paged ? query + " LIMIT ? OFFSET ?" : query;
     }
 
     private Object[] queryParams(Input input) {
