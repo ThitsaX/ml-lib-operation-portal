@@ -36,6 +36,8 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
 
     private static final String FILE_TYPE_XLSX = "xlsx";
 
+    private static final String FILE_TYPE_PDF = "pdf";
+
     private final GenerateFeeSummaryReportCommand generateFeeSummaryReportCommand;
 
     private final ReportGeneratorSupport reportGeneratorSupport;
@@ -53,7 +55,7 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
         throws ReportException, IOException {
 
         String fileType = this.reportGeneratorSupport.fileType(request.getFileType());
-        if (!FILE_TYPE_XLSX.equals(fileType)) {
+        if (!FILE_TYPE_XLSX.equals(fileType) && !FILE_TYPE_PDF.equals(fileType)) {
             throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
         }
 
@@ -75,13 +77,13 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
             GenerateFeeSummaryReportCommand.Output output =
                 this.generateFeeSummaryReportCommand.exportAll(input, totalRowCount, pageSize);
 
-            return new ReportGeneratedFile(output.feeSummaryRptByte(), FILE_TYPE_XLSX);
+            return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
         }
 
         GenerateFeeSummaryReportCommand.Output output =
             this.generateFeeSummaryReportCommand.execute(input);
 
-        return new ReportGeneratedFile(output.feeSummaryRptByte(), FILE_TYPE_XLSX);
+        return new ReportGeneratedFile(output.feeSummaryRptByte(), fileType);
     }
 
 }

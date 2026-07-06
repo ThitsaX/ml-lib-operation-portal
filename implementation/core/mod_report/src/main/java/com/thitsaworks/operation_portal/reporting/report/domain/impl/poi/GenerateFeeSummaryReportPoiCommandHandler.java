@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.reporting.report.domain.impl;
+package com.thitsaworks.operation_portal.reporting.report.domain.impl.poi;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.thitsaworks.operation_portal.component.misc.annotation.NoLogging;
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
 import com.thitsaworks.operation_portal.reporting.report.domain.GenerateFeeSummaryReportCommand;
@@ -43,6 +52,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,15 +60,24 @@ import java.util.Map;
 
 @Service
 @NoLogging
-public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummaryReportCommand {
+public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSummaryReportCommand {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GenerateFeeSummaryReportCommandHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(
+        GenerateFeeSummaryReportPoiCommandHandler.class);
 
     private static final int DEFAULT_ROW_WINDOW = 200;
 
     private static final int REPORT_START_ROW = 0;
 
     private static final int REPORT_START_COLUMN = 0;
+
+    private static final String FILE_TYPE_XLSX = "xlsx";
+
+    private static final String FILE_TYPE_PDF = "pdf";
+
+    private static final String AMOUNT_FORMAT = "#,##0.00";
+
+    private static final String COUNT_FORMAT = "#,##0";
 
     private static final String[] SUMMARY_HEADERS = {
         "Sender DFSP",
@@ -84,6 +103,18 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
         26,
         18};
 
+    private static final float[] PDF_COLUMN_WIDTHS = {
+        2.4f,
+        2.4f,
+        2.2f,
+        1.8f,
+        1.9f,
+        1.6f,
+        1.8f,
+        1.8f,
+        1.9f,
+        1.2f};
+
     private static final String[] BALANCE_SUMMARY_HEADERS = {
         "DFSP Name",
         "Fund In",
@@ -92,7 +123,7 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
 
     private final JdbcTemplate jdbcTemplate;
 
-    public GenerateFeeSummaryReportCommandHandler(
+    public GenerateFeeSummaryReportPoiCommandHandler(
         @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
 
         this.jdbcTemplate = jdbcTemplate;
@@ -102,16 +133,20 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
     public Output execute(Input input) throws ReportException {
 
         try {
-            if (!"xlsx".equalsIgnoreCase(input.fileType())) {
-                throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
-            }
-
             List<FeeSummaryRow> rows = this.fetchFeeSummaryRows(input);
             if (rows == null || rows.isEmpty()) {
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
             }
 
-            return new Output(this.exportXlsx(input, rows));
+            if (FILE_TYPE_XLSX.equalsIgnoreCase(input.fileType())) {
+                return new Output(this.exportXlsx(input, rows));
+            }
+
+            if (FILE_TYPE_PDF.equalsIgnoreCase(input.fileType())) {
+                return new Output(this.exportPdf(input, rows));
+            }
+
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
 
         } catch (ReportException exception) {
             throw exception;
@@ -223,7 +258,7 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
             fee_per_quote AS (
               SELECT
                 qe.quoteId,
-                MAX(CASE WHEN qe.key = 'feePolicy' THEN qe.value END) AS feePolicy,
+                MAX(CASE WHEN qe.key = 'fieldPolicyTierName' THEN qe.value END) AS feePolicy,
                 MAX(CASE WHEN qe.key = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayerFee,
                 MAX(CASE WHEN qe.key = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayeeFee,
                 MAX(CASE WHEN qe.key = 'schemeFee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalSchemeFee
@@ -407,6 +442,79 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
         }
     }
 
+    private byte[] exportPdf(Input input, List<FeeSummaryRow> rows)
+        throws IOException, DocumentException {
+
+        Path tempFile = Files.createTempFile("fee-summary-", ".pdf");
+
+        try (OutputStream outputStream = Files.newOutputStream(tempFile)) {
+            Document document = new Document(PageSize.A3.rotate(), 18, 18, 18, 18);
+            PdfWriter.getInstance(document, outputStream);
+            document.open();
+
+            Font labelFont = new Font(Font.HELVETICA, 8, Font.BOLD);
+            Font normalFont = new Font(Font.HELVETICA, 8);
+
+            PdfPTable metaTable = new PdfPTable(PDF_COLUMN_WIDTHS);
+            metaTable.setWidthPercentage(100f);
+            metaTable.setHorizontalAlignment(Element.ALIGN_LEFT);
+            this.addPdfMetaRow(metaTable, "Start Date", input.startDate(), labelFont, normalFont);
+            this.addPdfMetaRow(metaTable, "End Date", input.endDate(), labelFont, normalFont);
+            this.addPdfMetaRow(
+                metaTable, "DFSP Name", this.normalizeAllToken(input.dfspId()), labelFont, normalFont);
+            metaTable.setSpacingAfter(10f);
+            document.add(metaTable);
+
+            PdfPTable detailTable = new PdfPTable(PDF_COLUMN_WIDTHS);
+            detailTable.setWidthPercentage(100f);
+            for (String header : SUMMARY_HEADERS) {
+                detailTable.addCell(this.pdfCell(header, labelFont, Element.ALIGN_LEFT));
+            }
+
+            for (FeeSummaryRow row : rows) {
+                detailTable.addCell(this.pdfCell(row.senderDfsp(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.receiverDfsp(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.feePolicy(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(this.formatCount(row.totalTransactions()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalAmount()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalPayerFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalPayeeFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalSchemeFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(row.currency(), normalFont, Element.ALIGN_LEFT));
+            }
+            detailTable.setSpacingAfter(10f);
+            document.add(detailTable);
+
+            PdfPTable summaryTable = new PdfPTable(PDF_COLUMN_WIDTHS);
+            summaryTable.setWidthPercentage(100f);
+            summaryTable.setHorizontalAlignment(Element.ALIGN_LEFT);
+            summaryTable.addCell(this.pdfCell("Summary", labelFont, Element.ALIGN_LEFT, 10));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[0], labelFont, Element.ALIGN_LEFT, 2));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[1], labelFont, Element.ALIGN_LEFT, 2));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[2], labelFont, Element.ALIGN_LEFT, 2));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[3], labelFont, Element.ALIGN_LEFT));
+            summaryTable.addCell(this.pdfCell("", labelFont, Element.ALIGN_LEFT, 3));
+
+            for (BalanceSummaryRow row : this.buildBalanceSummaryRows(rows)) {
+                summaryTable.addCell(this.pdfCell(row.dfspName(), normalFont, Element.ALIGN_LEFT, 2));
+                summaryTable.addCell(
+                    this.pdfCell(this.formatBalanceAmount(row.fundIn()), normalFont, Element.ALIGN_RIGHT, 2));
+                summaryTable.addCell(
+                    this.pdfCell(this.formatBalanceAmount(row.fundOut()), normalFont, Element.ALIGN_RIGHT, 2));
+                summaryTable.addCell(this.pdfCell(row.currency(), normalFont, Element.ALIGN_LEFT));
+                summaryTable.addCell(this.pdfCell("", normalFont, Element.ALIGN_LEFT, 3));
+            }
+            document.add(summaryTable);
+
+            document.close();
+            return Files.readAllBytes(tempFile);
+
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
     private int writeHeaderRow(Sheet sheet,
                                int rowIndex,
                                String label,
@@ -502,12 +610,12 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
 
     private int compareSummaryNames(String left, String right) {
 
-        boolean leftScheme = "hub".equalsIgnoreCase(left);
-        boolean rightScheme = "hub".equalsIgnoreCase(right);
-        if (leftScheme && !rightScheme) {
+        boolean leftHub = "hub".equalsIgnoreCase(left);
+        boolean rightHub = "hub".equalsIgnoreCase(right);
+        if (leftHub && !rightHub) {
             return 1;
         }
-        if (!leftScheme && rightScheme) {
+        if (!leftHub && rightHub) {
             return -1;
         }
         return String.CASE_INSENSITIVE_ORDER.compare(left, right);
@@ -551,6 +659,33 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
             cell.setCellValue("-");
         }
         cell.setCellStyle(style);
+    }
+
+    private PdfPCell pdfCell(String text, Font font, int horizontalAlignment) {
+
+        PdfPCell cell = new PdfPCell(new Phrase(text == null ? "" : text, font));
+        cell.setHorizontalAlignment(horizontalAlignment);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setPadding(4f);
+        return cell;
+    }
+
+    private PdfPCell pdfCell(String text, Font font, int horizontalAlignment, int colspan) {
+
+        PdfPCell cell = this.pdfCell(text, font, horizontalAlignment);
+        cell.setColspan(colspan);
+        return cell;
+    }
+
+    private void addPdfMetaRow(PdfPTable table,
+                               String label,
+                               String value,
+                               Font labelFont,
+                               Font valueFont) {
+
+        table.addCell(this.pdfCell(label, labelFont, Element.ALIGN_LEFT));
+        table.addCell(this.pdfCell(value, valueFont, Element.ALIGN_LEFT, 2));
+        table.addCell(this.pdfCell("", valueFont, Element.ALIGN_LEFT, 7));
     }
 
     private CellStyle metaLabelStyle(SXSSFWorkbook workbook) {
@@ -601,6 +736,8 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
 
         CellStyle style = workbook.createCellStyle();
         style.cloneStyleFrom(this.textCellStyle(workbook));
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         var font = workbook.createFont();
         font.setFontName("Calibri");
         font.setFontHeightInPoints((short) 11);
@@ -656,6 +793,21 @@ public class GenerateFeeSummaryReportCommandHandler implements GenerateFeeSummar
         }
 
         return "all".equalsIgnoreCase(value.trim()) ? "ALL" : value.trim();
+    }
+
+    private String formatCount(Long value) {
+
+        return value == null ? "" : new DecimalFormat(COUNT_FORMAT).format(value);
+    }
+
+    private String formatAmount(BigDecimal value) {
+
+        return value == null ? "" : new DecimalFormat(AMOUNT_FORMAT).format(value);
+    }
+
+    private String formatBalanceAmount(BigDecimal value) {
+
+        return value == null ? "-" : new DecimalFormat(AMOUNT_FORMAT).format(value);
     }
 
     private String normalizeTimezone(String value) {

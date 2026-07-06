@@ -49,12 +49,13 @@ public class GenerateFeeSummaryReportController {
     public ResponseEntity<Response> execute(@RequestParam("startDate") String startDate,
                                             @RequestParam("endDate") String endDate,
                                             @RequestParam("dfspId") String dfspId,
+                                            @RequestParam("fileType") String fileType,
                                             @RequestParam("timezoneOffset") String timezoneOffset)
         throws DomainException, JsonProcessingException {
 
         LOG.info(
-            "Generate Fee Summary Report : startDate = [{}], endDate = [{}], dfspId = [{}], timezoneOffset = [{}]",
-            startDate, endDate, dfspId, timezoneOffset);
+            "Generate Fee Summary Report : startDate = [{}], endDate = [{}], dfspId = [{}], fileType = [{}], timezoneOffset = [{}]",
+            startDate, endDate, dfspId, fileType, timezoneOffset);
 
         String timezone = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
 
@@ -65,7 +66,7 @@ public class GenerateFeeSummaryReportController {
 
         GenerateFeeSummaryReport.Output output = this.generateFeeSummaryReport.execute(
             new GenerateFeeSummaryReport.Input(
-                startDate, endDate, dfspId, timezone,
+                startDate, endDate, dfspId, fileType, timezone,
                 userContext.userId().getId()));
 
         var response = new Response(

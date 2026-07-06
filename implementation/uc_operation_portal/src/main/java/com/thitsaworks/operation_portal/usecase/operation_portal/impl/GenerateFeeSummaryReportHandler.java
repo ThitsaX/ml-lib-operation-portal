@@ -51,8 +51,6 @@ public class GenerateFeeSummaryReportHandler
     private static final Logger LOG = LoggerFactory.getLogger(
         GenerateFeeSummaryReportHandler.class);
 
-    private static final String FILE_TYPE_XLSX = "xlsx";
-
     private final ReportDownloadRequestManager reportDownloadRequestManager;
 
     private final S3FileStorage s3FileStorage;
@@ -91,7 +89,7 @@ public class GenerateFeeSummaryReportHandler
                                                 .getValue());
 
         ReportDownloadRequestManager.CreateOrReuseResult result = this.reportDownloadRequestManager.createPendingOrReuse(
-            ReportType.FEE_SUMMARY, FILE_TYPE_XLSX, params);
+            ReportType.FEE_SUMMARY, ReportDownloadUtil.normalizeFileType(input.fileType()), params);
 
         String fileKey = result.request().fileUrl();
         String fileUrl = null;
