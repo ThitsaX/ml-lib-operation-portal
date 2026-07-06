@@ -95,6 +95,7 @@ public class GetParticipantListByDirectIndirectHandler
 
         participantInfoList.add(new Output.ParticipantInfo(
             participantData.participantId(),
+            participantData.dfspId(),
             participantData.participantName()
                            .getValue(),
             participantData.description(),
