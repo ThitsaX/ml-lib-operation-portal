@@ -83,7 +83,7 @@ public class GenerateSettlementBankReportUseCasePoiCommandHandler
     private static final String ALL_CURRENCY = "All";
 
     private static final String[] COLUMN_HEADERS = {
-            "Participant", "Settlement Bank Account", "Balance", "Settlement Transfer", "Currency", "Use Case"
+            "Participant", "Settlement Bank Account", "Balance", "Settlement Transfer", "Currency", "Usecase"
     };
 
     private static final int[] COLUMN_WIDTHS = {41, 41, 20, 22, 16, 33};
@@ -95,7 +95,7 @@ public class GenerateSettlementBankReportUseCasePoiCommandHandler
     private static final float[] PDF_META_COLUMN_WIDTHS = {200f, 270f};
 
     private static final String[] SUMMARY_HEADERS = {
-            "Participant", "Settlement Bank Account", "Balance", "Settlement Transfer", "Currency"
+            "Participant", "Settlement Bank Account", "Balance", "Net Settlement Transfer", "Currency"
     };
 
     private static final float[] PDF_SUMMARY_COLUMN_WIDTHS = {200f, 270f, 100f, 150f, 80f};
