@@ -280,6 +280,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 MAX(CASE WHEN qe.key = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayeeFee,
                 MAX(CASE WHEN qe.key = 'schemeFee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalSchemeFee
               FROM quoteExtension qe
+               WHERE qe.`key` IN ('payerFee', 'payeeFee', 'schemeFee', 'feePolicyTierName')
               GROUP BY qe.quoteId
             ),
             sender_receiver AS (
@@ -333,11 +334,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               ON f.quoteId = q.quoteId
             WHERE
               tsc.transferStateId = 'COMMITTED'
-              AND (
-                ? = 'ALL'
-                OR sr.senderDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
-                OR sr.receiverDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
-              )
+              AND ((? = 'All') OR (sr.receiverDFSP = ? OR sr.senderDFSP = ?))
             GROUP BY
               sr.senderDFSP,
               sr.receiverDFSP,
