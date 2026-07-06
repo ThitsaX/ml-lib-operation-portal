@@ -115,6 +115,23 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         1.9f,
         1.2f};
 
+    private static final float PDF_TOTAL_COLUMN_WIDTH = 19.0f;
+
+    private static final float[] PDF_META_COLUMN_WIDTHS = {
+        2.4f,
+        2.4f};
+
+    private static final float PDF_META_WIDTH_PERCENTAGE = (4.8f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
+
+    private static final float[] PDF_BALANCE_SUMMARY_COLUMN_WIDTHS = {
+        2.4f,
+        2.4f,
+        2.2f,
+        1.8f};
+
+    private static final float PDF_BALANCE_SUMMARY_WIDTH_PERCENTAGE =
+        (8.8f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
+
     private static final String[] BALANCE_SUMMARY_HEADERS = {
         "DFSP Name",
         "Fund In",
@@ -258,7 +275,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             fee_per_quote AS (
               SELECT
                 qe.quoteId,
-                MAX(CASE WHEN qe.key = 'fieldPolicyTierName' THEN qe.value END) AS feePolicy,
+                MAX(CASE WHEN qe.key = 'feePolicyTierName' THEN qe.value END) AS feePolicy,
                 MAX(CASE WHEN qe.key = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayerFee,
                 MAX(CASE WHEN qe.key = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalPayeeFee,
                 MAX(CASE WHEN qe.key = 'schemeFee' THEN CAST(qe.value AS DECIMAL(18,4)) END) AS totalSchemeFee
@@ -315,9 +332,12 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             LEFT JOIN fee_per_quote f
               ON f.quoteId = q.quoteId
             WHERE
-              ? = 'ALL'
-              OR sr.senderDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
-              OR sr.receiverDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+              tsc.transferStateId = 'COMMITTED'
+              AND (
+                ? = 'ALL'
+                OR sr.senderDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                OR sr.receiverDFSP COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+              )
             GROUP BY
               sr.senderDFSP,
               sr.receiverDFSP,
@@ -455,8 +475,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             Font labelFont = new Font(Font.HELVETICA, 8, Font.BOLD);
             Font normalFont = new Font(Font.HELVETICA, 8);
 
-            PdfPTable metaTable = new PdfPTable(PDF_COLUMN_WIDTHS);
-            metaTable.setWidthPercentage(100f);
+            PdfPTable metaTable = new PdfPTable(PDF_META_COLUMN_WIDTHS);
+            metaTable.setWidthPercentage(PDF_META_WIDTH_PERCENTAGE);
             metaTable.setHorizontalAlignment(Element.ALIGN_LEFT);
             this.addPdfMetaRow(metaTable, "Start Date", input.startDate(), labelFont, normalFont);
             this.addPdfMetaRow(metaTable, "End Date", input.endDate(), labelFont, normalFont);
@@ -486,24 +506,22 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             detailTable.setSpacingAfter(10f);
             document.add(detailTable);
 
-            PdfPTable summaryTable = new PdfPTable(PDF_COLUMN_WIDTHS);
-            summaryTable.setWidthPercentage(100f);
+            PdfPTable summaryTable = new PdfPTable(PDF_BALANCE_SUMMARY_COLUMN_WIDTHS);
+            summaryTable.setWidthPercentage(PDF_BALANCE_SUMMARY_WIDTH_PERCENTAGE);
             summaryTable.setHorizontalAlignment(Element.ALIGN_LEFT);
-            summaryTable.addCell(this.pdfCell("Summary", labelFont, Element.ALIGN_LEFT, 10));
-            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[0], labelFont, Element.ALIGN_LEFT, 2));
-            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[1], labelFont, Element.ALIGN_LEFT, 2));
-            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[2], labelFont, Element.ALIGN_LEFT, 2));
+            summaryTable.addCell(this.pdfCell("Summary", labelFont, Element.ALIGN_LEFT, 4));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[0], labelFont, Element.ALIGN_LEFT));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[1], labelFont, Element.ALIGN_LEFT));
+            summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[2], labelFont, Element.ALIGN_LEFT));
             summaryTable.addCell(this.pdfCell(BALANCE_SUMMARY_HEADERS[3], labelFont, Element.ALIGN_LEFT));
-            summaryTable.addCell(this.pdfCell("", labelFont, Element.ALIGN_LEFT, 3));
 
             for (BalanceSummaryRow row : this.buildBalanceSummaryRows(rows)) {
-                summaryTable.addCell(this.pdfCell(row.dfspName(), normalFont, Element.ALIGN_LEFT, 2));
+                summaryTable.addCell(this.pdfCell(row.dfspName(), normalFont, Element.ALIGN_LEFT));
                 summaryTable.addCell(
-                    this.pdfCell(this.formatBalanceAmount(row.fundIn()), normalFont, Element.ALIGN_RIGHT, 2));
+                    this.pdfCell(this.formatBalanceAmount(row.fundIn()), normalFont, Element.ALIGN_RIGHT));
                 summaryTable.addCell(
-                    this.pdfCell(this.formatBalanceAmount(row.fundOut()), normalFont, Element.ALIGN_RIGHT, 2));
+                    this.pdfCell(this.formatBalanceAmount(row.fundOut()), normalFont, Element.ALIGN_RIGHT));
                 summaryTable.addCell(this.pdfCell(row.currency(), normalFont, Element.ALIGN_LEFT));
-                summaryTable.addCell(this.pdfCell("", normalFont, Element.ALIGN_LEFT, 3));
             }
             document.add(summaryTable);
 
@@ -684,8 +702,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                                Font valueFont) {
 
         table.addCell(this.pdfCell(label, labelFont, Element.ALIGN_LEFT));
-        table.addCell(this.pdfCell(value, valueFont, Element.ALIGN_LEFT, 2));
-        table.addCell(this.pdfCell("", valueFont, Element.ALIGN_LEFT, 7));
+        table.addCell(this.pdfCell(value, valueFont, Element.ALIGN_LEFT));
     }
 
     private CellStyle metaLabelStyle(SXSSFWorkbook workbook) {
