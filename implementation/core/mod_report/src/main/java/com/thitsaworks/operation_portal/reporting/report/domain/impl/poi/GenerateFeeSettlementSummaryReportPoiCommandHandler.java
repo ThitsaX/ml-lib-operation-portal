@@ -683,7 +683,7 @@ public class GenerateFeeSettlementSummaryReportPoiCommandHandler implements Gene
         CellStyle style = workbook.createCellStyle();
         style.cloneStyleFrom(this.textCellStyle(workbook));
         style.setAlignment(HorizontalAlignment.RIGHT);
-        style.setDataFormat(workbook.createDataFormat().getFormat("#,##0"));
+        style.setDataFormat(workbook.createDataFormat().getFormat("0"));
         return style;
     }
 
@@ -692,7 +692,7 @@ public class GenerateFeeSettlementSummaryReportPoiCommandHandler implements Gene
         CellStyle style = workbook.createCellStyle();
         style.cloneStyleFrom(this.textCellStyle(workbook));
         style.setAlignment(HorizontalAlignment.RIGHT);
-        style.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
+        style.setDataFormat(workbook.createDataFormat().getFormat("0"));
         return style;
     }
 
@@ -776,4 +776,3 @@ public class GenerateFeeSettlementSummaryReportPoiCommandHandler implements Gene
                                  BigDecimal settlementAmount,
                                  String currency) { }
 }
-
