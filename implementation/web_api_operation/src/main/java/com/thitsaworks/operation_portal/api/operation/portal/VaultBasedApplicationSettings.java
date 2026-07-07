@@ -97,8 +97,6 @@ public class VaultBasedApplicationSettings {
     @Bean
     public S3FileStorage.Settings s3Settings(Vault vault) {
 
-        LOG.info("S3 settings :  [{}] ", vault.get(S3FileStorage.S3_SETTINGS_PATH, S3FileStorage.Settings.class));
-
         return vault.get(S3FileStorage.S3_SETTINGS_PATH, S3FileStorage.Settings.class);
     }
 
