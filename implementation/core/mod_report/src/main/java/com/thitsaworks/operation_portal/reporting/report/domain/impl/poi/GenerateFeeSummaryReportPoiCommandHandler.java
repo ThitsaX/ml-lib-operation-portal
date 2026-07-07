@@ -53,6 +53,11 @@ import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -78,6 +83,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private static final String AMOUNT_FORMAT = "#,##0.00";
 
     private static final String COUNT_FORMAT = "#,##0";
+
+    private static final DateTimeFormatter HEADER_DATE_FORMAT = DateTimeFormatter.ofPattern(
+        "yyyy-MM-dd'T'HH:mm:ssXXX");
 
     private static final String[] SUMMARY_HEADERS = {
         "Sender DFSP",
@@ -540,9 +548,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
             int rowIndex = REPORT_START_ROW;
             rowIndex = this.writeHeaderRow(
-                sheet, rowIndex, "Start Date", input.startDate(), metaLabelStyle, metaValueStyle);
+                sheet, rowIndex, "Start Date", this.formatHeaderDate(input.startDate(), input.timezone()),
+                metaLabelStyle, metaValueStyle);
             rowIndex = this.writeHeaderRow(
-                sheet, rowIndex, "End Date", input.endDate(), metaLabelStyle, metaValueStyle);
+                sheet, rowIndex, "End Date", this.formatHeaderDate(input.endDate(), input.timezone()),
+                metaLabelStyle, metaValueStyle);
             rowIndex = this.writeHeaderRow(
                 sheet, rowIndex, "DFSP Name", this.normalizeAllToken(input.dfspId()), metaLabelStyle,
                 metaValueStyle);
@@ -610,8 +620,12 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             PdfPTable metaTable = new PdfPTable(PDF_META_COLUMN_WIDTHS);
             metaTable.setWidthPercentage(PDF_META_WIDTH_PERCENTAGE);
             metaTable.setHorizontalAlignment(Element.ALIGN_LEFT);
-            this.addPdfMetaRow(metaTable, "Start Date", input.startDate(), labelFont, normalFont);
-            this.addPdfMetaRow(metaTable, "End Date", input.endDate(), labelFont, normalFont);
+            this.addPdfMetaRow(
+                metaTable, "Start Date", this.formatHeaderDate(input.startDate(), input.timezone()),
+                labelFont, normalFont);
+            this.addPdfMetaRow(
+                metaTable, "End Date", this.formatHeaderDate(input.endDate(), input.timezone()), labelFont,
+                normalFont);
             this.addPdfMetaRow(
                 metaTable, "DFSP Name", this.normalizeAllToken(input.dfspId()), labelFont, normalFont);
             metaTable.setSpacingAfter(10f);
@@ -966,6 +980,49 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
         String trimmedValue = value.trim();
         return trimmedValue.startsWith("+") || trimmedValue.startsWith("-") ? trimmedValue : "+" + trimmedValue;
+    }
+
+    private String formatHeaderDate(String value, String rawOffset) {
+
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        ZoneOffset zoneOffset = this.parseOffset(rawOffset);
+        String trimmedValue = value.trim();
+
+        try {
+            return Instant.parse(trimmedValue)
+                          .atOffset(ZoneOffset.UTC)
+                          .withOffsetSameLocal(zoneOffset)
+                          .format(HEADER_DATE_FORMAT)
+                          .replace("Z", "+00:00");
+        } catch (DateTimeParseException exception) {
+            try {
+                return LocalDateTime.parse(trimmedValue.replace("Z", ""))
+                                    .atOffset(zoneOffset)
+                                    .format(HEADER_DATE_FORMAT)
+                                    .replace("Z", "+00:00");
+            } catch (DateTimeParseException ignored) {
+                return trimmedValue;
+            }
+        }
+    }
+
+    private ZoneOffset parseOffset(String rawOffset) {
+
+        if (rawOffset == null || rawOffset.isBlank()) {
+            return ZoneOffset.UTC;
+        }
+
+        String normalized = rawOffset.trim();
+        if (normalized.matches("[+-]\\d{4}")) {
+            normalized = normalized.substring(0, 3) + ":" + normalized.substring(3);
+        } else if (normalized.matches("\\d{4}")) {
+            normalized = "+" + normalized.substring(0, 2) + ":" + normalized.substring(2);
+        }
+
+        return ZoneOffset.of(normalized);
     }
 
     private BigDecimal valueOrZero(BigDecimal value) {
