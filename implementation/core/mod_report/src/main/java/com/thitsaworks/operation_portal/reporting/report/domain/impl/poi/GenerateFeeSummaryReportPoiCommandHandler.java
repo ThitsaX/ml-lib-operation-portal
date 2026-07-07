@@ -358,8 +358,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               )
                 AND (
                   ? = 'ALL'
-                  OR prp.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
-                  OR pep.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                  OR prp.name = ?
+                  OR pep.name = ?
                 )
               GROUP BY
                 q.quoteId,
@@ -474,8 +474,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 )
                   AND (
                     ? = 'ALL'
-                    OR prp.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
-                    OR pep.name COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci
+                    OR prp.name = ?
+                    OR pep.name = ?
                   )
                 GROUP BY
                   q.quoteId,
