@@ -60,7 +60,7 @@ public class GetParticipantPositionsDataJdbcQueryHandler implements GetParticipa
                     "LEFT JOIN participantLimit pl ON pc.participantCurrencyId = pl.participantCurrencyId AND pl.isActive = 1 \n" +
                     "LEFT JOIN participantPosition pb ON pb.participantCurrencyId = pc.participantCurrencyId AND pc.ledgerAccountTypeId = 2 \n" +
                     "LEFT JOIN participantPosition pp ON pp.participantCurrencyId = pc.participantCurrencyId AND pc.ledgerAccountTypeId = 1 \n" +
-                    "WHERE (? = 'All' OR p.name = ?) AND p.name NOT LIKE '%HUB%' GROUP BY p.participantId, p.name, p.description, pc.currencyId  ORDER BY p.name, pc.currencyId;",
+                    "WHERE (? = 'All' OR p.name = ?) GROUP BY p.participantId, p.name, p.description, pc.currencyId  ORDER BY p.name, pc.currencyId;",
                 new FinancialDataMapper(),
                 input.getFspID(),
                 input.getFspID());
