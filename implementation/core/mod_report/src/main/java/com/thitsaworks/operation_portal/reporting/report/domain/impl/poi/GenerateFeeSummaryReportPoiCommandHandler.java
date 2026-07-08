@@ -200,6 +200,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
         Integer rowCount = this.countFeeSummaryRows(
             input.startDate(), input.endDate(), input.dfspId(), input.timezone());
+        LOG.info("Counted {} rows for fee summary report", rowCount);
         return rowCount == null ? 0 : rowCount;
     }
 
@@ -283,54 +284,43 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                     '+00:00')
                 END AS endUtc
             ),
-            latest_tsc AS (
-              SELECT tsc1.*
-              FROM transferStateChange tsc1
-              JOIN (
-                SELECT transferId, MAX(transferStateChangeId) AS maxId
-                FROM transferStateChange
-                GROUP BY transferId
-              ) mx
-                ON mx.transferId = tsc1.transferId
-               AND mx.maxId = tsc1.transferStateChangeId
-            ),
             transferList AS (
               SELECT t.transferId
               FROM transfer t
-              INNER JOIN latest_tsc tsc
+              INNER JOIN transferStateChange tsc
                 ON t.transferId = tsc.transferId
-              INNER JOIN bounds_base b
-                ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
-              WHERE tsc.transferStateId = 'COMMITTED'
+               AND tsc.transferStateId = 'COMMITTED'
+              CROSS JOIN bounds_base b
+              WHERE tsc.createdDate BETWEEN b.startUtc AND b.endUtc
             )
             SELECT
               rs.payerFSP AS senderDFSP,
               rs.payeeFSP AS receiverDFSP,
               rs.feePolicy AS feePolicy,
               COUNT(DISTINCT rs.quoteId) AS totalTransactions,
-              SUM(rs.amount) AS totalAmount,
-              SUM(
+              ROUND(SUM(rs.amount), 2) AS totalAmount,
+              ROUND(SUM(
                 rs.totalPayerFee +
                 rs.totalPayeeFee +
                 rs.totalSchemeFee
-              ) AS totalFee,
-              SUM(rs.totalPayerFee) AS totalPayerFee,
-              SUM(rs.totalPayeeFee) AS totalPayeeFee,
-              SUM(rs.totalSchemeFee) AS totalSchemeFee,
+              ), 2) AS totalFee,
+              ROUND(SUM(rs.totalPayerFee), 2) AS totalPayerFee,
+              ROUND(SUM(rs.totalPayeeFee), 2) AS totalPayeeFee,
+              ROUND(SUM(rs.totalSchemeFee), 2) AS totalSchemeFee,
               rs.currencyId AS currency
             FROM (
               SELECT
                 q.quoteId,
                 prp.name AS payerFSP,
                 pep.name AS payeeFSP,
-                MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
                 q.amount,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayerFee,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayeeFee,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalSchemeFee,
+                MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalPayerFee,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalPayeeFee,
+                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalSchemeFee,
                 q.currencyId
               FROM quote q
-              LEFT JOIN quoteExtension qe
+              INNER JOIN quoteExtension qe
                 ON q.quoteId = qe.quoteId
                AND LOWER(qe.`key`) IN ('payerfee', 'payeefee', 'schemefee', 'feepolicytiername')
               INNER JOIN quoteParty prqp
@@ -351,12 +341,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                )
               INNER JOIN participant pep
                 ON peqp.participantId = pep.participantId
-              WHERE EXISTS (
-                SELECT transferId
-                FROM transferList tl
-                WHERE tl.transferId = q.transactionReferenceId
-              )
-                AND (
+              INNER JOIN transferList tl
+                ON tl.transferId = q.transactionReferenceId
+              WHERE (
                   ? = 'ALL'
                   OR prp.name = ?
                   OR pep.name = ?
@@ -411,42 +398,31 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                     '+00:00')
                 END AS endUtc
             ),
-            latest_tsc AS (
-              SELECT tsc1.*
-              FROM transferStateChange tsc1
-              JOIN (
-                SELECT transferId, MAX(transferStateChangeId) AS maxId
-                FROM transferStateChange
-                GROUP BY transferId
-              ) mx
-                ON mx.transferId = tsc1.transferId
-               AND mx.maxId = tsc1.transferStateChangeId
-            ),
             transferList AS (
               SELECT t.transferId
               FROM transfer t
-              INNER JOIN latest_tsc tsc
+              INNER JOIN transferStateChange tsc
                 ON t.transferId = tsc.transferId
-              INNER JOIN bounds_base b
-                ON tsc.createdDate BETWEEN b.startUtc AND b.endUtc
-              WHERE tsc.transferStateId = 'COMMITTED'
+               AND tsc.transferStateId = 'COMMITTED'
+              CROSS JOIN bounds_base b
+              WHERE tsc.createdDate BETWEEN b.startUtc AND b.endUtc
             )
             SELECT COUNT(*) FROM (
               SELECT
-                1
+                rs.payerFSP,
+                rs.payeeFSP,
+                rs.feePolicy,
+                rs.currencyId
               FROM (
                 SELECT
                   q.quoteId,
                   prp.name AS payerFSP,
                   pep.name AS payeeFSP,
-                  MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
                   q.amount,
-                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayerFee,
-                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalPayeeFee,
-                  COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,4)) END), 0) AS totalSchemeFee,
+                  MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
                   q.currencyId
                 FROM quote q
-                LEFT JOIN quoteExtension qe
+                INNER JOIN quoteExtension qe
                   ON q.quoteId = qe.quoteId
                  AND LOWER(qe.`key`) IN ('payerfee', 'payeefee', 'schemefee', 'feepolicytiername')
                 INNER JOIN quoteParty prqp
@@ -467,12 +443,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                  )
                 INNER JOIN participant pep
                   ON peqp.participantId = pep.participantId
-                WHERE EXISTS (
-                  SELECT transferId
-                  FROM transferList tl
-                  WHERE tl.transferId = q.transactionReferenceId
-                )
-                  AND (
+                INNER JOIN transferList tl
+                  ON tl.transferId = q.transactionReferenceId
+                WHERE
+                  (
                     ? = 'ALL'
                     OR prp.name = ?
                     OR pep.name = ?
@@ -487,8 +461,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               GROUP BY
                 rs.payerFSP,
                 rs.payeeFSP,
-                rs.feePolicy,
-                rs.currencyId
+                rs.currencyId,
+                rs.feePolicy
             ) x
             """;
     }
