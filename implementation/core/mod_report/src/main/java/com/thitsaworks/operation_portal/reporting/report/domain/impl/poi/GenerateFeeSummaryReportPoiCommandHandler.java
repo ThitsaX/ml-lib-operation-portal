@@ -710,7 +710,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
             this.addBalanceAmount(balances, row.senderDfsp(), row.currency(), payerFundOut.negate());
             this.addBalanceAmount(balances, row.receiverDfsp(), row.currency(), payeeFee);
-            this.addBalanceAmount(balances, "hub", row.currency(), schemeFee);
+            this.addBalanceAmount(balances, "Scheme", row.currency(), schemeFee);
         }
 
         return balances.entrySet()
@@ -747,8 +747,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
     private int compareSummaryNames(String left, String right) {
 
-        boolean leftHub = "hub".equalsIgnoreCase(left);
-        boolean rightHub = "hub".equalsIgnoreCase(right);
+        boolean leftHub = "Scheme".equalsIgnoreCase(left);
+        boolean rightHub = "Scheme".equalsIgnoreCase(right);
         if (leftHub && !rightHub) {
             return 1;
         }
