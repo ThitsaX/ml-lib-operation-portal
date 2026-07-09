@@ -88,8 +88,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         "yyyy-MM-dd'T'HH:mm:ssXXX");
 
     private static final String[] SUMMARY_HEADERS = {
-        "Sender DFSP",
-        "Receiver DFSP",
+        "Sender DFSP ID",
+        "Sender DFSP Name",
+        "Receiver DFSP ID",
+        "Receiver DFSP Name",
         "Fee Policy",
         "Total Transactions",
         "Total Amount",
@@ -103,16 +105,20 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         40,
         40,
         40,
+        40,
         26,
         26,
         24,
         26,
         26,
         26,
+        26,
         18};
 
     private static final float[] PDF_COLUMN_WIDTHS = {
-        2.4f,
+        2.0f,
+        2.2f,
+        2.0f,
         2.4f,
         2.2f,
         1.8f,
@@ -244,9 +250,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         BigDecimal schemeFee = resultSet.getBigDecimal("totalSchemeFee");
 
         return new FeeSummaryRow(
-            resultSet.getString("senderDFSP"),
-            resultSet.getString("receiverDFSP"),
-            resultSet.getString("feePolicy"),
+            this.normalizeReportText(resultSet.getString("senderDFSPId")),
+            this.normalizeReportText(resultSet.getString("senderDFSPName")),
+            this.normalizeReportText(resultSet.getString("receiverDFSPId")),
+            this.normalizeReportText(resultSet.getString("receiverDFSPName")),
+            this.normalizeReportText(resultSet.getString("feePolicy")),
             resultSet.getLong("totalTransactions"),
             resultSet.getBigDecimal("totalAmount"),
             this.valueOrZero(payerFee).add(this.valueOrZero(payeeFee)).add(this.valueOrZero(schemeFee)),
@@ -294,8 +302,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               WHERE tsc.createdDate BETWEEN b.startUtc AND b.endUtc
             )
             SELECT
-              rs.payerFSP AS senderDFSP,
-              rs.payeeFSP AS receiverDFSP,
+              rs.payerFSP AS senderDFSPId,
+              rs.payerFSPName AS senderDFSPName,
+              rs.payeeFSP AS receiverDFSPId,
+              rs.payeeFSPName AS receiverDFSPName,
               rs.feePolicy AS feePolicy,
               COUNT(DISTINCT rs.quoteId) AS totalTransactions,
               ROUND(SUM(rs.amount), 2) AS totalAmount,
@@ -312,7 +322,15 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               SELECT
                 q.quoteId,
                 prp.name AS payerFSP,
+                CASE
+                  WHEN prp.description IS NULL OR CHAR_LENGTH(TRIM(prp.description)) = 0 THEN prp.name
+                  ELSE TRIM(prp.description)
+                END AS payerFSPName,
                 pep.name AS payeeFSP,
+                CASE
+                  WHEN pep.description IS NULL OR CHAR_LENGTH(TRIM(pep.description)) = 0 THEN pep.name
+                  ELSE TRIM(pep.description)
+                END AS payeeFSPName,
                 q.amount,
                 MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
                 COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalPayerFee,
@@ -351,13 +369,17 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               GROUP BY
                 q.quoteId,
                 payerFSP,
+                payerFSPName,
                 payeeFSP,
+                payeeFSPName,
                 q.amount,
                 q.currencyId
             ) rs
             GROUP BY
               rs.payerFSP,
+              rs.payerFSPName,
               rs.payeeFSP,
+              rs.payeeFSPName,
               rs.feePolicy,
               rs.currencyId
             ORDER BY
@@ -417,7 +439,15 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 SELECT
                   q.quoteId,
                   prp.name AS payerFSP,
+                  CASE
+                    WHEN prp.description IS NULL OR CHAR_LENGTH(TRIM(prp.description)) = 0 THEN prp.name
+                    ELSE TRIM(prp.description)
+                  END AS payerFSPName,
                   pep.name AS payeeFSP,
+                  CASE
+                    WHEN pep.description IS NULL OR CHAR_LENGTH(TRIM(pep.description)) = 0 THEN pep.name
+                    ELSE TRIM(pep.description)
+                  END AS payeeFSPName,
                   q.amount,
                   MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
                   q.currencyId
@@ -454,13 +484,17 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 GROUP BY
                   q.quoteId,
                   payerFSP,
+                  payerFSPName,
                   payeeFSP,
+                  payeeFSPName,
                   q.amount,
                   q.currencyId
               ) rs
               GROUP BY
                 rs.payerFSP,
+                rs.payerFSPName,
                 rs.payeeFSP,
+                rs.payeeFSPName,
                 rs.currencyId,
                 rs.feePolicy
             ) x
@@ -520,6 +554,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             CellStyle amountCellStyle = this.amountCellStyle(workbook);
             CellStyle sectionTitleStyle = this.sectionTitleStyle(workbook);
 
+            String filterDfspName = this.formatFilterDfspName(input.dfspId(), rows);
             int rowIndex = REPORT_START_ROW;
             rowIndex = this.writeHeaderRow(
                 sheet, rowIndex, "Start Date", this.formatHeaderDate(input.startDate(), input.timezone()),
@@ -528,8 +563,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 sheet, rowIndex, "End Date", this.formatHeaderDate(input.endDate(), input.timezone()),
                 metaLabelStyle, metaValueStyle);
             rowIndex = this.writeHeaderRow(
-                sheet, rowIndex, "DFSP Name", this.normalizeAllToken(input.dfspId()), metaLabelStyle,
-                metaValueStyle);
+                sheet, rowIndex, "DFSP Name", filterDfspName, metaLabelStyle, metaValueStyle);
             rowIndex++;
 
             Row columnHeaderRow = sheet.createRow(rowIndex++);
@@ -590,6 +624,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
             Font labelFont = new Font(Font.HELVETICA, 8, Font.BOLD);
             Font normalFont = new Font(Font.HELVETICA, 8);
+            String filterDfspName = this.formatFilterDfspName(input.dfspId(), rows);
 
             PdfPTable metaTable = new PdfPTable(PDF_META_COLUMN_WIDTHS);
             metaTable.setWidthPercentage(PDF_META_WIDTH_PERCENTAGE);
@@ -601,7 +636,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 metaTable, "End Date", this.formatHeaderDate(input.endDate(), input.timezone()), labelFont,
                 normalFont);
             this.addPdfMetaRow(
-                metaTable, "DFSP Name", this.normalizeAllToken(input.dfspId()), labelFont, normalFont);
+                metaTable, "DFSP Name", filterDfspName, labelFont, normalFont);
             metaTable.setSpacingAfter(10f);
             document.add(metaTable);
 
@@ -612,8 +647,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             }
 
             for (FeeSummaryRow row : rows) {
-                detailTable.addCell(this.pdfCell(row.senderDfsp(), normalFont, Element.ALIGN_LEFT));
-                detailTable.addCell(this.pdfCell(row.receiverDfsp(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.senderDfspId(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.senderDfspName(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.receiverDfspId(), normalFont, Element.ALIGN_LEFT));
+                detailTable.addCell(this.pdfCell(row.receiverDfspName(), normalFont, Element.ALIGN_LEFT));
                 detailTable.addCell(this.pdfCell(row.feePolicy(), normalFont, Element.ALIGN_LEFT));
                 detailTable.addCell(this.pdfCell(this.formatCount(row.totalTransactions()), normalFont, Element.ALIGN_RIGHT));
                 detailTable.addCell(this.pdfCell(this.formatAmount(row.totalAmount()), normalFont, Element.ALIGN_RIGHT));
@@ -677,16 +714,18 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                                      CellStyle integerCellStyle,
                                      CellStyle amountCellStyle) {
 
-        this.writeTextCell(row, REPORT_START_COLUMN, data.senderDfsp(), textCellStyle);
-        this.writeTextCell(row, REPORT_START_COLUMN + 1, data.receiverDfsp(), textCellStyle);
-        this.writeTextCell(row, REPORT_START_COLUMN + 2, data.feePolicy(), textCellStyle);
-        this.writeIntegerCell(row, REPORT_START_COLUMN + 3, data.totalTransactions(), integerCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 4, data.totalAmount(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 5, data.totalFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 6, data.totalPayerFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 7, data.totalPayeeFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 8, data.totalSchemeFee(), amountCellStyle);
-        this.writeTextCell(row, REPORT_START_COLUMN + 9, data.currency(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN, data.senderDfspId(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 1, data.senderDfspName(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 2, data.receiverDfspId(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 3, data.receiverDfspName(), textCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 4, data.feePolicy(), textCellStyle);
+        this.writeIntegerCell(row, REPORT_START_COLUMN + 5, data.totalTransactions(), integerCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 6, data.totalAmount(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 7, data.totalFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 8, data.totalPayerFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 9, data.totalPayeeFee(), amountCellStyle);
+        this.writeAmountCell(row, REPORT_START_COLUMN + 10, data.totalSchemeFee(), amountCellStyle);
+        this.writeTextCell(row, REPORT_START_COLUMN + 11, data.currency(), textCellStyle);
     }
 
     private void writeBalanceSummaryRow(Row row,
@@ -708,9 +747,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             BigDecimal schemeFee = this.valueOrZero(row.totalSchemeFee());
             BigDecimal payerFundOut = payeeFee.add(schemeFee);
 
-            this.addBalanceAmount(balances, row.senderDfsp(), row.currency(), payerFundOut.negate());
-            this.addBalanceAmount(balances, row.receiverDfsp(), row.currency(), payeeFee);
-            this.addBalanceAmount(balances, "Scheme", row.currency(), schemeFee);
+            this.addBalanceAmount(
+                balances, row.senderDfspId(), row.senderDfspName(), row.currency(), payerFundOut.negate());
+            this.addBalanceAmount(
+                balances, row.receiverDfspId(), row.receiverDfspName(), row.currency(), payeeFee);
+            this.addBalanceAmount(balances, "Scheme", "Scheme", row.currency(), schemeFee);
         }
 
         return balances.entrySet()
@@ -724,16 +765,18 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     }
 
     private void addBalanceAmount(Map<BalanceSummaryKey, BigDecimal> balances,
+                                  String dfspId,
                                   String dfspName,
                                   String currency,
                                   BigDecimal amount) {
 
-        if (dfspName == null || dfspName.isBlank() || currency == null || currency.isBlank() ||
+        if (dfspId == null || dfspId.isBlank() || dfspName == null || dfspName.isBlank() ||
+                currency == null || currency.isBlank() ||
                 amount == null || amount.signum() == 0) {
             return;
         }
 
-        balances.merge(new BalanceSummaryKey(dfspName, currency), amount, BigDecimal::add);
+        balances.merge(new BalanceSummaryKey(dfspId, dfspName, currency), amount, BigDecimal::add);
     }
 
     private BalanceSummaryRow toBalanceSummaryRow(BalanceSummaryKey key, BigDecimal balance) {
@@ -931,6 +974,62 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         return "all".equalsIgnoreCase(value.trim()) ? "ALL" : value.trim();
     }
 
+    private String formatFilterDfspName(String dfspId, List<FeeSummaryRow> rows) {
+
+        String normalizedDfspId = this.normalizeAllToken(dfspId);
+        if ("ALL".equalsIgnoreCase(normalizedDfspId) || rows == null) {
+            return normalizedDfspId;
+        }
+
+        for (FeeSummaryRow row : rows) {
+            String displayName = this.matchingDfspName(normalizedDfspId, row);
+            if (displayName != null) {
+                return displayName;
+            }
+        }
+
+        return normalizedDfspId;
+    }
+
+    private String matchingDfspName(String dfspId, FeeSummaryRow row) {
+
+        if (row == null) {
+            return null;
+        }
+
+        if (dfspId.equalsIgnoreCase(row.senderDfspId())) {
+            return this.formatDfspIdAndName(row.senderDfspId(), row.senderDfspName());
+        }
+
+        if (dfspId.equalsIgnoreCase(row.receiverDfspId())) {
+            return this.formatDfspIdAndName(row.receiverDfspId(), row.receiverDfspName());
+        }
+
+        return null;
+    }
+
+    private String formatDfspIdAndName(String dfspId, String dfspName) {
+
+        if (dfspId == null || dfspId.isBlank()) {
+            return "";
+        }
+
+        if (dfspName == null || dfspName.isBlank() || dfspId.equalsIgnoreCase(dfspName.trim())) {
+            return dfspId;
+        }
+
+        return dfspId + " (" + dfspName.trim() + ")";
+    }
+
+    private String normalizeReportText(String value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        return value.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ').trim();
+    }
+
     private String formatCount(Long value) {
 
         return value == null ? "" : new DecimalFormat(COUNT_FORMAT).format(value);
@@ -1004,8 +1103,10 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         return value == null ? BigDecimal.ZERO : value;
     }
 
-    private record FeeSummaryRow(String senderDfsp,
-                                 String receiverDfsp,
+    private record FeeSummaryRow(String senderDfspId,
+                                 String senderDfspName,
+                                 String receiverDfspId,
+                                 String receiverDfspName,
                                  String feePolicy,
                                  Long totalTransactions,
                                  BigDecimal totalAmount,
@@ -1015,7 +1116,8 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                                  BigDecimal totalSchemeFee,
                                  String currency) { }
 
-    private record BalanceSummaryKey(String dfspName,
+    private record BalanceSummaryKey(String dfspId,
+                                     String dfspName,
                                      String currency) { }
 
     private record BalanceSummaryRow(String dfspName,
