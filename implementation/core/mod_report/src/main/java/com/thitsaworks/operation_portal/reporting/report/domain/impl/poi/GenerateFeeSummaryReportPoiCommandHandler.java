@@ -129,22 +129,22 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         1.9f,
         1.2f};
 
-    private static final float PDF_TOTAL_COLUMN_WIDTH = 19.0f;
+    private static final float PDF_TOTAL_COLUMN_WIDTH = 22.8f;
 
     private static final float[] PDF_META_COLUMN_WIDTHS = {
-        2.4f,
-        2.4f};
+        2.0f,
+        2.2f};
 
-    private static final float PDF_META_WIDTH_PERCENTAGE = (4.8f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
+    private static final float PDF_META_WIDTH_PERCENTAGE = (4.2f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
 
     private static final float[] PDF_BALANCE_SUMMARY_COLUMN_WIDTHS = {
-        2.4f,
-        2.4f,
+        2.0f,
         2.2f,
-        1.8f};
+        2.0f,
+        2.4f};
 
     private static final float PDF_BALANCE_SUMMARY_WIDTH_PERCENTAGE =
-        (8.8f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
+        (8.6f / PDF_TOTAL_COLUMN_WIDTH) * 100f;
 
     private static final String[] BALANCE_SUMMARY_HEADERS = {
         "DFSP Name",
