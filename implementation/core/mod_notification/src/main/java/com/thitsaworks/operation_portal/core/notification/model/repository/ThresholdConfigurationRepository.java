@@ -16,13 +16,29 @@
 package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
+import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
+import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfiguration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface ThresholdConfigurationRepository
     extends JpaRepository<ThresholdConfiguration, ThresholdConfigurationId>,
             QuerydslPredicateExecutor<ThresholdConfiguration> {
+
+    List<ThresholdConfiguration> findBySchemeId(String schemeId);
+
+    Optional<ThresholdConfiguration> findFirstByScopeTypeAndSchemeIdAndStatus(ThresholdScopeType scopeType,
+                                                                              String schemeId,
+                                                                              NdcConfigurationStatus status);
+
+    Optional<ThresholdConfiguration> findFirstByScopeTypeAndSchemeIdAndfspIdAndStatus(ThresholdScopeType scopeType,
+                                                                                      String schemeId,
+                                                                                      String dfspId,
+                                                                                      NdcConfigurationStatus status);
 }
