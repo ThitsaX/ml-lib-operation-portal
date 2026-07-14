@@ -19,6 +19,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.JobExecution
 import com.thitsaworks.operation_portal.component.common.type.JobStatus;
 import com.thitsaworks.operation_portal.core.scheduler.model.JobExecutionLog;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -31,7 +32,11 @@ public record JobExecutionLogData(
         JobStatus status,
         LocalDateTime startTime,
         LocalDateTime endTime,
-        String executionMessage
+        String executionMessage,
+        String participantName,
+        String currency,
+        BigDecimal ndcUsedPercent,
+        BigDecimal thresholdPercent
 ) {
     /**
      * Creates a new JobExecutionLogData from a JobExecutionLog entity.
@@ -45,7 +50,11 @@ public record JobExecutionLogData(
                 log.getJobStatus(),
                 log.getStartTime(),
                 log.getEndTime(),
-                log.getExecutionMessage()
+                log.getExecutionMessage(),
+                log.getParticipantName(),
+                log.getCurrency(),
+                log.getNdcUsedPercent(),
+                log.getThresholdPercent()
         );
     }
 }

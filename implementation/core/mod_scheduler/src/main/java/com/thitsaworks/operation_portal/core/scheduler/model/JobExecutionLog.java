@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -57,6 +58,18 @@ public class JobExecutionLog extends JpaEntity<JobExecutionLogId> {
     @Column(name = "execution_message")
     private String executionMessage;
 
+    @Column(name = "participant_name")
+    private String participantName;
+
+    @Column(name = "currency")
+    private String currency;
+
+    @Column(name = "ndc_used_percent", precision = 7, scale = 4)
+    private BigDecimal ndcUsedPercent;
+
+    @Column(name = "threshold_percent", precision = 7, scale = 4)
+    private BigDecimal thresholdPercent;
+
     public JobExecutionLog(String jobName, JobStatus jobStatus, LocalDateTime startTime) {
         this.jobExecutionLogId = new JobExecutionLogId(Snowflake.get().nextId());
         this.jobName = jobName;
@@ -83,6 +96,17 @@ public class JobExecutionLog extends JpaEntity<JobExecutionLogId> {
     public void executionMessage(String executionMessage) {
 
         this.executionMessage = executionMessage;
+    }
+
+    public void ndcEvaluation(String participantName,
+                              String currency,
+                              BigDecimal ndcUsedPercent,
+                              BigDecimal thresholdPercent) {
+
+        this.participantName = participantName;
+        this.currency = currency;
+        this.ndcUsedPercent = ndcUsedPercent;
+        this.thresholdPercent = thresholdPercent;
     }
     
 }

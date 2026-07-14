@@ -21,6 +21,7 @@
         <module name="mod_misc" />
         <module name="mod_report" />
         <module name="uc_operation_portal" />
+        <module name="mod_notification" />
         <module name="mod_participant" />
         <module name="mod_common" />
         <module name="mod_infra" />
@@ -72,6 +73,7 @@
       <module name="mod_iam" options="-parameters" />
       <module name="mod_infra" options="-parameters" />
       <module name="mod_misc" options="-parameters" />
+      <module name="mod_notification" options="-parameters" />
       <module name="mod_participant" options="-parameters" />
       <module name="mod_pending_approval" options="-parameters" />
       <module name="mod_querydsl" options="-parameters" />
