@@ -17,7 +17,6 @@ package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
-import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
@@ -31,5 +30,5 @@ public interface NdcNotificationDispatchLogRepository
             QuerydslPredicateExecutor<NdcNotificationDispatchLog> {
 
     Optional<NdcNotificationDispatchLog> findByAlertEventIdAndRecipientUserId(NdcAlertEventId alertEventId,
-                                                                              UserId recipientUserId);
+                                                                              String recipientUserId);
 }

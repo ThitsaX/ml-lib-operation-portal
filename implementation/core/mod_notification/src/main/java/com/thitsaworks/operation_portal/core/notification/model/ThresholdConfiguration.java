@@ -15,31 +15,30 @@
  */
 package com.thitsaworks.operation_portal.core.notification.model;
 
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
-import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
-import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
-import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_threshold_configuration")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class ThresholdConfiguration extends JpaEntity<ThresholdConfigurationId> {
+public class ThresholdConfiguration {
 
     @EmbeddedId
     private ThresholdConfigurationId thresholdConfigurationId;
@@ -51,9 +50,8 @@ public class ThresholdConfiguration extends JpaEntity<ThresholdConfigurationId> 
     @Column(name = "scheme_id", nullable = false)
     private String schemeId;
 
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "participant_id"))
-    private ParticipantId participantId;
+    @Column(name = "dfsp_id")
+    private String dfspId;
 
     @Column(name = "threshold_enabled", nullable = false)
     private boolean thresholdEnabled;
@@ -62,27 +60,33 @@ public class ThresholdConfiguration extends JpaEntity<ThresholdConfigurationId> 
     @Enumerated(EnumType.STRING)
     private NdcConfigurationStatus status;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     public ThresholdConfiguration(ThresholdScopeType scopeType,
                                   String schemeId,
-                                  ParticipantId participantId,
+                                  String dfspId,
                                   boolean thresholdEnabled,
                                   String createdBy) {
 
         Objects.requireNonNull(scopeType, "scopeType is required");
         Objects.requireNonNull(schemeId, "schemeId is required");
         Objects.requireNonNull(createdBy, "createdBy is required");
-        validateScope(scopeType, participantId);
+        validateScope(scopeType, dfspId);
 
-        this.thresholdConfigurationId = new ThresholdConfigurationId(Snowflake.get().nextId());
+        this.thresholdConfigurationId = new ThresholdConfigurationId(UUID.randomUUID());
         this.scopeType = scopeType;
         this.schemeId = schemeId;
-        this.participantId = participantId;
+        this.dfspId = dfspId;
         this.thresholdEnabled = thresholdEnabled;
         this.status = NdcConfigurationStatus.ACTIVE;
         this.createdBy = createdBy;
@@ -100,18 +104,34 @@ public class ThresholdConfiguration extends JpaEntity<ThresholdConfigurationId> 
         return this.thresholdEnabled && this.status == NdcConfigurationStatus.ACTIVE;
     }
 
-    private static void validateScope(ThresholdScopeType scopeType, ParticipantId participantId) {
+    private static void validateScope(ThresholdScopeType scopeType, String dfspId) {
 
-        if (scopeType == ThresholdScopeType.SCHEME && participantId != null) {
-            throw new IllegalArgumentException("SCHEME configuration cannot have participantId");
+        if (scopeType == ThresholdScopeType.SCHEME && dfspId != null) {
+            throw new IllegalArgumentException("SCHEME configuration cannot have dfspId");
         }
 
-        if (scopeType == ThresholdScopeType.DFSP && participantId == null) {
-            throw new IllegalArgumentException("DFSP configuration requires participantId");
+        if (scopeType == ThresholdScopeType.DFSP && dfspId == null) {
+            throw new IllegalArgumentException("DFSP configuration requires dfspId");
         }
     }
 
-    @Override
+    @PrePersist
+    private void onCreate() {
+
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = this.createdAt;
+        }
+    }
+
+    @PreUpdate
+    private void onUpdate() {
+
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public ThresholdConfigurationId getId() {
 
         return this.thresholdConfigurationId;

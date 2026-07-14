@@ -18,11 +18,8 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
-import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
-import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
-import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -30,6 +27,8 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,12 +36,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_ndc_notification_dispatch_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatchLogId> {
+public class NdcNotificationDispatchLog {
 
     @EmbeddedId
     private NdcNotificationDispatchLogId ndcNotificationDispatchLogId;
@@ -59,14 +59,13 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
     @Enumerated(EnumType.STRING)
     private NdcRecipientType recipientType;
 
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "recipient_user_id", nullable = false))
-    private UserId recipientUserId;
+    @Column(name = "recipient_user_id")
+    private String recipientUserId;
 
     @Column(name = "recipient_name")
     private String recipientName;
 
-    @Column(name = "recipient_email", nullable = false)
+    @Column(name = "recipient_email")
     private String recipientEmail;
 
     @Column(name = "delivery_status", nullable = false)
@@ -85,8 +84,14 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
     @Column(name = "error_message")
     private String errorMessage;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
@@ -94,18 +99,18 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
     public NdcNotificationDispatchLog(NdcAlertEventId alertEventId,
                                       ParticipantNDCId participantNDCId,
                                       NdcRecipientType recipientType,
-                                      UserId recipientUserId,
+                                      String recipientUserId,
                                       String recipientName,
                                       String recipientEmail,
                                       String createdBy) {
 
-        this.ndcNotificationDispatchLogId = new NdcNotificationDispatchLogId(Snowflake.get().nextId());
+        this.ndcNotificationDispatchLogId = new NdcNotificationDispatchLogId(UUID.randomUUID());
         this.alertEventId = Objects.requireNonNull(alertEventId, "alertEventId is required");
         this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.recipientType = Objects.requireNonNull(recipientType, "recipientType is required");
-        this.recipientUserId = Objects.requireNonNull(recipientUserId, "recipientUserId is required");
+        this.recipientUserId = recipientUserId;
         this.recipientName = recipientName;
-        this.recipientEmail = Objects.requireNonNull(recipientEmail, "recipientEmail is required");
+        this.recipientEmail = recipientEmail;
         this.deliveryStatus = NdcDeliveryStatus.PENDING;
         this.attemptNo = 0;
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
@@ -144,7 +149,23 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
         this.updatedBy = updatedBy;
     }
 
-    @Override
+    @PrePersist
+    private void onCreate() {
+
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = this.createdAt;
+        }
+    }
+
+    @PreUpdate
+    private void onUpdate() {
+
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public NdcNotificationDispatchLogId getId() {
 
         return this.ndcNotificationDispatchLogId;

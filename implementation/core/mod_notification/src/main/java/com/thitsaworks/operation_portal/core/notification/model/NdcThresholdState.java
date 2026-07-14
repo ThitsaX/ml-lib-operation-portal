@@ -17,10 +17,7 @@ package com.thitsaworks.operation_portal.core.notification.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
-import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
-import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
-import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -28,8 +25,9 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,12 +35,13 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_ndc_threshold_state")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
+public class NdcThresholdState {
 
     @EmbeddedId
     private NdcThresholdStateId ndcThresholdStateId;
@@ -51,10 +50,6 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
     @AttributeOverride(name = "id", column = @Column(name = "participant_ndc_id", nullable = false))
     private ParticipantNDCId participantNDCId;
 
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "threshold_configuration_id", nullable = false))
-    private ThresholdConfigurationId thresholdConfigurationId;
-
     @Column(name = "current_state", nullable = false)
     @Enumerated(EnumType.STRING)
     private NdcThresholdStateType currentState;
@@ -62,14 +57,11 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
     @Column(name = "breach_cycle_no", nullable = false)
     private long breachCycleNo;
 
-    @Column(name = "last_current_position", precision = 18, scale = 4)
-    private BigDecimal lastCurrentPosition;
+    @Column(name = "last_evaluated_balance", precision = 18, scale = 4)
+    private BigDecimal lastEvaluatedBalance;
 
-    @Column(name = "last_ndc_amount", precision = 18, scale = 4)
-    private BigDecimal lastNdcAmount;
-
-    @Column(name = "last_ndc_used_percent", precision = 7, scale = 4)
-    private BigDecimal lastNdcUsedPercent;
+    @Column(name = "last_evaluated_ndc_used", precision = 7, scale = 4)
+    private BigDecimal lastEvaluatedNdcUsed;
 
     @Column(name = "last_breached_at")
     private LocalDateTime lastBreachedAt;
@@ -77,37 +69,34 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
     @Column(name = "last_recovered_at")
     private LocalDateTime lastRecoveredAt;
 
-    @Version
-    @Column(name = "version", nullable = false)
-    private long version;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     public NdcThresholdState(ParticipantNDCId participantNDCId,
-                             ThresholdConfigurationId thresholdConfigurationId,
                              String createdBy) {
 
-        this.ndcThresholdStateId = new NdcThresholdStateId(Snowflake.get().nextId());
+        this.ndcThresholdStateId = new NdcThresholdStateId(UUID.randomUUID());
         this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
-        this.thresholdConfigurationId = Objects.requireNonNull(thresholdConfigurationId,
-                                                               "thresholdConfigurationId is required");
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
         this.currentState = NdcThresholdStateType.SAFE;
         this.breachCycleNo = 0L;
     }
 
-    public void recordEvaluation(BigDecimal currentPosition,
-                                 BigDecimal ndcAmount,
+    public void recordEvaluation(BigDecimal balance,
                                  BigDecimal ndcUsedPercent,
                                  String updatedBy) {
 
-        this.lastCurrentPosition = currentPosition;
-        this.lastNdcAmount = ndcAmount;
-        this.lastNdcUsedPercent = ndcUsedPercent;
+        this.lastEvaluatedBalance = balance;
+        this.lastEvaluatedNdcUsed = ndcUsedPercent;
         this.updatedBy = updatedBy;
     }
 
@@ -136,7 +125,23 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
         return true;
     }
 
-    @Override
+    @PrePersist
+    private void onCreate() {
+
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = this.createdAt;
+        }
+    }
+
+    @PreUpdate
+    private void onUpdate() {
+
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public NdcThresholdStateId getId() {
 
         return this.ndcThresholdStateId;

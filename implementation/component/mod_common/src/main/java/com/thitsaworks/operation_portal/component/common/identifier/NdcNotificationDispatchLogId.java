@@ -17,22 +17,26 @@ package com.thitsaworks.operation_portal.component.common.identifier;
 
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaId;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Embeddable
-public class NdcNotificationDispatchLogId extends JpaId<Long> {
+public class NdcNotificationDispatchLogId extends JpaId<UUID> {
 
-    @Column(name = "ndc_notification_dispatch_log_id")
-    private Long id;
+    @Convert(converter = UuidStringConverter.class)
+    @Column(name = "id", length = 36)
+    private UUID id;
 
     @Override
-    public Long getEntityId() {
+    public UUID getEntityId() {
 
         return this.id;
     }
