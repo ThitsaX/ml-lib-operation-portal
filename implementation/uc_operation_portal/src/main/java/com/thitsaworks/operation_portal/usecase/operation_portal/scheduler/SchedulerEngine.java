@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.scheduler;
 import com.thitsaworks.operation_portal.component.common.identifier.SchedulerConfigId;
 import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
 import com.thitsaworks.operation_portal.core.scheduler.model.repository.SchedulerConfigRepository;
+import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
 import com.thitsaworks.operation_portal.core.settlement.data.SettlementModelData;
 import com.thitsaworks.operation_portal.core.settlement.query.SettlementModelQuery;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,8 @@ public class SchedulerEngine {
 
     private final SettlementModelQuery settlementModelQuery;
 
+    private final ThresholdConfigurationQuery thresholdConfigurationQuery;
+
     private final ConcurrentMap<Long, ScheduledFuture<?>> futures = new ConcurrentHashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerEngine.class);
@@ -69,7 +72,7 @@ public class SchedulerEngine {
 
         cancel(schedulerConfigData.schedulerConfigId().getId());
 
-        if (!schedulerConfigData.active()) {
+        if (!schedulerConfigData.active() || !isSchedulerAllowed(schedulerConfigData)) {
             return;
         }
 
@@ -86,6 +89,17 @@ public class SchedulerEngine {
             throw new IllegalStateException("Failed to schedule config " + schedulerConfigData);
         }
         futures.put(schedulerConfigData.schedulerConfigId().getId(), future);
+    }
+
+    private boolean isSchedulerAllowed(SchedulerConfigData schedulerConfigData) {
+
+        if (!"NdcThresholdWorker".equals(schedulerConfigData.jobName())) {
+            return true;
+        }
+
+        return thresholdConfigurationQuery.getSchemeConfiguration()
+                                          .map(configuration -> configuration.thresholdEnabled())
+                                          .orElse(false);
     }
 
     public synchronized void cancel(Long schedulerConfigId) {
@@ -190,4 +204,3 @@ public class SchedulerEngine {
     record SchedulerNextRunInfo(ZoneId zoneId, ZonedDateTime nextRunTime) {}
 
 }
-

@@ -15,7 +15,7 @@
  */
 package com.thitsaworks.operation_portal.core.notification.query.impl.jpa;
 
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
+import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreReadTransactional;
@@ -62,6 +62,66 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
                    .findFirstByScopeTypeAndDfspIdAndStatus(
                        ThresholdScopeType.DFSP, dfspId, NdcConfigurationStatus.ACTIVE)
                    .map(ThresholdConfigurationData::new);
+    }
+
+    @Override
+    public ThresholdGateDecision checkGate(String dfspId) {
+
+        if (dfspId == null || dfspId.isBlank()) {
+            return new ThresholdGateDecision(
+                false,
+                false,
+                false,
+                "DFSP_ID_MISSING"
+            );
+        }
+
+        var schemeConfiguration = getSchemeConfiguration();
+
+        if (schemeConfiguration.isEmpty()) {
+            return new ThresholdGateDecision(
+                false,
+                false,
+                false,
+                "SCHEME_CONFIGURATION_MISSING_OR_INACTIVE"
+            );
+        }
+
+        if (!schemeConfiguration.get().thresholdEnabled()) {
+            return new ThresholdGateDecision(
+                false,
+                false,
+                false,
+                "SCHEME_GATE_OFF"
+            );
+        }
+
+        var dfspConfiguration = getDfspConfiguration(dfspId);
+
+        if (dfspConfiguration.isEmpty()) {
+            return new ThresholdGateDecision(
+                false,
+                true,
+                false,
+                "DFSP_CONFIGURATION_MISSING_OR_INACTIVE"
+            );
+        }
+
+        if (!dfspConfiguration.get().thresholdEnabled()) {
+            return new ThresholdGateDecision(
+                false,
+                true,
+                false,
+                "DFSP_GATE_OFF"
+            );
+        }
+
+        return new ThresholdGateDecision(
+            true,
+            true,
+            true,
+            "SCHEME_AND_DFSP_GATES_ON"
+        );
     }
 
 }

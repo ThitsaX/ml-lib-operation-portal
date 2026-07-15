@@ -15,6 +15,9 @@
  */
 package com.thitsaworks.operation_portal.core.notification.command.impl;
 
+import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
+import com.thitsaworks.operation_portal.component.misc.exception.ErrorMessage;
+import com.thitsaworks.operation_portal.component.misc.exception.InputException;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.notification.command.CreateThresholdConfigurationCommand;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
@@ -32,6 +35,16 @@ public class CreateThresholdConfigurationCommandHandler implements CreateThresho
     @Override
     @CoreWriteTransactional
     public Output execute(Input input) {
+
+        if (input.scopeType() == ThresholdScopeType.SCHEME
+            && this.thresholdConfigurationRepository
+                   .existsByScopeTypeAndDfspIdIsNull(ThresholdScopeType.SCHEME)) {
+
+            throw new InputException(
+                new ErrorMessage(
+                    "SCHEME_CONFIGURATION_ALREADY_EXISTS",
+                    "Only one scheme configuration is allowed."));
+        }
 
         ThresholdConfiguration configuration = new ThresholdConfiguration(
             input.scopeType(),

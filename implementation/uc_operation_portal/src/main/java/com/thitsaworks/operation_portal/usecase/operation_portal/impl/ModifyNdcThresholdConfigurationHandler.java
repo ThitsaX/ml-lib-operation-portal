@@ -29,6 +29,7 @@ import com.thitsaworks.operation_portal.core.notification.command.ModifyThreshol
 import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyNdcThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +44,12 @@ public class ModifyNdcThresholdConfigurationHandler
 
     private final ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand;
 
-    public ModifyNdcThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand) {
+    private final SchedulerEngine schedulerEngine;
+
+    public ModifyNdcThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand, SchedulerEngine schedulerEngine) {
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
         this.modifyThresholdConfigurationCommand = modifyThresholdConfigurationCommand;
+        this.schedulerEngine = schedulerEngine;
     }
 
 
@@ -58,6 +62,8 @@ public class ModifyNdcThresholdConfigurationHandler
                 input.thresholdEnabled(),
                 input.status() == null ? NdcConfigurationStatus.ACTIVE : input.status(),
                 input.updatedBy()));
+
+        this.schedulerEngine.refreshAllActive();
 
         return new Output(output.thresholdConfigurationId(), output.modified());
     }

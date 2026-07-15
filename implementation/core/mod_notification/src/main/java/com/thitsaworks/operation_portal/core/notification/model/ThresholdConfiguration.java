@@ -101,11 +101,16 @@ public class ThresholdConfiguration {
 
     private static void validateScope(ThresholdScopeType scopeType, String dfspId) {
 
-        if (scopeType == ThresholdScopeType.SCHEME && dfspId != null) {
+        if (scopeType == ThresholdScopeType.SCHEME
+            && dfspId != null
+            && !dfspId.isBlank()) {
+
             throw new IllegalArgumentException("SCHEME configuration cannot have dfspId");
         }
 
-        if (scopeType == ThresholdScopeType.DFSP && dfspId == null) {
+        if (scopeType == ThresholdScopeType.DFSP
+            && (dfspId == null || dfspId.isBlank())) {
+
             throw new IllegalArgumentException("DFSP configuration requires dfspId");
         }
     }

@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.core.notification.query;
+package com.thitsaworks.operation_portal.core.hub_services.query;
 
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
-
+import com.thitsaworks.operation_portal.core.hub_services.data.NdcLedgerData;
+import com.thitsaworks.operation_portal.core.hub_services.exception.HubServicesException;
 import java.util.List;
-import java.util.Optional;
 
-public interface ThresholdConfigurationQuery {
+public interface GetNdcLedgerDataQuery {
 
-    List<ThresholdConfigurationData> getAll();
+    record Input(List<String> participantNames) {
+    }
 
-    Optional<ThresholdConfigurationData> getSchemeConfiguration();
+    record Output(List<NdcLedgerData> data) {
+    }
 
-    Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId);
-
-    ThresholdGateDecision checkGate(String dfspId);
-
+    Output execute(Input input) throws HubServicesException;
 }

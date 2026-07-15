@@ -18,7 +18,6 @@ CREATE INDEX idx_job_execution_ndc_history
 CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
     id CHAR(36) NOT NULL,
     scope_type VARCHAR(20) NOT NULL,
-    scheme_id VARCHAR(100) NOT NULL,
     dfsp_id VARCHAR(100) NULL,
     threshold_enabled TINYINT(1) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
@@ -28,7 +27,7 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
     updated_by VARCHAR(100) NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_threshold_config_scope
-        UNIQUE (scheme_id, scope_type, dfsp_id),
+        UNIQUE (scope_type, dfsp_id),
     CONSTRAINT chk_threshold_config_scope
         CHECK (
             (scope_type = 'SCHEME' AND dfsp_id IS NULL)
@@ -40,14 +39,14 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
         CHECK (status IN ('ACTIVE', 'INACTIVE'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_threshold_config_scheme
-    ON tbl_threshold_configuration (scheme_id, scope_type);
+CREATE INDEX idx_threshold_config_scope
+    ON tbl_threshold_configuration (scope_type);
 
 CREATE INDEX idx_threshold_config_dfsp
     ON tbl_threshold_configuration (dfsp_id);
 
 CREATE INDEX idx_threshold_config_gate
-    ON tbl_threshold_configuration (scheme_id, threshold_enabled, status);
+    ON tbl_threshold_configuration (scope_type, threshold_enabled, status);
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_threshold_state (
     id CHAR(36) NOT NULL,

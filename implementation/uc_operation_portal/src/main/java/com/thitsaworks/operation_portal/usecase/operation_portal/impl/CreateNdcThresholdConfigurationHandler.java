@@ -23,6 +23,7 @@ import com.thitsaworks.operation_portal.core.notification.command.CreateThreshol
 import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateNdcThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,13 +36,16 @@ public class CreateNdcThresholdConfigurationHandler
 
     private final CreateThresholdConfigurationCommand createThresholdConfigurationCommand;
 
+    private final SchedulerEngine schedulerEngine;
+
     public CreateNdcThresholdConfigurationHandler(PrincipalCache principalCache,
                                                   ActionAuthorizationManager actionAuthorizationManager,
-
-                                                  CreateThresholdConfigurationCommand createThresholdConfigurationCommand) {
+                                                  CreateThresholdConfigurationCommand createThresholdConfigurationCommand,
+                                                  SchedulerEngine schedulerEngine) {
 
         super(principalCache, actionAuthorizationManager);
         this.createThresholdConfigurationCommand = createThresholdConfigurationCommand;
+        this.schedulerEngine = schedulerEngine;
     }
 
     @Override
@@ -53,6 +57,8 @@ public class CreateNdcThresholdConfigurationHandler
                 input.dfspId(),
                 input.thresholdEnabled(),
                 input.createdBy()));
+
+        this.schedulerEngine.refreshAllActive();
 
         return new Output(output.thresholdConfigurationId());
     }

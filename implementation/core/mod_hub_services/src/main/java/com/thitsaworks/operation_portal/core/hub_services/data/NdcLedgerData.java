@@ -13,22 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.core.notification.query;
+package com.thitsaworks.operation_portal.core.hub_services.data;
 
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
+import java.math.BigDecimal;
 
-import java.util.List;
-import java.util.Optional;
-
-public interface ThresholdConfigurationQuery {
-
-    List<ThresholdConfigurationData> getAll();
-
-    Optional<ThresholdConfigurationData> getSchemeConfiguration();
-
-    Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId);
-
-    ThresholdGateDecision checkGate(String dfspId);
-
+public record NdcLedgerData(
+    String participantName,
+    String currency,
+    BigDecimal currentBalance,
+    BigDecimal ndcLimitAmount,
+    boolean active
+) {
 }

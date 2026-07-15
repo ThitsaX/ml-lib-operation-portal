@@ -24,7 +24,7 @@ public interface CreateNdcThresholdConfiguration
 
     record Input(ThresholdScopeType scopeType,
                  String dfspId,
-                 Boolean thresholdEnabled,
+                 boolean thresholdEnabled,
                  String createdBy) { }
 
     record Output(ThresholdConfigurationId thresholdConfigurationId) { }

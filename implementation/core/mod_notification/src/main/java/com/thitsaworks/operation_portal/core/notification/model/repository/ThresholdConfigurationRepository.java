@@ -37,4 +37,6 @@ public interface ThresholdConfigurationRepository
     Optional<ThresholdConfiguration> findFirstByScopeTypeAndDfspIdAndStatus(ThresholdScopeType scopeType,
                                                                                       String dfspId,
                                                                                       NdcConfigurationStatus status);
+
+    boolean existsByScopeTypeAndDfspIdIsNull(ThresholdScopeType scopeType);
 }
