@@ -19,7 +19,6 @@ import com.thitsaworks.operation_portal.component.misc.exception.ErrorMessage;
 import com.thitsaworks.operation_portal.component.misc.exception.InputException;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.notification.command.ModifyThresholdConfigurationCommand;
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfiguration;
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdConfigurationRepository;
 import lombok.RequiredArgsConstructor;

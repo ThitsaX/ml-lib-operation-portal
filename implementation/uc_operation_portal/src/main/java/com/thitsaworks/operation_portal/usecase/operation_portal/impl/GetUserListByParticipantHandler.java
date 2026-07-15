@@ -101,7 +101,7 @@ public class GetUserListByParticipantHandler
 
             userInfoList.add(new GetUserListByParticipant.UserInfo(
                 userData.userId(), userData.name(), userData.email(), userData.firstName(),
-                userData.lastName(), userData.jobTitle(), roleList, userData.participantId(),
+                userData.lastName(), userData.jobTitle(), userData.allowNotification(), roleList, userData.participantId(),
                 userData.participantName().getValue(), userData.participantDescription(),
                 principalData.principalStatus().toString(),
                 Instant.ofEpochSecond(userData.createdDate())));

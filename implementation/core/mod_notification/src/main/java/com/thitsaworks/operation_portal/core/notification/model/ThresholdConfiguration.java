@@ -87,7 +87,9 @@ public class ThresholdConfiguration {
         this.createdBy = createdBy;
     }
 
-    public void update(boolean thresholdEnabled, NdcConfigurationStatus status, String updatedBy) {
+    public void update(boolean thresholdEnabled,
+                       NdcConfigurationStatus status,
+                       String updatedBy) {
 
         this.thresholdEnabled = thresholdEnabled;
         this.status = Objects.requireNonNull(status, "status is required");

@@ -15,10 +15,8 @@
  */
 package com.thitsaworks.operation_portal.core.notification.command;
 
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
-import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 
 public interface CreateThresholdConfigurationCommand {
 

@@ -32,6 +32,7 @@ public interface GetUser extends UseCase<GetUser.Input, GetUser.Output> {
                   String firstName,
                   String lastName,
                   String jobTitle,
+                  boolean allowNotification,
                   List<String> roleList,
                   ParticipantId participantId,
                   Long createdDate) { }

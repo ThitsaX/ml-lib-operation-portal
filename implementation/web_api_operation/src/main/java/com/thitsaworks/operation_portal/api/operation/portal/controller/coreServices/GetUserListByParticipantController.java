@@ -63,6 +63,7 @@ public class GetUserListByParticipantController {
                                                    user.firstName(),
                                                    user.lastName(),
                                                    user.jobTitle(),
+                                                   user.allowNotification(),
                                                    user.roleList(),
                                                    user.participantId()
                                                        .getEntityId()
@@ -93,6 +94,7 @@ public class GetUserListByParticipantController {
                                @JsonProperty("firstName") String firstName,
                                @JsonProperty("lastName") String lastName,
                                @JsonProperty("jobTitle") String jobTitle,
+                               @JsonProperty("allowNotification") boolean allowNotification,
                                @JsonProperty("roleList") List<String> roleList,
                                @JsonProperty("participantId") String participantId,
                                @JsonProperty("participantName") String participantName,

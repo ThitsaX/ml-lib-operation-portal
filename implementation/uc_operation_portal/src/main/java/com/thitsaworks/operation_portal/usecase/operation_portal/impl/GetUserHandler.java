@@ -94,7 +94,7 @@ public class GetUserHandler extends OperationPortalUseCase<GetUser.Input, GetUse
 
         return new GetUser.Output(
             new UserId(userData.userId().getId()), userData.name(), userData.email(),
-            userData.firstName(), userData.lastName(), userData.jobTitle(), roleList,
+            userData.firstName(), userData.lastName(), userData.jobTitle(), userData.allowNotification(), roleList,
             userData.participantId(), userData.createdDate());
     }
 

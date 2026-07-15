@@ -36,7 +36,8 @@ public interface CreateUser extends
                  String jobTitle,
                  List<RoleId> roleIdList,
                  ParticipantId participantId,
-                 PrincipalStatus status) { }
+                 PrincipalStatus status,
+                 boolean allowNotification) { }
 
     record Output(UserId userId,
                   boolean created) { }

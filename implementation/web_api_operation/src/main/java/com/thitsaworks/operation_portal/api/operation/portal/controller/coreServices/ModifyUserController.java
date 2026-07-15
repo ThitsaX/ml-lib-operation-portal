@@ -22,11 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
 import com.thitsaworks.operation_portal.component.common.identifier.RoleId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.Email;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +64,8 @@ public class ModifyUserController {
                                                                   new ParticipantId(Long.parseLong(
                                                                       request.participantId())),
                                                                   request.jobTitle(),
+                                                                  new Email(request.email()),
+                                                                  Boolean.TRUE.equals(request.allowNotification()),
                                                                   request.roleIdList()
                                                                          .stream()
                                                                          .map(role -> new RoleId(Long.parseLong(role)))
@@ -81,8 +85,12 @@ public class ModifyUserController {
                           @NotNull @JsonProperty("name") String name,
                           @NotNull @NotBlank @JsonProperty("firstName") String firstName,
                           @NotNull @NotBlank @JsonProperty("lastName") String lastName,
+                          @NotNull @NotBlank @Pattern(
+                              regexp = Email.FORMAT,
+                              message = "Email must be with valid format.") @JsonProperty("email") String email,
                           @NotNull @NotBlank @JsonProperty("participantId") String participantId,
                           @NotNull @JsonProperty("jobTitle") String jobTitle,
+                          @JsonProperty("allowNotification") Boolean allowNotification,
                           @NotNull @JsonProperty("roleIdList") List<String> roleIdList
     ) implements Serializable { }
 

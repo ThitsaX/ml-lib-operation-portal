@@ -60,7 +60,7 @@ public class CreateUserCommandHandler implements CreateUserCommand {
 
         User user =
             participant.addUser(input.name(), input.email(), input.firstName(), input.lastName(),
-                                input.jobTitle());
+                                input.jobTitle(), input.allowNotification());
 
         this.participantRepository.save(participant);
 

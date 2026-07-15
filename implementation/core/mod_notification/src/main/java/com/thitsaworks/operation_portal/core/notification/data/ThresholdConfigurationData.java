@@ -20,7 +20,6 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfiguration;
 
-
 public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfigurationId,
                                          ThresholdScopeType scopeType,
                                          String dfspId,
@@ -36,7 +35,7 @@ public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfi
              thresholdConfiguration.getDfspId(),
              thresholdConfiguration.isThresholdEnabled(),
              thresholdConfiguration.getStatus(),
-                thresholdConfiguration.getCreatedBy(),
+             thresholdConfiguration.getCreatedBy(),
              thresholdConfiguration.getUpdatedBy());
 
     }
