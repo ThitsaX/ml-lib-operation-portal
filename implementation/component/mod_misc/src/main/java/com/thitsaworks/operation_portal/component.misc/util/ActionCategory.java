@@ -46,6 +46,8 @@ public enum ActionCategory {
 
     AUDIT_AND_LOGS("Audit & Logs"),
 
+    REVENUE_CONFIG("Revenue Config"),
+
     SCHEDULER_AND_JOB_CONFIGURATION("Scheduler / Job Configuration"),
 
     SYSTEM_JOBS_AND_SCHEDULED_EXECUTORS("Scheduled Job Executors / System Jobs");
