@@ -31,14 +31,10 @@ public interface ThresholdConfigurationRepository
     extends JpaRepository<ThresholdConfiguration, ThresholdConfigurationId>,
             QuerydslPredicateExecutor<ThresholdConfiguration> {
 
-    List<ThresholdConfiguration> findBySchemeId(String schemeId);
-
-    Optional<ThresholdConfiguration> findFirstByScopeTypeAndSchemeIdAndStatus(ThresholdScopeType scopeType,
-                                                                              String schemeId,
+    Optional<ThresholdConfiguration> findFirstByScopeTypeAndStatus(ThresholdScopeType scopeType,
                                                                               NdcConfigurationStatus status);
 
-    Optional<ThresholdConfiguration> findFirstByScopeTypeAndSchemeIdAndDfspIdAndStatus(ThresholdScopeType scopeType,
-                                                                                      String schemeId,
+    Optional<ThresholdConfiguration> findFirstByScopeTypeAndDfspIdAndStatus(ThresholdScopeType scopeType,
                                                                                       String dfspId,
                                                                                       NdcConfigurationStatus status);
 }

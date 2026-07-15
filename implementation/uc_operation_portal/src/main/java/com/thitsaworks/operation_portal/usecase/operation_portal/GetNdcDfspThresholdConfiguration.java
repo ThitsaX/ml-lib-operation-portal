@@ -23,12 +23,11 @@ import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 public interface GetNdcDfspThresholdConfiguration
     extends UseCase<GetNdcDfspThresholdConfiguration.Input, GetNdcDfspThresholdConfiguration.Output> {
 
-    record Input(String schemeId, String dfspId) { }
+    record Input(String dfspId) { }
 
     record Output(
             ThresholdConfigurationId thresholdConfigurationId,
             ThresholdScopeType scopeType,
-            String schemeId,
             String dfspId,
             boolean thresholdEnabled,
             NdcConfigurationStatus status,

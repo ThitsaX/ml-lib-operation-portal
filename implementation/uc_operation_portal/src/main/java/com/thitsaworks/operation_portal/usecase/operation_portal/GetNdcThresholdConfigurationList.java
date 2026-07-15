@@ -32,7 +32,6 @@ public interface GetNdcThresholdConfigurationList
     record NdcThresholdConfiguration(
             ThresholdConfigurationId thresholdConfigurationId,
             ThresholdScopeType scopeType,
-            String schemeId,
             String dfspId,
             boolean thresholdEnabled,
             NdcConfigurationStatus status,

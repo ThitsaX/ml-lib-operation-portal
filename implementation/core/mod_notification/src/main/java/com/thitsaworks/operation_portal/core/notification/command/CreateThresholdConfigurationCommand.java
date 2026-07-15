@@ -23,7 +23,6 @@ import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigur
 public interface CreateThresholdConfigurationCommand {
 
     record Input(ThresholdScopeType scopeType,
-                 String schemeId,
                  String dfspId,
                  boolean thresholdEnabled,
                  String createdBy) { }

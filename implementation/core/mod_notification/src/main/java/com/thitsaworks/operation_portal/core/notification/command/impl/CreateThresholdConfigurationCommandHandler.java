@@ -35,7 +35,6 @@ public class CreateThresholdConfigurationCommandHandler implements CreateThresho
 
         ThresholdConfiguration configuration = new ThresholdConfiguration(
             input.scopeType(),
-            input.schemeId(),
             input.dfspId(),
             input.thresholdEnabled(),
             input.createdBy());

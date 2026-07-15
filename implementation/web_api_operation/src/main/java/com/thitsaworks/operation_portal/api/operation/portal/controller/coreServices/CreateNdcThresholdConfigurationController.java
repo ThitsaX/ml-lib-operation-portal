@@ -60,7 +60,6 @@ public class CreateNdcThresholdConfigurationController {
         CreateNdcThresholdConfiguration.Output output = this.createNdcThresholdConfiguration.execute(
             new CreateNdcThresholdConfiguration.Input(
                 request.scopeType(),
-                request.schemeId(),
                 request.dfspId(),
                 request.thresholdEnabled(),
                 userContext.userId().toString()));
@@ -75,7 +74,6 @@ public class CreateNdcThresholdConfigurationController {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
         @NotNull @JsonProperty("scopeType") ThresholdScopeType scopeType,
-        @NotBlank @JsonProperty("schemeId") String schemeId,
         @JsonProperty("dfspId") String dfspId,
         @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
         @NotBlank @JsonProperty("createdBy") String createdBy
