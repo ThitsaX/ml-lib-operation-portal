@@ -56,7 +56,6 @@ public class GetNdcThresholdConfigurationListHandler
       return new Output(thresholdConfiguration.stream().map(tc -> new GetNdcThresholdConfigurationList.NdcThresholdConfiguration(
               tc.thresholdConfigurationId(),
               tc.scopeType(),
-              tc.schemeId(),
               tc.dfspId(),
               tc.thresholdEnabled(),
               tc.status(),

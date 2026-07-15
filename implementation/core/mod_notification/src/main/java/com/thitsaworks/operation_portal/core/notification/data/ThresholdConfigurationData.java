@@ -23,7 +23,6 @@ import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfigu
 
 public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfigurationId,
                                          ThresholdScopeType scopeType,
-                                         String schemeId,
                                          String dfspId,
                                          boolean thresholdEnabled,
                                          NdcConfigurationStatus status,
@@ -34,7 +33,6 @@ public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfi
 
         this(thresholdConfiguration.getThresholdConfigurationId(),
              thresholdConfiguration.getScopeType(),
-             thresholdConfiguration.getSchemeId(),
              thresholdConfiguration.getDfspId(),
              thresholdConfiguration.isThresholdEnabled(),
              thresholdConfiguration.getStatus(),

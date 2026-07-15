@@ -40,19 +40,18 @@ public class GetNdcSchemeThresholdConfigurationController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations/{schemeId}")
-    public ResponseEntity<Response> execute(@PathVariable("schemeId") String schemeId)
+    @GetMapping("/secured/ndc/configurations/scheme")
+    public ResponseEntity<Response> execute()
         throws DomainException, JsonProcessingException {
 
-        LOG.info("Get NDC Scheme Threshold Configuration Request : schemeId=[{}]", schemeId);
+        LOG.info("Get NDC Scheme Threshold Configuration Request");
 
         GetNdcSchemeThresholdConfiguration.Output output =
-            this.getNdcSchemeThresholdConfiguration.execute(new GetNdcSchemeThresholdConfiguration.Input(schemeId));
+            this.getNdcSchemeThresholdConfiguration.execute(new GetNdcSchemeThresholdConfiguration.Input());
 
         var response = new Response(
                 output.thresholdConfigurationId().toString(),
                 output.scopeType().toString(),
-                output.schemeId(),
                 output.dfspId(),
                 output.thresholdEnabled(),
                 output.status().toString(),
@@ -70,7 +69,6 @@ public class GetNdcSchemeThresholdConfigurationController {
     public record Response(
             @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
-            @JsonProperty("schemeId") String schemeId,
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,

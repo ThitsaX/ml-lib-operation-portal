@@ -47,29 +47,20 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
     }
 
     @Override
-    public List<ThresholdConfigurationData> getByScheme(String schemeId) {
-
-        return this.thresholdConfigurationRepository.findBySchemeId(schemeId)
-                                                    .stream()
-                                                    .map(ThresholdConfigurationData::new)
-                                                    .toList();
-    }
-
-    @Override
-    public Optional<ThresholdConfigurationData> getSchemeConfiguration(String schemeId) {
+    public Optional<ThresholdConfigurationData> getSchemeConfiguration() {
 
         return this.thresholdConfigurationRepository
-                   .findFirstByScopeTypeAndSchemeIdAndStatus(
-                       ThresholdScopeType.SCHEME, schemeId, NdcConfigurationStatus.ACTIVE)
+                   .findFirstByScopeTypeAndStatus(
+                       ThresholdScopeType.SCHEME, NdcConfigurationStatus.ACTIVE)
                    .map(ThresholdConfigurationData::new);
     }
 
     @Override
-    public Optional<ThresholdConfigurationData> getDfspConfiguration(String schemeId, String dfspId) {
+    public Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId) {
 
         return this.thresholdConfigurationRepository
-                   .findFirstByScopeTypeAndSchemeIdAndDfspIdAndStatus(
-                       ThresholdScopeType.DFSP, schemeId, dfspId, NdcConfigurationStatus.ACTIVE)
+                   .findFirstByScopeTypeAndDfspIdAndStatus(
+                       ThresholdScopeType.DFSP, dfspId, NdcConfigurationStatus.ACTIVE)
                    .map(ThresholdConfigurationData::new);
     }
 

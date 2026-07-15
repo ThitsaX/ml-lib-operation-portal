@@ -50,12 +50,11 @@ public class GetNdcSchemeThresholdConfigurationHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        Optional<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getSchemeConfiguration(input.schemeId());
+        Optional<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getSchemeConfiguration();
 
         return new Output(
                 thresholdConfiguration.get().thresholdConfigurationId(),
                 thresholdConfiguration.get().scopeType(),
-                thresholdConfiguration.get().schemeId(),
                 thresholdConfiguration.get().dfspId(),
                 thresholdConfiguration.get().thresholdEnabled(),
                 thresholdConfiguration.get().status(),

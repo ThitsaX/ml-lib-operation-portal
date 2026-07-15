@@ -47,8 +47,6 @@ public class ThresholdConfiguration {
     @Enumerated(EnumType.STRING)
     private ThresholdScopeType scopeType;
 
-    @Column(name = "scheme_id", nullable = false)
-    private String schemeId;
 
     @Column(name = "dfsp_id")
     private String dfspId;
@@ -73,19 +71,16 @@ public class ThresholdConfiguration {
     private String updatedBy;
 
     public ThresholdConfiguration(ThresholdScopeType scopeType,
-                                  String schemeId,
                                   String dfspId,
                                   boolean thresholdEnabled,
                                   String createdBy) {
 
         Objects.requireNonNull(scopeType, "scopeType is required");
-        Objects.requireNonNull(schemeId, "schemeId is required");
         Objects.requireNonNull(createdBy, "createdBy is required");
         validateScope(scopeType, dfspId);
 
         this.thresholdConfigurationId = new ThresholdConfigurationId(UUID.randomUUID());
         this.scopeType = scopeType;
-        this.schemeId = schemeId;
         this.dfspId = dfspId;
         this.thresholdEnabled = thresholdEnabled;
         this.status = NdcConfigurationStatus.ACTIVE;

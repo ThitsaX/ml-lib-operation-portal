@@ -25,10 +25,8 @@ public interface ThresholdConfigurationQuery {
 
     List<ThresholdConfigurationData> getAll();
 
-    List<ThresholdConfigurationData> getByScheme(String schemeId);
+    Optional<ThresholdConfigurationData> getSchemeConfiguration();
 
-    Optional<ThresholdConfigurationData> getSchemeConfiguration(String schemeId);
-
-    Optional<ThresholdConfigurationData> getDfspConfiguration(String schemeId, String dfspId);
+    Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId);
 
 }

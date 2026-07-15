@@ -23,7 +23,6 @@ public interface CreateNdcThresholdConfiguration
     extends UseCase<CreateNdcThresholdConfiguration.Input, CreateNdcThresholdConfiguration.Output> {
 
     record Input(ThresholdScopeType scopeType,
-                 String schemeId,
                  String dfspId,
                  Boolean thresholdEnabled,
                  String createdBy) { }

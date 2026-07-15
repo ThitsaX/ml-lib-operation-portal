@@ -50,7 +50,6 @@ public class CreateNdcThresholdConfigurationHandler
         CreateThresholdConfigurationCommand.Output output = this.createThresholdConfigurationCommand.execute(
             new CreateThresholdConfigurationCommand.Input(
                 input.scopeType(),
-                input.schemeId(),
                 input.dfspId(),
                 input.thresholdEnabled(),
                 input.createdBy()));
@@ -63,7 +62,6 @@ public class CreateNdcThresholdConfigurationHandler
 this is request body
 {
   "scopeType": "DFSP",
-  "schemeId": "1",
   "dfspId": "1",
   "thresholdEnabled": true,
   "createdBy": "admin"
