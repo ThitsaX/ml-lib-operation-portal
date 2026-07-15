@@ -17,11 +17,16 @@ package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
+import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -31,4 +36,20 @@ public interface NdcAlertEventRepository
 
     Optional<NdcAlertEvent> findByParticipantNDCIdAndBreachCycleNo(ParticipantNDCId participantNDCId,
                                                                    long breachCycleNo);
+
+    @Query("""
+        select e
+        from NdcAlertEvent e
+        where (:participantName is null or e.participantName = :participantName)
+          and (:currency is null or e.currency = :currency)
+          and (:currentState is null or e.currentState = :currentState)
+          and (:fromTime is null or e.eventTime >= :fromTime)
+          and (:toTime is null or e.eventTime <= :toTime)
+        order by e.eventTime desc
+        """)
+    List<NdcAlertEvent> search(@Param("participantName") String participantName,
+                               @Param("currency") String currency,
+                               @Param("currentState") NdcThresholdStateType currentState,
+                               @Param("fromTime") LocalDateTime from,
+                               @Param("toTime") LocalDateTime to);
 }

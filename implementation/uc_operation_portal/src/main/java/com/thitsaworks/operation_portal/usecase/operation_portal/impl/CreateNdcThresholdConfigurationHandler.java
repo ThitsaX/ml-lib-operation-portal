@@ -59,3 +59,13 @@ public class CreateNdcThresholdConfigurationHandler
     }
 
 }
+/*
+this is request body
+{
+  "scopeType": "DFSP",
+  "schemeId": "1",
+  "dfspId": "1",
+  "thresholdEnabled": true,
+  "createdBy": "admin"
+}
+ */

@@ -68,7 +68,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
     public Optional<ThresholdConfigurationData> getDfspConfiguration(String schemeId, String dfspId) {
 
         return this.thresholdConfigurationRepository
-                   .findFirstByScopeTypeAndSchemeIdAndfspIdAndStatus(
+                   .findFirstByScopeTypeAndSchemeIdAndDfspIdAndStatus(
                        ThresholdScopeType.DFSP, schemeId, dfspId, NdcConfigurationStatus.ACTIVE)
                    .map(ThresholdConfigurationData::new);
     }

@@ -20,7 +20,9 @@ import com.thitsaworks.operation_portal.component.common.type.JobStatus;
 import com.thitsaworks.operation_portal.core.scheduler.model.JobExecutionLog;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -92,4 +94,22 @@ public interface JobExecutionLogRepository extends JpaRepository<JobExecutionLog
      * @return a sorted list of job execution logs within the specified date range
      */
     List<JobExecutionLog> findByStartTimeBetween(LocalDateTime startDate, LocalDateTime endDate, Sort sort);
+
+    @Query("""
+        select l
+        from JobExecutionLog l
+        where (:jobName is null or l.jobName = :jobName)
+          and (:jobStatus is null or l.jobStatus = :jobStatus)
+          and (:participantName is null or l.participantName = :participantName)
+          and (:currency is null or l.currency = :currency)
+          and (:fromTime is null or l.startTime >= :fromTime)
+          and (:toTime is null or l.startTime <= :toTime)
+        order by l.startTime desc
+        """)
+    List<JobExecutionLog> search(@Param("jobName") String jobName,
+                                 @Param("jobStatus") JobStatus jobStatus,
+                                 @Param("participantName") String participantName,
+                                 @Param("currency") String currency,
+                                 @Param("fromTime") LocalDateTime from,
+                                 @Param("toTime") LocalDateTime to);
 }

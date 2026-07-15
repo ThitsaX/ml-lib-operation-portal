@@ -17,11 +17,16 @@ package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
+import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -31,4 +36,21 @@ public interface NdcNotificationDispatchLogRepository
 
     Optional<NdcNotificationDispatchLog> findByAlertEventIdAndRecipientUserId(NdcAlertEventId alertEventId,
                                                                               String recipientUserId);
+
+    @Query("""
+        select d, p.participantName, p.currency
+        from NdcNotificationDispatchLog d
+        join ParticipantNDC p on p.participantNDCId = d.participantNDCId
+        where (:participantName is null or p.participantName = :participantName)
+          and (:currency is null or p.currency = :currency)
+          and (:deliveryStatus is null or d.deliveryStatus = :deliveryStatus)
+          and (:fromTime is null or d.createdAt >= :fromTime)
+          and (:toTime is null or d.createdAt <= :toTime)
+        order by d.createdAt desc
+        """)
+    List<Object[]> search(@Param("participantName") String participantName,
+                          @Param("currency") String currency,
+                          @Param("deliveryStatus") NdcDeliveryStatus deliveryStatus,
+                          @Param("fromTime") LocalDateTime from,
+                          @Param("toTime") LocalDateTime to);
 }

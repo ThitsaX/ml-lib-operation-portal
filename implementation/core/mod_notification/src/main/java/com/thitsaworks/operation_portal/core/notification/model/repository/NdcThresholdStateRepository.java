@@ -17,11 +17,15 @@ package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
+import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcThresholdState;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,4 +34,17 @@ public interface NdcThresholdStateRepository
             QuerydslPredicateExecutor<NdcThresholdState> {
 
     Optional<NdcThresholdState> findByParticipantNDCId(ParticipantNDCId participantNDCId);
+
+    @Query("""
+        select s, p.participantName, p.currency
+        from NdcThresholdState s
+        join ParticipantNDC p on p.participantNDCId = s.participantNDCId
+        where (:participantName is null or p.participantName = :participantName)
+          and (:currency is null or p.currency = :currency)
+          and (:currentState is null or s.currentState = :currentState)
+        order by s.updatedAt desc
+        """)
+    List<Object[]> search(@Param("participantName") String participantName,
+                          @Param("currency") String currency,
+                          @Param("currentState") NdcThresholdStateType currentState);
 }
