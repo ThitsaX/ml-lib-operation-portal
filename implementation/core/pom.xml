@@ -25,6 +25,7 @@
         <module>mod_scheduler</module>
         <module>mod_settlement</module>
         <module>mod_notification</module>
+        <module>mod_email</module>
 
     </modules>
 

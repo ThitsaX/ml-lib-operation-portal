@@ -15,8 +15,6 @@
  */
 package com.thitsaworks.operation_portal.component.misc.util;
 
-import lombok.Value;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -51,20 +49,59 @@ public class MMDateTimeUtil {
                 zonedDateTime.getSecond());
     }
 
-    @Value
     public static class MMLocalTime {
 
-        private int year;
+        private final int year;
 
-        private int month;
+        private final int month;
 
-        private int date;
+        private final int date;
 
-        private int hour;
+        private final int hour;
 
-        private int minute;
+        private final int minute;
 
-        private int second;
+        private final int second;
+
+        public MMLocalTime(int year, int month, int date, int hour, int minute, int second) {
+
+            this.year = year;
+            this.month = month;
+            this.date = date;
+            this.hour = hour;
+            this.minute = minute;
+            this.second = second;
+        }
+
+        public int getYear() {
+
+            return this.year;
+        }
+
+        public int getMonth() {
+
+            return this.month;
+        }
+
+        public int getDate() {
+
+            return this.date;
+        }
+
+        public int getHour() {
+
+            return this.hour;
+        }
+
+        public int getMinute() {
+
+            return this.minute;
+        }
+
+        public int getSecond() {
+
+            return this.second;
+        }
 
     }
 

@@ -15,13 +15,8 @@
  */
 package com.thitsaworks.operation_portal.component.misc.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.text.MessageFormat;
 
-@Getter
-@AllArgsConstructor
 public class ErrorMessage {
 
     private final String code;
@@ -30,9 +25,31 @@ public class ErrorMessage {
 
     private final String description;
 
+    public ErrorMessage(String code, String defaultMessage, String description) {
+
+        this.code = code;
+        this.defaultMessage = defaultMessage;
+        this.description = description;
+    }
+
     public ErrorMessage(String code, String defaultMessage) {
 
         this(code, defaultMessage, "");
+    }
+
+    public String getCode() {
+
+        return this.code;
+    }
+
+    public String getDefaultMessage() {
+
+        return this.defaultMessage;
+    }
+
+    public String getDescription() {
+
+        return this.description;
     }
 
     public ErrorMessage code(String code) {

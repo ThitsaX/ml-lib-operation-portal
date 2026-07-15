@@ -26,7 +26,6 @@ import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
-import lombok.Value;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -76,12 +75,27 @@ public class DfspSecurityHeader {
         return verifyingSignature.equals(jwsToken);
     }
 
-    @Value
     private static class Envelope implements Serializable {
 
-        String uri;
+        private final String uri;
 
-        String payload;
+        private final String payload;
+
+        private Envelope(String uri, String payload) {
+
+            this.uri = uri;
+            this.payload = payload;
+        }
+
+        public String getUri() {
+
+            return this.uri;
+        }
+
+        public String getPayload() {
+
+            return this.payload;
+        }
 
     }
 
