@@ -24,6 +24,7 @@
         <module>mod_report</module>
         <module>mod_scheduler</module>
         <module>mod_settlement</module>
+        <module>mod_revenue_party</module>
 
     </modules>
 
