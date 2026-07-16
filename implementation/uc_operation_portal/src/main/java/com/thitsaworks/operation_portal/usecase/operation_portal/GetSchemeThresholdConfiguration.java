@@ -16,17 +16,22 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
+import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-public interface CreateNdcThresholdConfiguration
-    extends UseCase<CreateNdcThresholdConfiguration.Input, CreateNdcThresholdConfiguration.Output> {
+public interface GetSchemeThresholdConfiguration
+    extends UseCase<GetSchemeThresholdConfiguration.Input, GetSchemeThresholdConfiguration.Output> {
 
-    record Input(ThresholdScopeType scopeType,
-                 String dfspId,
-                 boolean thresholdEnabled,
-                 String createdBy) { }
+    record Input() { }
 
-    record Output(ThresholdConfigurationId thresholdConfigurationId) { }
+    record Output(
+            ThresholdConfigurationId thresholdConfigurationId,
+            ThresholdScopeType scopeType,
+            String dfspId,
+            boolean thresholdEnabled,
+            NdcConfigurationStatus status,
+            String createdBy,
+            String updatedBy) { }
 
 }

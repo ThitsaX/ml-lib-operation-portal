@@ -20,23 +20,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcSchemeThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GetSchemeThresholdConfiguration;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class GetNdcSchemeThresholdConfigurationController {
+public class GetSchemeThresholdConfigurationController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GetNdcSchemeThresholdConfigurationController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GetSchemeThresholdConfigurationController.class);
 
-    private final GetNdcSchemeThresholdConfiguration getNdcSchemeThresholdConfiguration;
+    private final GetSchemeThresholdConfiguration getSchemeThresholdConfiguration;
 
     private final ObjectMapper objectMapper;
 
@@ -46,8 +45,8 @@ public class GetNdcSchemeThresholdConfigurationController {
 
         LOG.info("Get NDC Scheme Threshold Configuration Request");
 
-        GetNdcSchemeThresholdConfiguration.Output output =
-            this.getNdcSchemeThresholdConfiguration.execute(new GetNdcSchemeThresholdConfiguration.Input());
+        GetSchemeThresholdConfiguration.Output output =
+            this.getSchemeThresholdConfiguration.execute(new GetSchemeThresholdConfiguration.Input());
 
         var response = new Response(
                 output.thresholdConfigurationId().toString(),

@@ -20,8 +20,8 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-public interface GetNdcDfspThresholdConfiguration
-    extends UseCase<GetNdcDfspThresholdConfiguration.Input, GetNdcDfspThresholdConfiguration.Output> {
+public interface GetDfspThresholdConfiguration
+    extends UseCase<GetDfspThresholdConfiguration.Input, GetDfspThresholdConfiguration.Output> {
 
     record Input(String dfspId) { }
 

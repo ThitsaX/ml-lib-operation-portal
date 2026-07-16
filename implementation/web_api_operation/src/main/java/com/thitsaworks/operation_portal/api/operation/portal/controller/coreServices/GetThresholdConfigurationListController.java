@@ -20,47 +20,49 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcDfspThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GetThresholdConfigurationList;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-public class GetNdcDfspThresholdConfigurationController {
+public class GetThresholdConfigurationListController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GetNdcDfspThresholdConfigurationController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GetThresholdConfigurationListController.class);
 
-    private final GetNdcDfspThresholdConfiguration getNdcDfspThresholdConfiguration;
+    private final GetThresholdConfigurationList getThresholdConfigurationList;
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations/dfsp/{dfspId}")
-    public ResponseEntity<Response> execute(@PathVariable("dfspId") String dfspId)
-        throws DomainException, JsonProcessingException {
+    @GetMapping("/secured/ndc/configurations")
+    public ResponseEntity<Response> execute() throws DomainException, JsonProcessingException {
 
-        LOG.info("Get NDC DFSP Threshold Configuration Request : dfspId=[{}]", dfspId);
+        LOG.info("Get NDC Threshold Configuration List Request");
 
-        GetNdcDfspThresholdConfiguration.Output output =
-            this.getNdcDfspThresholdConfiguration.execute(
-                new GetNdcDfspThresholdConfiguration.Input(dfspId));
+        GetThresholdConfigurationList.Output output =
+            this.getThresholdConfigurationList.execute(new GetThresholdConfigurationList.Input());
 
-        var response = new Response(
-                output.thresholdConfigurationId().toString(),
-                output.scopeType().toString(),
-                output.dfspId(),
-                output.thresholdEnabled(),
-                output.status().toString(),
-                output.createdBy(),
-                output.updatedBy()
-        );
+        List<NdcThresholdConfiguration> configurations = output.configurations().stream()
+            .map(config -> new NdcThresholdConfiguration(
+                config.thresholdConfigurationId().toString(),
+                config.scopeType().toString(),
+                config.dfspId(),
+                config.thresholdEnabled(),
+                config.status().toString(),
+                config.createdBy(),
+                config.updatedBy()
+            ))
+            .toList();
+        var response = new Response(configurations);
 
-        LOG.info("Get NDC DFSP Threshold Configuration Response : [{}]",
+        LOG.info("Get NDC Threshold Configuration List Response : [{}]",
                  this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -68,13 +70,17 @@ public class GetNdcDfspThresholdConfigurationController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
+        @JsonProperty("configurations") List<NdcThresholdConfiguration> configurations
+    ) { }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record NdcThresholdConfiguration(
             @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
-            @JsonProperty("createBy") String createdBy,
+            @JsonProperty("createdBy") String createdBy,
             @JsonProperty("updatedBy") String updatedBy
     ) { }
 

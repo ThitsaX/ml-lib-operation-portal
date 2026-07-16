@@ -32,5 +32,7 @@ public class SecurityErrors {
     public static final ErrorMessage JSON_UI_NOT_FOUND = new ErrorMessage("JSON_UI_NOT_FOUND", "Json UI is not found.");
     public static final ErrorMessage JSON_PROCESSING_ERROR = new ErrorMessage("JSON_PROCESSING_ERROR", "Something went wrong in Json processing.");
     public static final ErrorMessage ACCOUNT_INACTIVE = new ErrorMessage("ACCOUNT_INACTIVE", "Account is inactive.");
+
+    public static final ErrorMessage INVALID_NDC_WORKER_CONFIG = new ErrorMessage("INVALID_NDC_WORKER_CONFIG", "Invalid NDC worker configuration.");
     //@@formatter:on
 }

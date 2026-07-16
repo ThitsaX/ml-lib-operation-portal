@@ -15,17 +15,15 @@
  */
 package com.thitsaworks.operation_portal.api.operation.portal.security;
 
+import com.thitsaworks.operation_portal.api.operation.portal.error.ErrorResponse;
+import com.thitsaworks.operation_portal.api.operation.portal.security.exception.SecurityErrors;
 import com.thitsaworks.operation_portal.component.misc.exception.ErrorMessage;
 import com.thitsaworks.operation_portal.component.misc.exception.InputException;
 import org.springframework.scheduling.support.CronExpression;
 
+
 public final class NdcWorkerConfigRequestValidator {
 
-    private static final String NDC_THRESHOLD_WORKER = "NdcThresholdWorker";
-    private static final ErrorMessage INVALID_NDC_WORKER_CONFIG =
-        new ErrorMessage(
-            "INVALID_NDC_WORKER_CONFIG",
-            "Invalid NDC worker configuration.");
 
     private NdcWorkerConfigRequestValidator() {
     }
@@ -100,7 +98,7 @@ public final class NdcWorkerConfigRequestValidator {
 
     private static InputException invalid(String message) {
 
-        return new InputException(INVALID_NDC_WORKER_CONFIG.defaultMessage(message));
+        return new InputException(SecurityErrors.INVALID_NDC_WORKER_CONFIG.defaultMessage(message));
     }
 
     public record Values(String cronExpression) {

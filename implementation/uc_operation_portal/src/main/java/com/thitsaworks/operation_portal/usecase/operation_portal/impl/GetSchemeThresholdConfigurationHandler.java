@@ -25,9 +25,8 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditComm
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
-import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcSchemeThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GetSchemeThresholdConfiguration;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,14 +34,14 @@ import java.util.Optional;
 
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
-public class GetNdcSchemeThresholdConfigurationHandler
-    extends OperationPortalAuditableUseCase<GetNdcSchemeThresholdConfiguration.Input,
-        GetNdcSchemeThresholdConfiguration.Output>
-    implements GetNdcSchemeThresholdConfiguration {
+public class GetSchemeThresholdConfigurationHandler
+    extends OperationPortalAuditableUseCase<GetSchemeThresholdConfiguration.Input,
+        GetSchemeThresholdConfiguration.Output>
+    implements GetSchemeThresholdConfiguration {
 
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
-    public GetNdcSchemeThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ThresholdConfigurationQuery thresholdConfigurationQuery) {
+    public GetSchemeThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ThresholdConfigurationQuery thresholdConfigurationQuery) {
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
         this.thresholdConfigurationQuery = thresholdConfigurationQuery;
     }

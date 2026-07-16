@@ -20,28 +20,27 @@ import com.thitsaworks.operation_portal.component.misc.exception.DomainException
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.command.CreateThresholdConfigurationCommand;
-import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
-import com.thitsaworks.operation_portal.usecase.operation_portal.CreateNdcThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.CreateThresholdConfiguration;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
-public class CreateNdcThresholdConfigurationHandler
-    extends OperationPortalUseCase<CreateNdcThresholdConfiguration.Input,
-        CreateNdcThresholdConfiguration.Output>
-    implements CreateNdcThresholdConfiguration {
+public class CreateThresholdConfigurationHandler
+    extends OperationPortalUseCase<CreateThresholdConfiguration.Input,
+        CreateThresholdConfiguration.Output>
+    implements CreateThresholdConfiguration {
 
     private final CreateThresholdConfigurationCommand createThresholdConfigurationCommand;
 
     private final SchedulerEngine schedulerEngine;
 
-    public CreateNdcThresholdConfigurationHandler(PrincipalCache principalCache,
-                                                  ActionAuthorizationManager actionAuthorizationManager,
-                                                  CreateThresholdConfigurationCommand createThresholdConfigurationCommand,
-                                                  SchedulerEngine schedulerEngine) {
+    public CreateThresholdConfigurationHandler(PrincipalCache principalCache,
+                                               ActionAuthorizationManager actionAuthorizationManager,
+                                               CreateThresholdConfigurationCommand createThresholdConfigurationCommand,
+                                               SchedulerEngine schedulerEngine) {
 
         super(principalCache, actionAuthorizationManager);
         this.createThresholdConfigurationCommand = createThresholdConfigurationCommand;

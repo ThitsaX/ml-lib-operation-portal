@@ -26,9 +26,8 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditComma
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.command.ModifyThresholdConfigurationCommand;
-import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
-import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyNdcThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyThresholdConfiguration;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
@@ -37,16 +36,16 @@ import java.util.UUID;
 
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
-public class ModifyNdcThresholdConfigurationHandler
-    extends OperationPortalAuditableUseCase<ModifyNdcThresholdConfiguration.Input,
-        ModifyNdcThresholdConfiguration.Output>
-    implements ModifyNdcThresholdConfiguration {
+public class ModifyThresholdConfigurationHandler
+    extends OperationPortalAuditableUseCase<ModifyThresholdConfiguration.Input,
+        ModifyThresholdConfiguration.Output>
+    implements ModifyThresholdConfiguration {
 
     private final ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand;
 
     private final SchedulerEngine schedulerEngine;
 
-    public ModifyNdcThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand, SchedulerEngine schedulerEngine) {
+    public ModifyThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ModifyThresholdConfigurationCommand modifyThresholdConfigurationCommand, SchedulerEngine schedulerEngine) {
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
         this.modifyThresholdConfigurationCommand = modifyThresholdConfigurationCommand;
         this.schedulerEngine = schedulerEngine;

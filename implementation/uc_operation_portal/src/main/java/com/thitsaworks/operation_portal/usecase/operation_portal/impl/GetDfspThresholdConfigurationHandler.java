@@ -25,24 +25,23 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditComm
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
-import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcThresholdConfigurationList;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GetDfspThresholdConfiguration;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
-public class GetNdcThresholdConfigurationListHandler
-    extends OperationPortalAuditableUseCase<GetNdcThresholdConfigurationList.Input,
-        GetNdcThresholdConfigurationList.Output>
-    implements GetNdcThresholdConfigurationList {
+public class GetDfspThresholdConfigurationHandler
+    extends OperationPortalAuditableUseCase<GetDfspThresholdConfiguration.Input,
+        GetDfspThresholdConfiguration.Output>
+    implements GetDfspThresholdConfiguration {
 
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
-    public GetNdcThresholdConfigurationListHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ThresholdConfigurationQuery thresholdConfigurationQuery) {
+    public GetDfspThresholdConfigurationHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, ThresholdConfigurationQuery thresholdConfigurationQuery) {
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
         this.thresholdConfigurationQuery = thresholdConfigurationQuery;
     }
@@ -51,17 +50,18 @@ public class GetNdcThresholdConfigurationListHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-      List<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getAll();
+        Optional<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getDfspConfiguration(input.dfspId());
 
-      return new Output(thresholdConfiguration.stream().map(tc -> new GetNdcThresholdConfigurationList.NdcThresholdConfiguration(
-              tc.thresholdConfigurationId(),
-              tc.scopeType(),
-              tc.dfspId(),
-              tc.thresholdEnabled(),
-              tc.status(),
-              tc.createdBy(),
-              tc.updatedBy()
-      )).toList());
+
+        return new Output(
+                thresholdConfiguration.get().thresholdConfigurationId(),
+                thresholdConfiguration.get().scopeType(),
+                thresholdConfiguration.get().dfspId(),
+                thresholdConfiguration.get().thresholdEnabled(),
+                thresholdConfiguration.get().status(),
+                thresholdConfiguration.get().createdBy(),
+                thresholdConfiguration.get().updatedBy()
+        );
     }
 
 }
