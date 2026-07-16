@@ -15,6 +15,8 @@
  */
 package com.thitsaworks.operation_portal.component.misc.util;
 
+import lombok.Value;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -36,8 +38,8 @@ public class MMDateTimeUtil {
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(("GMT+06:30")));
 
         return new MMLocalTime(zonedDateTime.getYear(), zonedDateTime.getMonth().getValue(),
-                zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
-                zonedDateTime.getSecond());
+            zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
+            zonedDateTime.getSecond());
     }
 
     public static  MMLocalTime toMyanmarTime(Instant instant){
@@ -45,63 +47,24 @@ public class MMDateTimeUtil {
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(instant, ZoneId.of(("GMT+06:30")));
 
         return new MMLocalTime(zonedDateTime.getYear(), zonedDateTime.getMonth().getValue(),
-                zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
-                zonedDateTime.getSecond());
+            zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
+            zonedDateTime.getSecond());
     }
 
+    @Value
     public static class MMLocalTime {
 
-        private final int year;
+        private int year;
 
-        private final int month;
+        private int month;
 
-        private final int date;
+        private int date;
 
-        private final int hour;
+        private int hour;
 
-        private final int minute;
+        private int minute;
 
-        private final int second;
-
-        public MMLocalTime(int year, int month, int date, int hour, int minute, int second) {
-
-            this.year = year;
-            this.month = month;
-            this.date = date;
-            this.hour = hour;
-            this.minute = minute;
-            this.second = second;
-        }
-
-        public int getYear() {
-
-            return this.year;
-        }
-
-        public int getMonth() {
-
-            return this.month;
-        }
-
-        public int getDate() {
-
-            return this.date;
-        }
-
-        public int getHour() {
-
-            return this.hour;
-        }
-
-        public int getMinute() {
-
-            return this.minute;
-        }
-
-        public int getSecond() {
-
-            return this.second;
-        }
+        private int second;
 
     }
 

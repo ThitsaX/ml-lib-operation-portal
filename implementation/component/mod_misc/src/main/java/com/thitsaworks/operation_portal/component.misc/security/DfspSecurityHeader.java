@@ -26,6 +26,7 @@ import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
+import lombok.Value;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -56,7 +57,7 @@ public class DfspSecurityHeader {
     }
 
     public boolean verify(String jwsToken, String uri, String payload, byte[] secretKey)
-            throws JOSEException, ParseException, JsonProcessingException {
+        throws JOSEException, ParseException, JsonProcessingException {
 
         if (secretKey.length > 32) {
             secretKey = DigestUtils.sha256(secretKey);
@@ -75,27 +76,12 @@ public class DfspSecurityHeader {
         return verifyingSignature.equals(jwsToken);
     }
 
+    @Value
     private static class Envelope implements Serializable {
 
-        private final String uri;
+        String uri;
 
-        private final String payload;
-
-        private Envelope(String uri, String payload) {
-
-            this.uri = uri;
-            this.payload = payload;
-        }
-
-        public String getUri() {
-
-            return this.uri;
-        }
-
-        public String getPayload() {
-
-            return this.payload;
-        }
+        String payload;
 
     }
 
