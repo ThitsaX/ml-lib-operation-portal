@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.thitsaworks.operation_portal.component.common.identifier.PrincipalId;
@@ -36,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -78,22 +80,71 @@ public class GetPendingApprovalListHandler
 
         var currentUser = this.userPermissionManager.getCurrentUser();
         var principalId = currentUser.principalId();
+        final var tabCode = this.normalizeTabCode(input.tabCode());
         final List<ApprovalRequestData> requests;
 
         if (hasApprovalPermissions(principalId)) {
 
-            requests = this.approvalRequestQuery.getPendingApprovalRequests();
+            requests =
+                this.isBlank(tabCode) ? this.approvalRequestQuery.getPendingApprovalRequests() :
+                    this.approvalRequestQuery.getPendingApprovalRequestsByTabCode(tabCode);
         } else {
 
-            requests = this.approvalRequestQuery.getPendingApprovalRequestsByRequestedId(
-                new UserId(principalId.getId()));
+            var userId = new UserId(principalId.getId());
+            requests = this.isBlank(tabCode) ?
+                           this.approvalRequestQuery.getPendingApprovalRequestsByRequestedId(
+                               userId) :
+                           this.approvalRequestQuery.getPendingApprovalRequestsByRequestedIdAndTabCode(
+                               userId, tabCode);
         }
 
         return new Output(requests.stream().map(request -> new Output.PendingApproval(
             request.getApprovalRequestId(), request.getFundInOutAction(),
-            request.getParticipantName(), request.getCurrency(), request.getAmount(),
+            request.getParticipantName(), request.getCurrency(),
+            this.normalize(request.getAmount()),
             this.utility.getEmail(new UserId(request.getRequestedBy().getId())),
-            request.getRequestedDtm(), request.getAction())).toList());
+            request.getRequestedDtm(), request.getRespondedBy() == null ? null :
+                                           this.utility.getEmail(
+                                               new UserId(request.getRespondedBy().getId())),
+            request.getDecidedAt(), request.getAction(), request.getRequestCategory(),
+            request.getFieldDetails().stream().map(fieldDetail -> new Output.PendingApprovalDetail(
+                fieldDetail.getTabCode(), fieldDetail.getFieldKey(), fieldDetail.getFieldLabel(),
+                fieldDetail.getFieldValue(), this.normalizeText(fieldDetail.getBeforeValue()),
+                this.normalizeText(fieldDetail.getAfterValue()), fieldDetail.getValueType(),
+                fieldDetail.getDisplayOrder())).toList())).toList());
+    }
+
+    private boolean isBlank(String value) {
+
+        return value == null || value.isBlank();
+    }
+
+    private String normalizeTabCode(String tabCode) {
+
+        return this.isBlank(tabCode) ? null : tabCode.trim();
+    }
+
+    private BigDecimal normalize(BigDecimal value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        var normalized = value.stripTrailingZeros();
+        return normalized.scale() < 0 ? normalized.setScale(0) : normalized;
+    }
+
+    private String normalizeText(String value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        try {
+            return this.normalize(new BigDecimal(value)).toPlainString();
+        } catch (NumberFormatException ex) {
+            return value;
+        }
     }
 
     private boolean hasApprovalPermissions(PrincipalId principalId) throws IAMException {

@@ -26,7 +26,12 @@ public interface ApprovalRequestQuery {
 
     List<ApprovalRequestData> getPendingApprovalRequests();
 
+    List<ApprovalRequestData> getPendingApprovalRequestsByTabCode(String tabCode);
+
     List<ApprovalRequestData> getPendingApprovalRequestsByRequestedId(UserId userId);
+
+    List<ApprovalRequestData> getPendingApprovalRequestsByRequestedIdAndTabCode(UserId userId,
+                                                                                String tabCode);
 
     ApprovalRequestData getPendingApprovalRequestByID(ApprovalRequestId approvalRequestId) throws ApprovalException;
 
