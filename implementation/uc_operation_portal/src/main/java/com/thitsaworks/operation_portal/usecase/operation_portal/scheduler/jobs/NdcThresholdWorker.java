@@ -27,7 +27,9 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditC
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.hub_services.data.NdcLedgerData;
+import com.thitsaworks.operation_portal.core.hub_services.data.NdcUsedData;
 import com.thitsaworks.operation_portal.core.hub_services.query.GetNdcLedgerDataQuery;
+import com.thitsaworks.operation_portal.core.hub_services.query.GetNdcUsedDataQuery;
 import com.thitsaworks.operation_portal.core.notification.command.EvaluateNdcThresholdCommand;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
@@ -37,7 +39,6 @@ import com.thitsaworks.operation_portal.core.scheduler.command.CreateJobExecutio
 import com.thitsaworks.operation_portal.core.scheduler.command.ModifyJobExecutionLogCommand;
 import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.ScheduledJob;
-import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.ndc.NdcUsedPercentCalculator;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,8 @@ public class NdcThresholdWorker
 
     private final ModifyJobExecutionLogCommand evaluationLogModifyCommand;
 
+    private final GetNdcUsedDataQuery ndcUsedDataQuery;
+
     public NdcThresholdWorker(
         CreateJobExecutionLogCommand createJobExecutionLogCommand,
         ModifyJobExecutionLogCommand modifyJobExecutionLogCommand,
@@ -82,8 +85,8 @@ public class NdcThresholdWorker
         GetNdcLedgerDataQuery ledgerDataQuery,
         ThresholdConfigurationQuery thresholdConfigurationQuery,
         EvaluateNdcThresholdCommand evaluateNdcThresholdCommand,
-        ParticipantNDCQuery participantNDCQuery
-    ) {
+        ParticipantNDCQuery participantNDCQuery,
+        GetNdcUsedDataQuery getNdcUsedDataQuery) {
         super(
             createJobExecutionLogCommand,
             modifyJobExecutionLogCommand,
@@ -100,6 +103,7 @@ public class NdcThresholdWorker
         this.participantNDCQuery = participantNDCQuery;
         this.evaluationLogCreateCommand = createJobExecutionLogCommand;
         this.evaluationLogModifyCommand = modifyJobExecutionLogCommand;
+        this.ndcUsedDataQuery = getNdcUsedDataQuery;
     }
 
     @Override
@@ -168,13 +172,16 @@ public class NdcThresholdWorker
                 continue;
             }
 
-            BigDecimal ndcUsedPercent = NdcUsedPercentCalculator.calculate(
-                data.currentBalance(),
-                data.ndcLimitAmount()
-            );
-
             LocalDateTime evaluatedAt = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
                                                       .withNano(0);
+            var output = this.ndcUsedDataQuery.execute(new GetNdcUsedDataQuery.Input(data.participantName()));
+            BigDecimal ndcUsedPercent = this.extractNdcUsedPercent(output, data);
+
+            if (ndcUsedPercent == null) {
+                LOG.warn("Skipping NDC evaluation because NDC used percent is missing for [{} / {}]",
+                         data.participantName(), data.currency());
+                continue;
+            }
 
             EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
                 new EvaluateNdcThresholdCommand.Input(
@@ -214,6 +221,22 @@ public class NdcThresholdWorker
     private boolean isGateAllowed(String dfspId) {
 
         return thresholdConfigurationQuery.checkGate(dfspId).allowed();
+    }
+
+    private BigDecimal extractNdcUsedPercent(GetNdcUsedDataQuery.Output output, NdcLedgerData data) {
+
+        if (output == null || output.getNdcUsedData() == null) {
+            return null;
+        }
+
+        return output.getNdcUsedData()
+                     .stream()
+                     .filter(NdcUsedData::isActive)
+                     .filter(ndcUsedData -> data.currency().equals(ndcUsedData.currency()))
+                     .map(NdcUsedData::ndcUsed)
+                     .filter(ndcUsed -> ndcUsed != null)
+                     .findFirst()
+                     .orElse(null);
     }
 
     private void persistEvaluationLog(SchedulerConfigData schedulerConfigData,
