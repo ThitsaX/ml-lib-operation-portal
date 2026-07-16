@@ -41,7 +41,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tbl_ndc_notification_dispatch_log")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NdcNotificationDispatchLog {
 
     @EmbeddedId

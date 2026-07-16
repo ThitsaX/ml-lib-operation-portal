@@ -50,6 +50,15 @@ public class ModifyJobExecutionLogCommandHandler implements ModifyJobExecutionLo
         jobExecutionLog.endTime(input.endTime());
         jobExecutionLog.executionMessage(input.executionMessage());
 
+        if (input.ndcUsedPercent() != null) {
+            jobExecutionLog.ndcEvaluation(
+                input.participantName(),
+                input.currency(),
+                input.ndcUsedPercent(),
+                input.thresholdPercent()
+                                         );
+        }
+
         this.jobExecutionLogRepository.saveAndFlush(jobExecutionLog);
 
         return new Output(true);

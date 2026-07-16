@@ -19,6 +19,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEven
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
@@ -36,6 +37,18 @@ public interface NdcAlertEventRepository
 
     Optional<NdcAlertEvent> findByParticipantNDCIdAndBreachCycleNo(ParticipantNDCId participantNDCId,
                                                                    long breachCycleNo);
+
+    @Query("""
+        select e
+        from NdcAlertEvent e
+        where not exists (
+            select d.ndcNotificationDispatchLogId
+            from NdcNotificationDispatchLog d
+            where d.alertEventId = e.ndcAlertEventId
+        )
+        order by e.eventTime asc
+        """)
+    List<NdcAlertEvent> findUndispatched(Pageable pageable);
 
     @Query("""
         select e

@@ -38,10 +38,19 @@ public class CreateJobExecutionLogCommandHandler implements CreateJobExecutionLo
     public Output execute(Input input) throws DomainException {
 
         JobExecutionLog jobExecutionLog = new JobExecutionLog(
-                input.jobName(),
-                input.jobStatus(),
-                input.startTime()
+            input.jobName(),
+            input.jobStatus(),
+            input.startTime()
         );
+
+        if (input.ndcUsedPercent() != null) {
+            jobExecutionLog.ndcEvaluation(
+                input.participantName(),
+                input.currency(),
+                input.ndcUsedPercent(),
+                input.thresholdPercent()
+                                         );
+        }
 
         var output = this.jobExecutionLogRepository.saveAndFlush(jobExecutionLog);
 

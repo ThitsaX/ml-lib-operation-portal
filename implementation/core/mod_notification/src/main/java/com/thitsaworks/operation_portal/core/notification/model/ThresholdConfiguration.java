@@ -37,7 +37,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tbl_threshold_configuration")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ThresholdConfiguration {
 
     @EmbeddedId

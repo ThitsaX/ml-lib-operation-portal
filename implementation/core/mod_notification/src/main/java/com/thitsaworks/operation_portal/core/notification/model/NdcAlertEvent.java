@@ -40,7 +40,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tbl_ndc_alert_event")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NdcAlertEvent {
 
     @EmbeddedId

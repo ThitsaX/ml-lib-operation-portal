@@ -19,12 +19,35 @@ import com.thitsaworks.operation_portal.component.common.identifier.JobExecution
 import com.thitsaworks.operation_portal.component.common.type.JobStatus;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public interface ModifyJobExecutionLogCommand {
 
-    record Input(JobExecutionLogId jobExecutionLogId, JobStatus jobStatus, String executionMessage, LocalDateTime endTime) {}
-
+    record Input(
+        JobExecutionLogId jobExecutionLogId,
+        JobStatus jobStatus,
+        String executionMessage,
+        LocalDateTime endTime,
+        String participantName,
+        String currency,
+        BigDecimal ndcUsedPercent,
+        BigDecimal thresholdPercent
+    ) {
+        public Input(JobExecutionLogId jobExecutionLogId,
+                     JobStatus jobStatus,
+                     String executionMessage,
+                     LocalDateTime endTime) {
+            this(jobExecutionLogId,
+                 jobStatus,
+                 executionMessage,
+                 endTime,
+                 null,
+                 null,
+                 null,
+                 null);
+        }
+    }
     record Output(boolean updated) {}
 
     Output execute(Input input) throws DomainException;

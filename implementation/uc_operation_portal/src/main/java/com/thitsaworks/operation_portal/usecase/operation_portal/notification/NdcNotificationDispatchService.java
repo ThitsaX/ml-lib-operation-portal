@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2024-2026 ThitsaWorks Pte. Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.thitsaworks.operation_portal.usecase.operation_portal.notification;
+
+import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
+import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
+import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
+import com.thitsaworks.operation_portal.core.email.EmailService;
+import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
+import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
+import com.thitsaworks.operation_portal.core.notification.model.repository.NdcAlertEventRepository;
+import com.thitsaworks.operation_portal.core.notification.model.repository.NdcNotificationDispatchLogRepository;
+import com.thitsaworks.operation_portal.core.participant.data.UserData;
+import com.thitsaworks.operation_portal.core.participant.query.UserQuery;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class NdcNotificationDispatchService {
+
+    private static final String SYSTEM_USER = "system";
+
+    private static final int MAXIMUM_ATTEMPTS = 3;
+
+    private final NdcAlertEventRepository alertEventRepository;
+
+    private final NdcNotificationDispatchLogRepository dispatchLogRepository;
+
+    private final UserQuery userQuery;
+
+    private final EmailService emailService;
+
+    @CoreWriteTransactional
+    public List<NdcNotificationDispatchLogId> createDispatchLogs(
+        NdcAlertEvent alertEvent) {
+
+        Map<Long, UserData> recipients = resolveRecipients(alertEvent);
+
+        return recipients.values()
+                         .stream()
+                         .map(user -> createDispatchLog(alertEvent, user))
+                         .toList();
+    }
+
+    @CoreWriteTransactional
+    public DeliveryResult deliver(NdcNotificationDispatchLogId dispatchLogId) {
+
+        NdcNotificationDispatchLog dispatchLog =
+            dispatchLogRepository.findByIdForUpdate(dispatchLogId)
+                                  .orElseThrow(() -> new IllegalStateException(
+                                      "Dispatch log not found: " + dispatchLogId));
+
+        if (!dispatchLog.canAttempt(MAXIMUM_ATTEMPTS)) {
+            return new DeliveryResult(false, false, true);
+        }
+
+        dispatchLog.startAttempt(LocalDateTime.now(), SYSTEM_USER);
+
+        try {
+            NdcAlertEvent alertEvent =
+                alertEventRepository.findById(dispatchLog.getAlertEventId())
+                                    .orElseThrow(() -> new IllegalStateException(
+                                        "Alert event not found: " + dispatchLog.getAlertEventId()));
+
+            emailService.sendNdcUsageAlertToEmail(
+                dispatchLog.getRecipientEmail(),
+                alertEvent.getParticipantName(),
+                alertEvent.getCurrency(),
+                alertEvent.getCurrentNdcUsed(),
+                alertEvent.getThresholdPercent());
+
+            dispatchLog.markSent(LocalDateTime.now(), SYSTEM_USER);
+            dispatchLogRepository.saveAndFlush(dispatchLog);
+
+            return new DeliveryResult(true, false, false);
+
+        } catch (RuntimeException exception) {
+            dispatchLog.markFailed(exception.getMessage(), SYSTEM_USER);
+            dispatchLogRepository.saveAndFlush(dispatchLog);
+
+            return new DeliveryResult(false, true, false);
+        }
+    }
+
+    private NdcNotificationDispatchLogId createDispatchLog(
+        NdcAlertEvent alertEvent,
+        UserData user) {
+
+        String recipientUserId = user.userId().getId().toString();
+
+        var existing = dispatchLogRepository.findByAlertEventIdAndRecipientUserId(
+            alertEvent.getNdcAlertEventId(),
+            recipientUserId);
+
+        if (existing.isPresent()) {
+            return existing.get().getNdcNotificationDispatchLogId();
+        }
+
+        if (user.email() == null) {
+            throw new IllegalStateException(
+                "Recipient email is missing for user: " + recipientUserId);
+        }
+
+        NdcRecipientType recipientType = isHubUser(user)
+            ? NdcRecipientType.HUB
+            : NdcRecipientType.DFSP;
+
+        NdcNotificationDispatchLog dispatchLog =
+            new NdcNotificationDispatchLog(
+                alertEvent.getNdcAlertEventId(),
+                alertEvent.getParticipantNDCId(),
+                recipientType,
+                recipientUserId,
+                user.name(),
+                user.email().getValue(),
+                SYSTEM_USER);
+
+        return dispatchLogRepository.saveAndFlush(dispatchLog)
+                                    .getNdcNotificationDispatchLogId();
+    }
+
+    private Map<Long, UserData> resolveRecipients(NdcAlertEvent alertEvent) {
+
+        String breachedDfsp = alertEvent.getParticipantName();
+        Map<Long, UserData> recipients = new LinkedHashMap<>();
+
+        for (UserData user : userQuery.getUsers()) {
+
+            if (user.email() == null || user.participantName() == null) {
+                continue;
+            }
+
+            if (!user.allowNotification()) {
+                continue;
+            }
+
+            String participantName = user.participantName().getValue();
+            boolean hubUser = participantName.toUpperCase(Locale.ROOT).contains("HUB");
+            boolean breachedDfspUser = participantName.equals(breachedDfsp);
+
+            if (hubUser || breachedDfspUser) {
+                recipients.put(user.userId().getId(), user);
+            }
+        }
+
+        return recipients;
+    }
+
+    private boolean isHubUser(UserData user) {
+
+        return user.participantName().getValue()
+                  .toUpperCase(Locale.ROOT)
+                  .contains("HUB");
+    }
+
+    public record DeliveryResult(boolean sent,
+                                 boolean failed,
+                                 boolean skipped) {
+    }
+}

@@ -19,7 +19,9 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcThreshold
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcThresholdState;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +49,14 @@ public interface NdcThresholdStateRepository
     List<Object[]> search(@Param("participantName") String participantName,
                           @Param("currency") String currency,
                           @Param("currentState") NdcThresholdStateType currentState);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE) // This will lock the data not to update until this is unlock
+    @Query("""
+    select s
+    from NdcThresholdState s
+    where s.participantNDCId = :participantNDCId
+    """)
+    Optional<NdcThresholdState> findByParticipantNDCIdForUpdate(
+        @Param("participantNDCId") ParticipantNDCId participantNDCId
+                                                               );
 }

@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2024-2026 ThitsaWorks Pte. Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
+import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
+import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
+import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
+import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
+import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
+import com.thitsaworks.operation_portal.core.notification.model.repository.NdcAlertEventRepository;
+import com.thitsaworks.operation_portal.core.notification.model.repository.NdcNotificationDispatchLogRepository;
+import com.thitsaworks.operation_portal.core.scheduler.command.CreateJobExecutionLogCommand;
+import com.thitsaworks.operation_portal.core.scheduler.command.ModifyJobExecutionLogCommand;
+import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
+import com.thitsaworks.operation_portal.usecase.operation_portal.notification.NdcNotificationDispatchService;
+import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.ScheduledJob;
+import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Component("NdcNotificationDispatcher")
+@ActionMetadata(category = ActionCategory.SYSTEM_JOBS_AND_SCHEDULED_EXECUTORS)
+public class NdcNotificationDispatcher
+    extends ScheduledJob<SchedulerConfigData, NdcNotificationDispatcher.DispatchSummary> {
+
+    private static final int EVENT_BATCH_SIZE = 100;
+
+    private static final int MAXIMUM_ATTEMPTS = 3;
+
+    private static final Duration RETRY_DELAY = Duration.ofMinutes(5);
+
+    private final NdcAlertEventRepository alertEventRepository;
+
+    private final NdcNotificationDispatchLogRepository dispatchLogRepository;
+
+    private final NdcNotificationDispatchService dispatchService;
+
+    public NdcNotificationDispatcher(
+        CreateJobExecutionLogCommand createJobExecutionLogCommand,
+        ModifyJobExecutionLogCommand modifyJobExecutionLogCommand,
+        CreateInputAuditCommand createInputAuditCommand,
+        CreateOutputAuditCommand createOutputAuditCommand,
+        CreateExceptionAuditCommand createExceptionAuditCommand,
+        ActionAuthorizationManager actionAuthorizationManager,
+        ObjectMapper objectMapper,
+        NdcAlertEventRepository alertEventRepository,
+        NdcNotificationDispatchLogRepository dispatchLogRepository,
+        NdcNotificationDispatchService dispatchService) {
+
+        super(
+            createJobExecutionLogCommand,
+            modifyJobExecutionLogCommand,
+            createInputAuditCommand,
+            createOutputAuditCommand,
+            createExceptionAuditCommand,
+            actionAuthorizationManager,
+            objectMapper);
+
+        this.alertEventRepository = alertEventRepository;
+        this.dispatchLogRepository = dispatchLogRepository;
+        this.dispatchService = dispatchService;
+    }
+
+    @Override
+    protected DispatchSummary onExecute(SchedulerConfigData schedulerConfigData)
+        throws DomainException {
+
+        int prepared = 0;
+        int sent = 0;
+        int failed = 0;
+        int skipped = 0;
+
+        List<NdcAlertEvent> undispatchedEvents =
+            alertEventRepository.findUndispatched(PageRequest.of(0, EVENT_BATCH_SIZE));
+
+        for (NdcAlertEvent alertEvent : undispatchedEvents) {
+
+            List<NdcNotificationDispatchLogId> dispatchLogIds =
+                dispatchService.createDispatchLogs(alertEvent);
+
+            prepared += dispatchLogIds.size();
+
+            for (NdcNotificationDispatchLogId dispatchLogId : dispatchLogIds) {
+
+                var result = dispatchService.deliver(dispatchLogId);
+
+                if (result.sent()) {
+                    sent++;
+                } else if (result.failed()) {
+                    failed++;
+                } else {
+                    skipped++;
+                }
+            }
+        }
+
+        LocalDateTime retryBefore = LocalDateTime.now().minus(RETRY_DELAY);
+
+        var retryableLogs = dispatchLogRepository.findRetryable(
+            List.of(
+                NdcDeliveryStatus.PENDING,
+                NdcDeliveryStatus.FAILED,
+                NdcDeliveryStatus.RETRYING),
+            MAXIMUM_ATTEMPTS,
+            retryBefore,
+            PageRequest.of(0, EVENT_BATCH_SIZE));
+
+        for (var dispatchLog : retryableLogs) {
+
+            var result = dispatchService.deliver(
+                dispatchLog.getNdcNotificationDispatchLogId());
+
+            if (result.sent()) {
+                sent++;
+            } else if (result.failed()) {
+                failed++;
+            } else {
+                skipped++;
+            }
+        }
+
+        return new DispatchSummary(
+            undispatchedEvents.size(),
+            prepared,
+            sent,
+            failed,
+            skipped);
+    }
+
+    public record DispatchSummary(int undispatchedEvents,
+                                  int preparedRecipients,
+                                  int sent,
+                                  int failed,
+                                  int skipped) {
+    }
+}

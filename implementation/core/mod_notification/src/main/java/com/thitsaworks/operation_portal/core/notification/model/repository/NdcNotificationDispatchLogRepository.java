@@ -19,7 +19,10 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEven
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
@@ -36,6 +39,32 @@ public interface NdcNotificationDispatchLogRepository
 
     Optional<NdcNotificationDispatchLog> findByAlertEventIdAndRecipientUserId(NdcAlertEventId alertEventId,
                                                                               String recipientUserId);
+
+    @Query("""
+        select d
+        from NdcNotificationDispatchLog d
+        where d.deliveryStatus in :statuses
+          and d.attemptNo < :maximumAttempts
+          and (
+              d.lastAttemptAt is null
+              or d.lastAttemptAt <= :retryBefore
+          )
+        order by d.createdAt asc
+        """)
+    List<NdcNotificationDispatchLog> findRetryable(
+        @Param("statuses") List<NdcDeliveryStatus> statuses,
+        @Param("maximumAttempts") int maximumAttempts,
+        @Param("retryBefore") LocalDateTime retryBefore,
+        Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        select d
+        from NdcNotificationDispatchLog d
+        where d.ndcNotificationDispatchLogId = :id
+        """)
+    Optional<NdcNotificationDispatchLog> findByIdForUpdate(
+        @Param("id") NdcNotificationDispatchLogId id);
 
     @Query("""
         select d, p.participantName, p.currency
