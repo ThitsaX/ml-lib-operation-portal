@@ -22,7 +22,7 @@ import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 public interface ModifyThresholdConfiguration
     extends UseCase<ModifyThresholdConfiguration.Input, ModifyThresholdConfiguration.Output> {
 
-    record Input(String id,
+    record Input(Long id,
                  Boolean thresholdEnabled,
                  NdcConfigurationStatus status,
                  String updatedBy) { }

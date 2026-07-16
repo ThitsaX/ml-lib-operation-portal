@@ -16,7 +16,7 @@ CREATE INDEX idx_job_execution_ndc_history
     ON tbl_job_execution_log (job_name, start_time, participant_name, currency);
 
 CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
-    id CHAR(36) NOT NULL,
+    id BIGINT NOT NULL,
     scope_type VARCHAR(20) NOT NULL,
     dfsp_id VARCHAR(100) NULL,
     threshold_enabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -49,7 +49,7 @@ CREATE INDEX idx_threshold_config_gate
     ON tbl_threshold_configuration (scope_type, threshold_enabled, status);
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_threshold_state (
-    id CHAR(36) NOT NULL,
+    id BIGINT NOT NULL,
     participant_ndc_id BIGINT NOT NULL,
     current_state VARCHAR(20) NOT NULL DEFAULT 'SAFE',
     breach_cycle_no BIGINT NOT NULL DEFAULT 0,
@@ -77,7 +77,7 @@ CREATE INDEX idx_ndc_state_current_state
     ON tbl_ndc_threshold_state (current_state);
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_alert_event (
-    id CHAR(36) NOT NULL,
+    id BIGINT NOT NULL,
     participant_ndc_id BIGINT NOT NULL,
     participant_name VARCHAR(100) NOT NULL,
     currency VARCHAR(100) NOT NULL,
@@ -117,8 +117,8 @@ CREATE INDEX idx_ndc_alert_participant_ndc_time
     ON tbl_ndc_alert_event (participant_ndc_id, event_time);
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_notification_dispatch_log (
-    id CHAR(36) NOT NULL,
-    alert_event_id CHAR(36) NOT NULL,
+    id BIGINT NOT NULL,
+    alert_event_id BIGINT NOT NULL,
     participant_ndc_id BIGINT NOT NULL,
     recipient_type VARCHAR(20) NOT NULL,
     recipient_user_id VARCHAR(100) NULL,

@@ -64,7 +64,7 @@ public class CreateThresholdConfigurationController {
                 request.thresholdEnabled(),
                 userContext.userId().toString()));
 
-        var response = new Response(output.thresholdConfigurationId().toString());
+        var response = new Response(output.thresholdConfigurationId().getEntityId());
 
         LOG.info("Create NDC Threshold Configuration Response : [{}]", this.objectMapper.writeValueAsString(response));
 
@@ -81,7 +81,7 @@ public class CreateThresholdConfigurationController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-        @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId
+        @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId
     ) { }
 
 }

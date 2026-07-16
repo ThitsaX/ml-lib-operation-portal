@@ -17,10 +17,7 @@ package com.thitsaworks.operation_portal.component.common.identifier;
 
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaId;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
-
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,14 +26,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Embeddable
-public class NdcThresholdStateId extends JpaId<UUID> {
+public class NdcThresholdStateId extends JpaId<Long> {
 
-    @Convert(converter = UuidStringConverter.class)
-    @Column(name = "id", length = 36)
-    private UUID id;
+    @Column(name = "id")
+    private Long id;
 
     @Override
-    public UUID getEntityId() {
+    public Long getEntityId() {
 
         return this.id;
     }

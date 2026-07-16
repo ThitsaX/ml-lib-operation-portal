@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
+import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -32,7 +33,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_threshold_configuration")
@@ -79,7 +79,7 @@ public class ThresholdConfiguration {
         Objects.requireNonNull(createdBy, "createdBy is required");
         validateScope(scopeType, dfspId);
 
-        this.thresholdConfigurationId = new ThresholdConfigurationId(UUID.randomUUID());
+        this.thresholdConfigurationId = new ThresholdConfigurationId(Snowflake.get().nextId());
         this.scopeType = scopeType;
         this.dfspId = dfspId;
         this.thresholdEnabled = thresholdEnabled;

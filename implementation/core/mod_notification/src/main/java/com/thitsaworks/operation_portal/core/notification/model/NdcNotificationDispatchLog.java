@@ -20,6 +20,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificat
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
+import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -36,7 +37,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_ndc_notification_dispatch_log")
@@ -104,7 +104,7 @@ public class NdcNotificationDispatchLog {
                                       String recipientEmail,
                                       String createdBy) {
 
-        this.ndcNotificationDispatchLogId = new NdcNotificationDispatchLogId(UUID.randomUUID());
+        this.ndcNotificationDispatchLogId = new NdcNotificationDispatchLogId(Snowflake.get().nextId());
         this.alertEventId = Objects.requireNonNull(alertEventId, "alertEventId is required");
         this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.recipientType = Objects.requireNonNull(recipientType, "recipientType is required");

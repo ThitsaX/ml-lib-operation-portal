@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
+import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -35,7 +36,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_ndc_threshold_state")
@@ -84,7 +84,7 @@ public class NdcThresholdState {
     public NdcThresholdState(ParticipantNDCId participantNDCId,
                              String createdBy) {
 
-        this.ndcThresholdStateId = new NdcThresholdStateId(UUID.randomUUID());
+        this.ndcThresholdStateId = new NdcThresholdStateId(Snowflake.get().nextId());
         this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
         this.currentState = NdcThresholdStateType.SAFE;

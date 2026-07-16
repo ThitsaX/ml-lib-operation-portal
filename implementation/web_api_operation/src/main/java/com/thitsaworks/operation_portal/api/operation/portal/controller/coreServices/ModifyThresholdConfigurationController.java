@@ -48,7 +48,7 @@ public class ModifyThresholdConfigurationController {
     private final ObjectMapper objectMapper;
 
     @PutMapping("/secured/ndc/configurations/{id}")
-    public ResponseEntity<Response> execute(@PathVariable("id") String id,
+    public ResponseEntity<Response> execute(@PathVariable("id") Long id,
                                             @Valid @RequestBody Request request)
         throws DomainException, JsonProcessingException {
 
@@ -62,7 +62,7 @@ public class ModifyThresholdConfigurationController {
                 request.status(),
                 request.updatedBy()));
 
-        var response = new Response(output.thresholdConfigurationId().toString(), output.modified());
+        var response = new Response(output.thresholdConfigurationId().getEntityId(), output.modified());
 
         LOG.info("Modify NDC Threshold Configuration Response : [{}]", this.objectMapper.writeValueAsString(response));
 
@@ -78,7 +78,7 @@ public class ModifyThresholdConfigurationController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-            @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
+            @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("modified") boolean modified) implements Serializable { }
 
 

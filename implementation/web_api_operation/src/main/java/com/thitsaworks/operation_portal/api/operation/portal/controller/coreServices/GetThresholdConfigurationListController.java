@@ -51,7 +51,7 @@ public class GetThresholdConfigurationListController {
 
         List<NdcThresholdConfiguration> configurations = output.configurations().stream()
             .map(config -> new NdcThresholdConfiguration(
-                config.thresholdConfigurationId().toString(),
+                config.thresholdConfigurationId().getEntityId(),
                 config.scopeType().toString(),
                 config.dfspId(),
                 config.thresholdEnabled(),
@@ -75,7 +75,7 @@ public class GetThresholdConfigurationListController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NdcThresholdConfiguration(
-            @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
+            @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,

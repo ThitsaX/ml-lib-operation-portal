@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
+import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -35,7 +36,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tbl_ndc_alert_event")
@@ -109,7 +109,7 @@ public class NdcAlertEvent {
             throw new IllegalArgumentException("breachCycleNo must be greater than zero");
         }
 
-        this.ndcAlertEventId = new NdcAlertEventId(UUID.randomUUID());
+        this.ndcAlertEventId = new NdcAlertEventId(Snowflake.get().nextId());
         this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.participantName = Objects.requireNonNull(participantName, "participantName is required");
         this.currency = Objects.requireNonNull(currency, "currency is required");

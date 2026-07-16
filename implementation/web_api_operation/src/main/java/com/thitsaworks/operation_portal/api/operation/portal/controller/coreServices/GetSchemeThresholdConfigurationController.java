@@ -49,7 +49,7 @@ public class GetSchemeThresholdConfigurationController {
             this.getSchemeThresholdConfiguration.execute(new GetSchemeThresholdConfiguration.Input());
 
         var response = new Response(
-                output.thresholdConfigurationId().toString(),
+                output.thresholdConfigurationId().getEntityId(),
                 output.scopeType().toString(),
                 output.dfspId(),
                 output.thresholdEnabled(),
@@ -66,7 +66,7 @@ public class GetSchemeThresholdConfigurationController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-            @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
+            @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,

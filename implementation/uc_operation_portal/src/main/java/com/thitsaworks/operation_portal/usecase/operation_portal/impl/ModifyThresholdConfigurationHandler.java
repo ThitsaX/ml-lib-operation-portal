@@ -32,8 +32,6 @@ import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.Sched
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
 public class ModifyThresholdConfigurationHandler
@@ -57,7 +55,7 @@ public class ModifyThresholdConfigurationHandler
 
         ModifyThresholdConfigurationCommand.Output output = this.modifyThresholdConfigurationCommand.execute(
             new ModifyThresholdConfigurationCommand.Input(
-                new ThresholdConfigurationId(UUID.fromString(input.id().toString())),
+                new ThresholdConfigurationId(input.id()),
                 input.thresholdEnabled(),
                 input.status() == null ? NdcConfigurationStatus.ACTIVE : input.status(),
                 input.updatedBy()));
