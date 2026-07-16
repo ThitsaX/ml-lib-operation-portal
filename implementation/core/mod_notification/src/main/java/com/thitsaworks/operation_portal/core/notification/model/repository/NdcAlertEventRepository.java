@@ -35,6 +35,13 @@ public interface NdcAlertEventRepository
     extends JpaRepository<NdcAlertEvent, NdcAlertEventId>,
             QuerydslPredicateExecutor<NdcAlertEvent> {
 
+    @Query("""
+        select e
+        from NdcAlertEvent e
+        where e.ndcAlertEventId = :alertEventId
+        """)
+    Optional<NdcAlertEvent> get(@Param("alertEventId") NdcAlertEventId alertEventId);
+
     Optional<NdcAlertEvent> findByParticipantNDCIdAndBreachCycleNo(ParticipantNDCId participantNDCId,
                                                                    long breachCycleNo);
 

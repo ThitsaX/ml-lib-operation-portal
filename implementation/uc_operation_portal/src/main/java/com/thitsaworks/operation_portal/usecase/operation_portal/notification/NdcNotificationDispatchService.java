@@ -82,10 +82,14 @@ public class NdcNotificationDispatchService {
                                     .orElseThrow(() -> new IllegalStateException(
                                         "Alert event not found: " + dispatchLog.getAlertEventId()));
 
+            AlertMessage alertMessage = parseAlertMessage(alertEvent.getEventMessage());
+
             emailService.sendNdcUsageAlertToEmail(
                 dispatchLog.getRecipientEmail(),
                 alertEvent.getParticipantName(),
                 alertEvent.getCurrency(),
+                alertMessage.subject(),
+                alertMessage.content(),
                 alertEvent.getCurrentNdcUsed(),
                 alertEvent.getThresholdPercent());
 
@@ -173,8 +177,39 @@ public class NdcNotificationDispatchService {
                   .contains("HUB");
     }
 
+    private AlertMessage parseAlertMessage(String eventMessage) {
+
+        if (eventMessage == null || eventMessage.isBlank()) {
+            throw new IllegalStateException("Alert event message is required");
+        }
+
+        String normalizedMessage = eventMessage.stripLeading();
+        int subjectEndIndex = normalizedMessage.indexOf('\n');
+
+        if (subjectEndIndex < 0) {
+            throw new IllegalStateException("Alert event message content is required");
+        }
+
+        String subject = normalizedMessage.substring(0, subjectEndIndex).strip();
+        String content = normalizedMessage.substring(subjectEndIndex + 1).stripLeading();
+
+        if (subject.endsWith(",")) {
+            subject = subject.substring(0, subject.length() - 1).strip();
+        }
+
+        if (subject.isBlank() || content.isBlank()) {
+            throw new IllegalStateException("Alert event message subject and content are required");
+        }
+
+        return new AlertMessage(subject, content);
+    }
+
     public record DeliveryResult(boolean sent,
                                  boolean failed,
                                  boolean skipped) {
+    }
+
+    private record AlertMessage(String subject,
+                                String content) {
     }
 }

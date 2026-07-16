@@ -18,6 +18,8 @@ import java.util.Objects;
 public class EvaluateNdcThresholdCommandHandler
     implements EvaluateNdcThresholdCommand {
 
+    private static final String NDC_USAGE_ALERT_SUBJECT = "NDC Usage Alert – Action Required";
+
     private final NdcThresholdStateRepository stateRepository;
     private final NdcAlertEventRepository alertEventRepository;
 
@@ -65,7 +67,7 @@ public class EvaluateNdcThresholdCommandHandler
                     input.thresholdPercent(),
                     input.currentBalance(),
                     input.currentNdcUsed(),
-                    "NDC notification threshold breached",
+                    buildNdcUsageAlertEventMessage(input),
                     input.evaluatedAt(),
                     input.actor()
                 );
@@ -87,6 +89,29 @@ public class EvaluateNdcThresholdCommandHandler
             alertCreated,
             recovered,
             alertEvent == null ? null : alertEvent.getNdcAlertEventId()
+        );
+    }
+
+    private String buildNdcUsageAlertEventMessage(Input input) {
+
+        return """
+            %s,
+            Dear User,
+            Your %s account has reached %s%% of its NDC usage limit.
+            Please deposit additional funds to prevent transaction blockage.
+            DFSP: %s
+            Currency: %s
+            Current NDC Usage: %s%%
+            This is an automated notification. Please do not reply to this email.
+            Regards,
+            Operations Team
+            """.formatted(
+            NDC_USAGE_ALERT_SUBJECT,
+            input.currency(),
+            input.currentNdcUsed().toPlainString(),
+            input.participantName(),
+            input.currency(),
+            input.currentNdcUsed().toPlainString()
         );
     }
 }

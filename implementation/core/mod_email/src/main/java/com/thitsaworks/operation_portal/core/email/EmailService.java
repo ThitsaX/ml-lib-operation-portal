@@ -24,19 +24,6 @@ import java.math.BigDecimal;
 
 public class EmailService {
 
-    private static final String SUBJECT = "NDC Usage Alert - Action Required";
-
-    private static final String MESSAGE =
-        "Dear User,\n\n" +
-            "The NDC usage threshold has been reached.\n\n" +
-            "DFSP: <<dfsp_name>>\n" +
-            "Currency: <<currency>>\n" +
-            "Configured Threshold: <<threshold_percentage>>%\n" +
-            "Current NDC Usage: <<ndc_used_percentage>>%\n\n" +
-            "Please deposit additional funds to prevent transaction blockage.\n\n" +
-            "This is an automated notification. Please do not reply to this email.\n\n" +
-            "Regards,\n" +
-            "Operations Team";
 
     private final EmailSender emailSender;
 
@@ -48,29 +35,11 @@ public class EmailService {
         this.userQuery = userQuery;
     }
 
-    public void sendNdcUsageAlertToUser(UserId receiverUserId,
-                                        String dfspName,
-                                        String currency,
-                                        BigDecimal ndcUsedPercentage) throws ParticipantException {
-
-        UserData user = this.userQuery.get(receiverUserId);
-
-        if (user.email() == null) {
-            return;
-        }
-
-        this.sendNdcUsageAlertToEmail(
-            user.email().getValue(),
-            dfspName,
-            currency,
-            ndcUsedPercentage,
-            BigDecimal.valueOf(80)
-        );
-    }
-
     public void sendNdcUsageAlertToEmail(String receiverEmail,
                                          String dfspName,
                                          String currency,
+                                         String subject,
+                                         String message,
                                          BigDecimal ndcUsedPercentage,
                                          BigDecimal thresholdPercentage) {
 
@@ -90,13 +59,7 @@ public class EmailService {
             throw new IllegalArgumentException("NDC percentages are required");
         }
 
-        String content = MESSAGE
-            .replace("<<dfsp_name>>", dfspName)
-            .replace("<<currency>>", currency)
-            .replace("<<threshold_percentage>>", thresholdPercentage.toPlainString())
-            .replace("<<ndc_used_percentage>>", ndcUsedPercentage.toPlainString());
-
-        this.emailSender.send(receiverEmail, SUBJECT, content);
+        this.emailSender.send(receiverEmail, subject, message);
     }
 
 }
