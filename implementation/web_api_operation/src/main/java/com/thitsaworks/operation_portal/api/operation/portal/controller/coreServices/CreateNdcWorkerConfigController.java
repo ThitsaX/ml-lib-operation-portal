@@ -17,6 +17,7 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.coreSer
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.thitsaworks.operation_portal.api.operation.portal.security.NdcWorkerConfigRequestValidator;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateSchedulerConfig;
 import jakarta.validation.Valid;
@@ -39,11 +40,13 @@ public class CreateNdcWorkerConfigController {
     @PostMapping("/secured/ndc/worker-config")
     public ResponseEntity<Response> execute(@Valid @RequestBody Request request) throws DomainException {
 
+        NdcWorkerConfigRequestValidator.Values values = NdcWorkerConfigRequestValidator.validate(request.runEvery());
+
         CreateSchedulerConfig.Output output = this.createSchedulerConfig.execute(
             new CreateSchedulerConfig.Input(request.name(),
                                             request.jobName(),
                                             request.description(),
-                                            request.cronExpression(),
+                                            values.cronExpression(),
                                             ZoneId.of(request.zoneId())));
 
         return new ResponseEntity<>(new Response(output.created()), HttpStatus.OK);
@@ -53,7 +56,7 @@ public class CreateNdcWorkerConfigController {
     public record Request(@NotBlank @JsonProperty("name") String name,
                           @NotBlank @JsonProperty("jobName") String jobName,
                           @NotBlank @JsonProperty("description") String description,
-                          @NotBlank @JsonProperty("cronExpression") String cronExpression,
+                          @NotBlank @JsonProperty("runEvery") String runEvery,
                           @NotBlank @JsonProperty("zoneId") String zoneId) {
     }
 

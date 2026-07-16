@@ -26,6 +26,7 @@ import com.thitsaworks.operation_portal.core.email.EmailConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 public class VaultBasedApplicationSettings {
@@ -102,9 +103,20 @@ public class VaultBasedApplicationSettings {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "email.enabled", havingValue = "true")
     public EmailConfiguration.EmailSettings emailSettings(Vault vault) {
 
-        return vault.get(EmailConfiguration.EMAIL_SETTINGS_PATH, EmailConfiguration.EmailSettings.class);
+        try {
+            EmailConfiguration.EmailSettings settings = vault.get(EmailConfiguration.EMAIL_SETTINGS_PATH, EmailConfiguration.EmailSettings.class);
+            if (settings == null) {
+                LOG.warn("Email settings not found in vault at path: {}", EmailConfiguration.EMAIL_SETTINGS_PATH);
+                throw new IllegalStateException("Email settings not found in vault");
+            }
+            return settings;
+        } catch (Exception e) {
+            LOG.warn("Failed to load email settings from vault: {}", e.getMessage());
+            throw new RuntimeException("Failed to load email settings from vault", e);
+        }
     }
 
 }

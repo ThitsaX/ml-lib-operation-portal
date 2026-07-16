@@ -16,6 +16,8 @@
 package com.thitsaworks.operation_portal.core.email;
 
 import com.thitsaworks.operation_portal.core.participant.query.UserQuery;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
 public class EmailConfiguration {
@@ -23,12 +25,21 @@ public class EmailConfiguration {
     public static final String EMAIL_SETTINGS_PATH = "email/settings";
 
     @Bean
-    public EmailSender emailSender(EmailSettings settings) {
+    @ConditionalOnBean(EmailSettings.class)
+    public EmailSender smtpEmailSender(EmailSettings settings) {
 
         return new SmtpEmailSender(settings);
     }
 
     @Bean
+    @ConditionalOnMissingBean(EmailSender.class)
+    public EmailSender noOpEmailSender() {
+
+        return new NoOpEmailSender();
+    }
+
+    @Bean
+    @ConditionalOnBean(EmailSender.class)
     public EmailService emailService(EmailSender emailSender, UserQuery userQuery) {
 
         return new EmailService(emailSender, userQuery);

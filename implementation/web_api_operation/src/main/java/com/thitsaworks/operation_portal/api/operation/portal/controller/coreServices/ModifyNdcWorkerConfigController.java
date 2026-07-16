@@ -17,6 +17,7 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.coreSer
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.thitsaworks.operation_portal.api.operation.portal.security.NdcWorkerConfigRequestValidator;
 import com.thitsaworks.operation_portal.component.common.identifier.SchedulerConfigId;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifySchedulerConfig;
@@ -43,12 +44,14 @@ public class ModifyNdcWorkerConfigController {
     public ResponseEntity<Response> execute(@PathVariable("id") Long id,
                                             @Valid @RequestBody Request request) throws DomainException {
 
+        NdcWorkerConfigRequestValidator.Values values = NdcWorkerConfigRequestValidator.validate(request.runEvery());
+
         ModifySchedulerConfig.Output output = this.modifySchedulerConfig.execute(
             new ModifySchedulerConfig.Input(new SchedulerConfigId(id),
                                             request.name(),
                                             request.jobName(),
                                             request.description(),
-                                            request.cronExpression(),
+                                            values.cronExpression(),
                                             ZoneId.of(request.zoneId()),
                                             request.active()));
 
@@ -59,7 +62,7 @@ public class ModifyNdcWorkerConfigController {
     public record Request(@NotBlank @JsonProperty("name") String name,
                           @NotBlank @JsonProperty("jobName") String jobName,
                           @NotBlank @JsonProperty("description") String description,
-                          @NotBlank @JsonProperty("cronExpression") String cronExpression,
+                          @NotBlank @JsonProperty("runEvery") String runEvery,
                           @NotBlank @JsonProperty("zoneId") String zoneId,
                           @NotNull @JsonProperty("active") Boolean active) {
     }
