@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
@@ -21,7 +22,8 @@ import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
 
-public interface CreateApprovalRequest extends UseCase<CreateApprovalRequest.Input, CreateApprovalRequest.Output> {
+public interface CreateApprovalRequest
+    extends UseCase<CreateApprovalRequest.Input, CreateApprovalRequest.Output> {
 
     record Input(String requestedAction,
                  String participant,
