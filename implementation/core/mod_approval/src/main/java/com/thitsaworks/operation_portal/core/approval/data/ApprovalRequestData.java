@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.core.approval.data;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
@@ -25,6 +26,7 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -53,9 +55,21 @@ public class ApprovalRequestData {
 
     private ApprovalActionType action;
 
+    private String requestCategory;
+
+    private Instant respondedDtm;
+
+    private List<ApprovalRequestFieldDetailData> fieldDetails = List.of();
+
     public ApprovalRequestData() { }
 
     public ApprovalRequestData(ApprovalRequest request) {
+
+        this(request, List.of());
+    }
+
+    public ApprovalRequestData(ApprovalRequest request,
+                               List<ApprovalRequestFieldDetailData> fieldDetails) {
 
         this.approvalRequestId = request.getApprovalRequestId();
         this.fundInOutAction = request.getRequestedAction();
@@ -68,6 +82,9 @@ public class ApprovalRequestData {
         this.respondedBy = request.getRespondedBy();
         this.requestedDtm = request.getRequestedDtm();
         this.action = request.getAction();
+        this.requestCategory = request.getRequestCategory();
+        this.respondedDtm = request.getRespondedDtm();
+        this.fieldDetails = fieldDetails == null ? List.of() : fieldDetails;
     }
 
 }

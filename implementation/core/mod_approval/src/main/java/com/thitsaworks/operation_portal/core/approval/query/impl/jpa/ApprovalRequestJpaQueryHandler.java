@@ -20,11 +20,13 @@ import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequ
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreReadTransactional;
+import com.thitsaworks.operation_portal.core.approval.data.ApprovalRequestFieldDetailData;
 import com.thitsaworks.operation_portal.core.approval.data.ApprovalRequestData;
 import com.thitsaworks.operation_portal.core.approval.exception.ApprovalErrors;
 import com.thitsaworks.operation_portal.core.approval.exception.ApprovalException;
 import com.thitsaworks.operation_portal.core.approval.model.ApprovalRequest;
 import com.thitsaworks.operation_portal.core.approval.model.QApprovalRequest;
+import com.thitsaworks.operation_portal.core.approval.model.repository.ApprovalRequestFieldDetailRepository;
 import com.thitsaworks.operation_portal.core.approval.model.repository.ApprovalRequestRepository;
 import com.thitsaworks.operation_portal.core.approval.query.ApprovalRequestQuery;
 import lombok.RequiredArgsConstructor;
@@ -39,11 +41,15 @@ import java.util.List;
 @CoreReadTransactional
 public class ApprovalRequestJpaQueryHandler implements ApprovalRequestQuery {
 
+    private static final String AMOUNT_TAB_CODE = "AMOUNT";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ApprovalRequestJpaQueryHandler.class);
 
     private final QApprovalRequest approvalRequest = QApprovalRequest.approvalRequest;
 
     private final ApprovalRequestRepository approvalRequestRepository;
+
+    private final ApprovalRequestFieldDetailRepository approvalRequestFieldDetailRepository;
 
     @Override
     public List<ApprovalRequestData> getPendingApprovalRequests() {
@@ -53,7 +59,18 @@ public class ApprovalRequestJpaQueryHandler implements ApprovalRequestQuery {
         var pendingApprovalRequest = (List<ApprovalRequest>) this.approvalRequestRepository.findAll(predicate);
 
         return pendingApprovalRequest.stream()
-                                     .map(ApprovalRequestData::new)
+                                     .map(this::toData)
+                                     .toList();
+    }
+
+    @Override
+    public List<ApprovalRequestData> getPendingApprovalRequestsByTabCode(String tabCode) {
+
+        var pendingApprovalRequest = this.approvalRequestRepository.findByRequestedByAndTabCode(
+            null, this.normalizeTabCode(tabCode), this.isAmountTabCode(tabCode));
+
+        return pendingApprovalRequest.stream()
+                                     .map(request -> this.toData(request, tabCode))
                                      .toList();
     }
 
@@ -65,7 +82,19 @@ public class ApprovalRequestJpaQueryHandler implements ApprovalRequestQuery {
         var pendingApprovalRequest = (List<ApprovalRequest>) this.approvalRequestRepository.findAll(predicate);
 
         return pendingApprovalRequest.stream()
-                                     .map(ApprovalRequestData::new)
+                                     .map(this::toData)
+                                     .toList();
+    }
+
+    @Override
+    public List<ApprovalRequestData> getPendingApprovalRequestsByRequestedIdAndTabCode(UserId userId,
+                                                                                      String tabCode) {
+
+        var pendingApprovalRequest = this.approvalRequestRepository.findByRequestedByAndTabCode(
+            userId.getId(), this.normalizeTabCode(tabCode), this.isAmountTabCode(tabCode));
+
+        return pendingApprovalRequest.stream()
+                                     .map(request -> this.toData(request, tabCode))
                                      .toList();
     }
 
@@ -82,10 +111,45 @@ public class ApprovalRequestJpaQueryHandler implements ApprovalRequestQuery {
                                                                                 ApprovalActionType.PENDING));
 
         return this.approvalRequestRepository.findOne(predicate)
-                                             .map(ApprovalRequestData::new)
+                                             .map(this::toData)
                                              .orElseThrow(() -> new ApprovalException(ApprovalErrors.APPROVAL_REQUEST_NOT_FOUND.format(
                                                  approvalRequestId.getId()
                                                                   .toString())));
+    }
+
+    private ApprovalRequestData toData(ApprovalRequest request) {
+
+        var fieldDetails = this.approvalRequestFieldDetailRepository
+            .findByApprovalRequestIdOrderByDisplayOrderAsc(request.getApprovalRequestId())
+            .stream()
+            .map(ApprovalRequestFieldDetailData::new)
+            .toList();
+
+        return new ApprovalRequestData(request, fieldDetails);
+    }
+
+    private ApprovalRequestData toData(ApprovalRequest request, String tabCode) {
+
+        var normalizedTabCode = this.normalizeTabCode(tabCode);
+        var fieldDetails = this.approvalRequestFieldDetailRepository
+            .findByApprovalRequestIdAndTabCodeOrderByDisplayOrderAsc(
+                request.getApprovalRequestId(), normalizedTabCode, this.isAmountTabCode(normalizedTabCode))
+            .stream()
+            .map(ApprovalRequestFieldDetailData::new)
+            .toList();
+
+        return new ApprovalRequestData(request, fieldDetails);
+    }
+
+    private String normalizeTabCode(String tabCode) {
+
+        return tabCode == null ? null : tabCode.trim()
+                                                .toUpperCase();
+    }
+
+    private boolean isAmountTabCode(String tabCode) {
+
+        return AMOUNT_TAB_CODE.equalsIgnoreCase(tabCode);
     }
 
 }

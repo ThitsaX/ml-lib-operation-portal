@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -42,7 +43,8 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class CreateApprovalRequestController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CreateApprovalRequestController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(
+        CreateApprovalRequestController.class);
 
     private final CreateApprovalRequest createApprovalRequest;
 
@@ -54,24 +56,21 @@ public class CreateApprovalRequestController {
 
         LOG.info("Create Approval Request : [{}]", this.objectMapper.writeValueAsString(request));
 
-        UserContext userContext =
-            (UserContext) SecurityContextHolder.getContext()
-                                               .getAuthentication()
-                                               .getDetails();
+        UserContext userContext = (UserContext) SecurityContextHolder
+                                                    .getContext()
+                                                    .getAuthentication()
+                                                    .getDetails();
 
-        var output = this.createApprovalRequest.execute(new CreateApprovalRequest.Input(request.requestedAction(),
-                                                                                        request.participantName(),
-                                                                                        request.currency(),
-                                                                                        request.settlementCurrencyId(),
-                                                                                        request.positionCurrencyId(),
-                                                                                        request.amount(),
-                                                                                        userContext.userId()));
+        var output = this.createApprovalRequest.execute(new CreateApprovalRequest.Input(
+            request.requestedAction(), request.participantName(), request.currency(),
+            request.settlementCurrencyId(), request.positionCurrencyId(), request.amount(),
+            userContext.userId()));
 
-        var response = new Response(output.approvalRequestId()
-                                          .getEntityId()
-                                          .toString());
+        var response = new Response(output.approvalRequestId().getEntityId().toString());
 
-        LOG.info("Create Approval Request Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info(
+            "Create Approval Request Response : [{}]",
+            this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
 
@@ -79,13 +78,14 @@ public class CreateApprovalRequestController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @NotBlank @JsonProperty("requestedAction") String requestedAction,
-                          @NotNull @NotBlank @JsonProperty("participantName") String participantName,
-                          @NotNull @NotBlank @JsonProperty("currency") String currency,
-                          @NotNull @NotBlank @JsonProperty("settlementCurrencyId") String settlementCurrencyId,
-                          @NotNull @NotBlank @JsonProperty("positionCurrencyId") String positionCurrencyId,
+                          @JsonProperty("participantName") String participantName,
+                          @JsonProperty("currency") String currency,
+                          @JsonProperty("settlementCurrencyId") String settlementCurrencyId,
+                          @JsonProperty("positionCurrencyId") String positionCurrencyId,
                           @JsonProperty("amount") BigDecimal amount) implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("approvalRequestId") String approvalRequestId) implements Serializable { }
+    public record Response(@JsonProperty("approvalRequestId") String approvalRequestId)
+        implements Serializable { }
 
 }
