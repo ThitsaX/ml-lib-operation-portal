@@ -89,13 +89,9 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
     @Column(name = "request_category")
     protected String requestCategory;
 
-    @Column(name = "submitted_at")
+    @Column(name = "responded_dtm")
     @Convert(converter = JpaInstantConverter.class)
-    protected Instant submittedAt;
-
-    @Column(name = "decided_at")
-    @Convert(converter = JpaInstantConverter.class)
-    protected Instant decidedAt;
+    protected Instant respondedDtm;
 
     public ApprovalRequest(String requestedAction,
                            String participantName,
@@ -128,7 +124,6 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
         this.requestedAction(requestedAction);
         this.requestedBy(requestedBy);
         this.requestedDtm();
-        this.submittedAt(this.requestedDtm);
         this.action(ApprovalActionType.PENDING);
         this.requestCategory(requestCategory);
     }
@@ -223,15 +218,9 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
         this.requestCategory = requestCategory;
     }
 
-    public void submittedAt(Instant submittedAt) {
+    public void respondedDtm() {
 
-        this.submittedAt = submittedAt;
-    }
-
-
-    public void decidedAt(Instant decidedAt) {
-
-        this.decidedAt = decidedAt;
+        this.respondedDtm = Instant.now();
     }
 
     @Override
