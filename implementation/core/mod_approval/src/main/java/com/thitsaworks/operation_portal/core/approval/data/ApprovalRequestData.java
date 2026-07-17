@@ -57,9 +57,7 @@ public class ApprovalRequestData {
 
     private String requestCategory;
 
-    private Instant submittedAt;
-
-    private Instant decidedAt;
+    private Instant respondedDtm;
 
     private List<ApprovalRequestFieldDetailData> fieldDetails = List.of();
 
@@ -85,8 +83,7 @@ public class ApprovalRequestData {
         this.requestedDtm = request.getRequestedDtm();
         this.action = request.getAction();
         this.requestCategory = request.getRequestCategory();
-        this.submittedAt = request.getSubmittedAt();
-        this.decidedAt = request.getDecidedAt();
+        this.respondedDtm = request.getRespondedDtm();
         this.fieldDetails = fieldDetails == null ? List.of() : fieldDetails;
     }
 

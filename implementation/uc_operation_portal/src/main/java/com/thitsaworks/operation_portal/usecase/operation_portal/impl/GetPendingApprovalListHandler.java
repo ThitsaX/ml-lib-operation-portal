@@ -107,7 +107,7 @@ public class GetPendingApprovalListHandler
             request.getRequestedDtm(), request.getRespondedBy() == null ? null :
                                            this.utility.getEmail(
                                                new UserId(request.getRespondedBy().getId())),
-            request.getDecidedAt(), request.getAction(), request.getRequestCategory(),
+            request.getRespondedDtm(), request.getAction(), request.getRequestCategory(),
             request.getFieldDetails().stream().map(fieldDetail -> new Output.PendingApprovalDetail(
                 fieldDetail.getTabCode(), fieldDetail.getFieldKey(), fieldDetail.getFieldLabel(),
                 fieldDetail.getFieldValue(), this.normalizeText(fieldDetail.getBeforeValue()),

@@ -1,7 +1,6 @@
 ALTER TABLE `tbl_approval_request`
     ADD COLUMN `request_category` VARCHAR(50) DEFAULT NULL AFTER `updated_date`,
-    ADD COLUMN `submitted_at` BIGINT DEFAULT NULL AFTER `request_category`,
-    ADD COLUMN `decided_at` BIGINT DEFAULT NULL AFTER `submitted_at`;
+    ADD COLUMN `responded_dtm` BIGINT DEFAULT NULL AFTER `request_category`;
 
 ALTER TABLE `tbl_approval_request`
     MODIFY COLUMN `participant_name` VARCHAR(100) DEFAULT NULL,
