@@ -19,6 +19,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 import com.thitsaworks.operation_portal.component.common.identifier.PrincipalId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.ActionCode;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalTabCode;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
@@ -119,9 +120,9 @@ public class GetPendingApprovalListHandler
         return value == null || value.isBlank();
     }
 
-    private String normalizeTabCode(String tabCode) {
+    private String normalizeTabCode(ApprovalTabCode tabCode) {
 
-        return this.isBlank(tabCode) ? null : tabCode.trim();
+        return tabCode == null ? null : tabCode.name();
     }
 
     private BigDecimal normalize(BigDecimal value) {

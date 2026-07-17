@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalTabCode;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.approval.command.ModifyApprovalActionCommand;
 import com.thitsaworks.operation_portal.core.approval.data.ApprovalRequestData;
+import com.thitsaworks.operation_portal.core.approval.exception.ApprovalErrors;
 import com.thitsaworks.operation_portal.core.approval.exception.ApprovalException;
 import com.thitsaworks.operation_portal.core.approval.query.ApprovalRequestQuery;
 import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
@@ -33,6 +36,7 @@ import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.iam.exception.IAMErrors;
 import com.thitsaworks.operation_portal.core.iam.exception.IAMException;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
+import com.thitsaworks.operation_portal.usecase.operation_portal.Approval.AmountApprovalActionHandler;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyApprovalAction;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.slf4j.Logger;
@@ -106,7 +110,8 @@ public class ModifyApprovalActionHandler
             return new Output(output.approvalRequestId());
         }
 
-        if (this.isAmountApproval(approvalRequestData)) {
+        // Add conditions here for other Tab Code
+        if (ApprovalTabCode.AMOUNT.equals(this.getApprovalTab(approvalRequestData))) {
             this.amountApprovalActionHandler.execute(input, approvalRequestData);
         }
 
@@ -120,17 +125,24 @@ public class ModifyApprovalActionHandler
         return requestedByUserId.getId().equals(respondedByUserId.getId());
     }
 
-    private boolean isAmountApproval(ApprovalRequestData approvalRequestData) {
+    private ApprovalTabCode getApprovalTab(ApprovalRequestData approvalRequestData)
+        throws ApprovalException {
 
         if (approvalRequestData.getFieldDetails() == null ||
                 approvalRequestData.getFieldDetails().isEmpty()) {
-            return true;
+            return ApprovalTabCode.AMOUNT;
         }
 
-        return approvalRequestData.getFieldDetails()
-                                  .stream()
-                                  .anyMatch(fieldDetail -> fieldDetail.getTabCode() == null ||
-                                                           "AMOUNT".equalsIgnoreCase(fieldDetail.getTabCode()));
+        for (var fieldDetail : approvalRequestData.getFieldDetails()) {
+            try {
+                return ApprovalTabCode.valueOf(fieldDetail.getTabCode());
+            } catch (IllegalArgumentException e) {
+                throw new ApprovalException(
+                    ApprovalErrors.INVALID_APPROVAL_TAB_CODE.format(fieldDetail.getTabCode()));
+            }
+        }
+
+        return null;
     }
 
     private ModifyApprovalActionCommand.Output executeApprovalAction(Input input)
@@ -138,7 +150,8 @@ public class ModifyApprovalActionHandler
 
         return this.modifyApprovalActionCommand.execute(
             new ModifyApprovalActionCommand.Input(
-                input.approvalRequestId(), input.action(), input.responseUserId()));
+                input.approvalRequestId(), input.action(),
+                input.responseUserId()));
     }
 
 }
