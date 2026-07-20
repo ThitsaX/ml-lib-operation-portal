@@ -24,7 +24,6 @@ import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateThresholdConfiguration;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -75,8 +74,7 @@ public class CreateThresholdConfigurationController {
     public record Request(
         @NotNull @JsonProperty("scopeType") ThresholdScopeType scopeType,
         @JsonProperty("dfspId") String dfspId,
-        @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
-        @NotBlank @JsonProperty("createdBy") String createdBy
+        @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled
     ) { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

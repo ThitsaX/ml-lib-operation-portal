@@ -56,7 +56,6 @@ public class GetThresholdConfigurationListController {
                 config.dfspId(),
                 config.thresholdEnabled(),
                 config.status().toString(),
-                config.createdBy(),
                 config.updatedBy()
             ))
             .toList();
@@ -80,7 +79,6 @@ public class GetThresholdConfigurationListController {
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
-            @JsonProperty("createdBy") String createdBy,
             @JsonProperty("updatedBy") String updatedBy
     ) { }
 
