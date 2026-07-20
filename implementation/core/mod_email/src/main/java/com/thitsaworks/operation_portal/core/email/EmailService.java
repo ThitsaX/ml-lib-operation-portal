@@ -19,11 +19,14 @@ import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.core.participant.data.UserData;
 import com.thitsaworks.operation_portal.core.participant.exception.ParticipantException;
 import com.thitsaworks.operation_portal.core.participant.query.UserQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 
 public class EmailService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EmailService.class);
 
     private final EmailSender emailSender;
 
@@ -43,6 +46,7 @@ public class EmailService {
                                          BigDecimal ndcUsedPercentage,
                                          BigDecimal thresholdPercentage) {
 
+
         if (receiverEmail == null || receiverEmail.isBlank()) {
             throw new IllegalArgumentException("receiverEmail is required");
         }
@@ -59,7 +63,15 @@ public class EmailService {
             throw new IllegalArgumentException("NDC percentages are required");
         }
 
+        LOG.info(
+            "Sending NDC usage alert email: receiverEmail=[{}], dfspName=[{}], currency=[{}], ndcUsedPercentage=[{}], thresholdPercentage=[{}]",
+            receiverEmail, dfspName, currency, ndcUsedPercentage, thresholdPercentage);
+
         this.emailSender.send(receiverEmail, subject, message);
+
+        LOG.info(
+            "NDC usage alert email sent: receiverEmail=[{}], dfspName=[{}], currency=[{}]",
+            receiverEmail, dfspName, currency);
     }
 
 }

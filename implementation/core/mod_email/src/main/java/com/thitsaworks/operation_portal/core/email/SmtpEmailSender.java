@@ -23,10 +23,14 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
 public class SmtpEmailSender implements EmailSender {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SmtpEmailSender.class);
 
     private final EmailConfiguration.EmailSettings settings;
 
@@ -42,6 +46,10 @@ public class SmtpEmailSender implements EmailSender {
 
         try {
 
+            LOG.info(
+                "Sending email via SMTP: receiverEmail=[{}], subject=[{}], host=[{}], port=[{}]",
+                receiverEmail, subject, this.settings.host(), this.settings.smtpPort());
+
             MimeMessage message = new MimeMessage(this.session());
             message.setFrom(new InternetAddress(this.settings.senderEmail()));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(receiverEmail));
@@ -50,7 +58,11 @@ public class SmtpEmailSender implements EmailSender {
 
             Transport.send(message);
 
+            LOG.info("Email sent via SMTP: receiverEmail=[{}], subject=[{}]", receiverEmail, subject);
+
         } catch (MessagingException e) {
+
+            LOG.error("Failed to send email via SMTP: receiverEmail=[{}], subject=[{}]", receiverEmail, subject, e);
 
             throw new IllegalStateException("Failed to send email.", e);
         }

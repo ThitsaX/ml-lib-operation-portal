@@ -58,6 +58,7 @@ public class NdcNotificationDispatchService {
     public List<NdcNotificationDispatchLogId> createDispatchLogs(
         NdcAlertEvent alertEvent) {
 
+        LOG.info("createDispatchLogs ");
         Map<Long, UserData> recipients = resolveRecipients(alertEvent);
 
         return recipients.values()
@@ -68,6 +69,8 @@ public class NdcNotificationDispatchService {
 
     @CoreWriteTransactional
     public DeliveryResult deliver(NdcNotificationDispatchLogId dispatchLogId) {
+
+        LOG.info("NDC email delivery ");
 
         NdcNotificationDispatchLog dispatchLog =
             dispatchLogRepository.findByIdForUpdate(dispatchLogId)
