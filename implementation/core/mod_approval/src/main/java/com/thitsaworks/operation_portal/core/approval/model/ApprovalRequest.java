@@ -86,6 +86,13 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
     @Enumerated(EnumType.STRING)
     protected ApprovalActionType action;
 
+    @Column(name = "request_category")
+    protected String requestCategory;
+
+    @Column(name = "responded_dtm")
+    @Convert(converter = JpaInstantConverter.class)
+    protected Instant respondedDtm;
+
     public ApprovalRequest(String requestedAction,
                            String participantName,
                            String participantCurrency,
@@ -106,6 +113,19 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
         this.requestedDtm();
         this.action(ApprovalActionType.PENDING);
 
+    }
+
+    public ApprovalRequest(String requestedAction,
+                           UserId requestedBy,
+                           String requestCategory) {
+
+        this.approvalRequestId = new ApprovalRequestId(Snowflake.get()
+                                                                .nextId());
+        this.requestedAction(requestedAction);
+        this.requestedBy(requestedBy);
+        this.requestedDtm();
+        this.action(ApprovalActionType.PENDING);
+        this.requestCategory(requestCategory);
     }
 
     public void requestedAction(String requestedAction) {
@@ -191,6 +211,16 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
     public void action(ApprovalActionType action) {
 
         this.action = action;
+    }
+
+    public void requestCategory(String requestCategory) {
+
+        this.requestCategory = requestCategory;
+    }
+
+    public void respondedDtm() {
+
+        this.respondedDtm = Instant.now();
     }
 
     @Override
