@@ -63,12 +63,4 @@ public class CreateThresholdConfigurationHandler
     }
 
 }
-/*
-this is request body
-{
-  "scopeType": "DFSP",
-  "dfspId": "1",
-  "thresholdEnabled": true,
-  "createdBy": "admin"
-}
- */
+

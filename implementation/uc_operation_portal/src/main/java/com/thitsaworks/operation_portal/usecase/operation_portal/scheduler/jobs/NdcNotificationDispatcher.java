@@ -45,7 +45,7 @@ import java.util.List;
 public class NdcNotificationDispatcher
     extends ScheduledJob<SchedulerConfigData, NdcNotificationDispatcher.DispatchSummary> {
 
-    private static final int EVENT_BATCH_SIZE = 100;
+    private static final int EVENT_BATCH_SIZE = 100; // old alert log limit
 
     private static final int MAXIMUM_ATTEMPTS = 3;
 
