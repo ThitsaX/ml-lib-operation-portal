@@ -117,6 +117,8 @@ public class NdcThresholdWorker
             return List.of();
         }
 
+        LOG.info("Starting NDC threshold evaluation because the scheme gate is ON");
+
         Set<String> enabledDfspIds = thresholdConfigurationQuery.getAll()
                                                                 .stream()
                                                                 .filter(config -> config.scopeType() == ThresholdScopeType.DFSP)
@@ -131,21 +133,37 @@ public class NdcThresholdWorker
             return List.of();
         }
 
+        LOG.info("NDC enabled DFSPs resolved: count={}, participants={}",
+                 enabledDfspIds.size(), enabledDfspIds);
+
         var result = ledgerDataQuery.execute(
             new GetNdcLedgerDataQuery.Input(List.copyOf(enabledDfspIds))
         );
 
+        LOG.info("Central Ledger NDC data fetched: requestedDfspCount={}, recordCount={}",
+                 enabledDfspIds.size(), result.data().size());
+
         List<NdcEvaluation> evaluations = new ArrayList<>();
+        int skippedEvaluations = 0;
 
         for (NdcLedgerData data : result.data()) {
+
+            LOG.info("NDC ledger input: participant={}, currency={}, currentBalance={}, "
+                         + "ndcLimitAmount={}, active={}",
+                     data.participantName(), data.currency(), data.currentBalance(),
+                     data.ndcLimitAmount(), data.active());
 
             if (!enabledDfspIds.contains(data.participantName())) {
                 LOG.warn("Ignoring ledger participant [{}] because it is not an enabled configured DFSP",
                          data.participantName());
+                skippedEvaluations++;
                 continue;
             }
 
             if (!data.active()) {
+                LOG.warn("Skipping inactive Central Ledger account for [{} / {}]",
+                         data.participantName(), data.currency());
+                skippedEvaluations++;
                 continue;
             }
 
@@ -153,6 +171,7 @@ public class NdcThresholdWorker
             if (!gate.allowed()) {
                 LOG.info("Skipping NDC evaluation for DFSP [{}]: {}",
                          data.participantName(), gate.reason());
+                skippedEvaluations++;
                 continue;
             }
 
@@ -163,12 +182,14 @@ public class NdcThresholdWorker
             if (participantNDC == null || participantNDC.getNdcPercent() == null) {
                 LOG.warn("Skipping NDC evaluation because no NDC configuration exists for [{} / {}]",
                          data.participantName(), data.currency());
+                skippedEvaluations++;
                 continue;
             }
 
             if (data.ndcLimitAmount() == null || data.ndcLimitAmount().signum() <= 0) {
                 LOG.warn("Skipping NDC evaluation because ledger NDC limit is missing or invalid for [{} / {}]",
                          data.participantName(), data.currency());
+                skippedEvaluations++;
                 continue;
             }
 
@@ -180,8 +201,18 @@ public class NdcThresholdWorker
             if (ndcUsedPercent == null) {
                 LOG.warn("Skipping NDC evaluation because NDC used percent is missing for [{} / {}]",
                          data.participantName(), data.currency());
+                skippedEvaluations++;
                 continue;
             }
+
+            String comparison = ndcUsedPercent.compareTo(participantNDC.getNdcPercent()) >= 0
+                ? "AT_OR_ABOVE_THRESHOLD"
+                : "BELOW_THRESHOLD";
+
+            LOG.info("NDC calculation result: participant={}, currency={}, ndcUsedPercent={}, "
+                         + "thresholdPercent={}, comparison={}, calculationSource=GetNdcUsedDataQuery",
+                     data.participantName(), data.currency(), ndcUsedPercent,
+                     participantNDC.getNdcPercent(), comparison);
 
             EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
                 new EvaluateNdcThresholdCommand.Input(
@@ -211,9 +242,34 @@ public class NdcThresholdWorker
                 thresholdOutput.alertEventId()
             );
 
+            String decision;
+            if (thresholdOutput.alertCreated()) {
+                decision = "CREATE_ALERT";
+            } else if (thresholdOutput.recovered()) {
+                decision = "RECOVERED";
+            } else if (thresholdOutput.currentState() == NdcThresholdStateType.BREACHED) {
+                decision = "SUPPRESS_DUPLICATE";
+            } else {
+                decision = "NO_ALERT";
+            }
+
+            LOG.info("NDC evaluation decision: participant={}, currency={}, previousState={}, "
+                         + "currentState={}, breachCycle={}, decision={}, alertEventId={}",
+                     evaluation.participantName(), evaluation.currency(), evaluation.previousState(),
+                     evaluation.currentState(), evaluation.breachCycleNo(), decision,
+                     evaluation.alertEventId());
+
             persistEvaluationLog(schedulerConfigData, evaluation, evaluatedAt);
             evaluations.add(evaluation);
         }
+
+        long alertsCreated = evaluations.stream().filter(NdcEvaluation::alertCreated).count();
+        long recoveries = evaluations.stream().filter(NdcEvaluation::recovered).count();
+
+        LOG.info("NDC worker completed: ledgerRecords={}, evaluated={}, skipped={}, "
+                     + "alertsCreated={}, recovered={}",
+                 result.data().size(), evaluations.size(), skippedEvaluations,
+                 alertsCreated, recoveries);
 
         return evaluations;
     }

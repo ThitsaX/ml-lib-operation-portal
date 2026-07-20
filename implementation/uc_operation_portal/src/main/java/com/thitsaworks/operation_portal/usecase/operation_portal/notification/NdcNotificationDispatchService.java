@@ -26,6 +26,8 @@ import com.thitsaworks.operation_portal.core.notification.model.repository.NdcNo
 import com.thitsaworks.operation_portal.core.participant.data.UserData;
 import com.thitsaworks.operation_portal.core.participant.query.UserQuery;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -37,6 +39,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class NdcNotificationDispatchService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NdcNotificationDispatchService.class);
 
     private static final String SYSTEM_USER = "system";
 
@@ -71,10 +75,21 @@ public class NdcNotificationDispatchService {
                                       "Dispatch log not found: " + dispatchLogId));
 
         if (!dispatchLog.canAttempt(MAXIMUM_ATTEMPTS)) {
+            LOG.warn("Skipping NDC email delivery because no attempts remain: dispatchLogId={}, "
+                         + "alertEventId={}, recipientUserId={}, status={}, attempt={}",
+                     dispatchLog.getNdcNotificationDispatchLogId(), dispatchLog.getAlertEventId(),
+                     dispatchLog.getRecipientUserId(), dispatchLog.getDeliveryStatus(),
+                     dispatchLog.getAttemptNo());
             return new DeliveryResult(false, false, true);
         }
 
         dispatchLog.startAttempt(LocalDateTime.now(), SYSTEM_USER);
+
+        LOG.info("NDC email delivery attempt: dispatchLogId={}, alertEventId={}, "
+                     + "recipientUserId={}, recipientType={}, attempt={}",
+                 dispatchLog.getNdcNotificationDispatchLogId(), dispatchLog.getAlertEventId(),
+                 dispatchLog.getRecipientUserId(), dispatchLog.getRecipientType(),
+                 dispatchLog.getAttemptNo());
 
         try {
             NdcAlertEvent alertEvent =
@@ -96,11 +111,22 @@ public class NdcNotificationDispatchService {
             dispatchLog.markSent(LocalDateTime.now(), SYSTEM_USER);
             dispatchLogRepository.saveAndFlush(dispatchLog);
 
+            LOG.info("NDC email delivery succeeded: dispatchLogId={}, alertEventId={}, "
+                         + "recipientUserId={}, attempt={}",
+                     dispatchLog.getNdcNotificationDispatchLogId(), dispatchLog.getAlertEventId(),
+                     dispatchLog.getRecipientUserId(), dispatchLog.getAttemptNo());
+
             return new DeliveryResult(true, false, false);
 
         } catch (RuntimeException exception) {
             dispatchLog.markFailed(exception.getMessage(), SYSTEM_USER);
             dispatchLogRepository.saveAndFlush(dispatchLog);
+
+            LOG.error("NDC email delivery failed: dispatchLogId={}, alertEventId={}, "
+                          + "recipientUserId={}, attempt={}, error={}",
+                      dispatchLog.getNdcNotificationDispatchLogId(), dispatchLog.getAlertEventId(),
+                      dispatchLog.getRecipientUserId(), dispatchLog.getAttemptNo(),
+                      exception.getMessage(), exception);
 
             return new DeliveryResult(false, true, false);
         }
@@ -165,6 +191,19 @@ public class NdcNotificationDispatchService {
             if (hubUser || breachedDfspUser) {
                 recipients.put(user.userId().getId(), user);
             }
+        }
+
+        long hubRecipients = recipients.values().stream().filter(this::isHubUser).count();
+        long dfspRecipients = recipients.size() - hubRecipients;
+
+        if (recipients.isEmpty()) {
+            LOG.warn("No eligible NDC notification recipients found: alertEventId={}, breachedDfsp={}",
+                     alertEvent.getNdcAlertEventId(), breachedDfsp);
+        } else {
+            LOG.info("NDC notification recipients resolved: alertEventId={}, breachedDfsp={}, "
+                         + "hubRecipients={}, dfspRecipients={}, totalRecipients={}",
+                     alertEvent.getNdcAlertEventId(), breachedDfsp, hubRecipients,
+                     dfspRecipients, recipients.size());
         }
 
         return recipients;

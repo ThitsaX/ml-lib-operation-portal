@@ -34,6 +34,8 @@ import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
 import com.thitsaworks.operation_portal.usecase.operation_portal.notification.NdcNotificationDispatchService;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.ScheduledJob;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +47,8 @@ import java.util.List;
 @ActionMetadata(category = ActionCategory.SYSTEM_JOBS_AND_SCHEDULED_EXECUTORS)
 public class NdcNotificationDispatcher
     extends ScheduledJob<SchedulerConfigData, NdcNotificationDispatcher.DispatchSummary> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NdcNotificationDispatcher.class);
 
     private static final int EVENT_BATCH_SIZE = 100; // old alert log limit
 
@@ -98,6 +102,7 @@ public class NdcNotificationDispatcher
                                        .orElse(false);
 
         if (!schemeEnabled) {
+            LOG.debug("Skipping NDC notification dispatch because the scheme gate is OFF or unavailable");
             return DispatchSummary.empty();
         }
 
@@ -108,6 +113,11 @@ public class NdcNotificationDispatcher
 
         List<NdcAlertEvent> undispatchedEvents =
             alertEventRepository.findUndispatched(PageRequest.of(0, EVENT_BATCH_SIZE));
+
+        if (!undispatchedEvents.isEmpty()) {
+            LOG.info("NDC notification dispatcher found new alert events: count={}",
+                     undispatchedEvents.size());
+        }
 
         for (NdcAlertEvent alertEvent : undispatchedEvents) {
 
@@ -141,6 +151,11 @@ public class NdcNotificationDispatcher
             retryBefore,
             PageRequest.of(0, EVENT_BATCH_SIZE));
 
+        if (!retryableLogs.isEmpty()) {
+            LOG.info("NDC notification dispatcher found retryable deliveries: count={}, retryBefore={}",
+                     retryableLogs.size(), retryBefore);
+        }
+
         for (var dispatchLog : retryableLogs) {
 
             var result = dispatchService.deliver(
@@ -155,13 +170,22 @@ public class NdcNotificationDispatcher
             }
         }
 
-        return new DispatchSummary(
+        DispatchSummary summary = new DispatchSummary(
             undispatchedEvents.size(),
             retryableLogs.size(),
             prepared,
             sent,
             failed,
             skipped);
+
+        if (summary.hasWork()) {
+            LOG.info("NDC notification dispatcher completed: events={}, retries={}, prepared={}, "
+                         + "sent={}, failed={}, skipped={}",
+                     summary.undispatchedEvents(), summary.retryableDeliveries(),
+                     summary.preparedRecipients(), summary.sent(), summary.failed(), summary.skipped());
+        }
+
+        return summary;
     }
 
     @Override

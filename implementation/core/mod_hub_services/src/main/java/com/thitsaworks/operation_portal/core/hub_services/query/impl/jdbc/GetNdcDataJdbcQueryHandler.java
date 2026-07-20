@@ -46,6 +46,9 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
     public Output execute(Input input) throws HubServicesException {
 
         try {
+            LOG.debug("Executing Central Ledger NDC used calculation query for DFSP [{}]",
+                      input.getFspID());
+
             String sql = """
                 SELECT
                     IFNULL(pc.currencyId, '') AS currency,
@@ -90,12 +93,22 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
 
             if (result == null || result.isEmpty()) {
 
+                LOG.debug("Central Ledger NDC used calculation returned no data for DFSP [{}]",
+                          input.getFspID());
+
                 return null;
             }
+
+            result.forEach(data ->
+                LOG.debug("Central Ledger NDC used result: dfsp={}, currency={}, ndcUsedPercent={}, active={}",
+                          input.getFspID(), data.currency(), data.ndcUsed(), data.isActive()));
 
             return new Output(result);
 
         } catch (Exception e) {
+
+            LOG.error("Central Ledger NDC used calculation query failed for DFSP [{}]",
+                      input.getFspID(), e);
 
             throw new HubServicesException(
                 HubServicesErrors.HUB_PARTICIPANT_POSITION_ERROR.description(e.getMessage()));

@@ -8,6 +8,8 @@ import com.thitsaworks.operation_portal.core.notification.model.NdcThresholdStat
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcAlertEventRepository;
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcThresholdStateRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,6 +19,9 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class EvaluateNdcThresholdCommandHandler
     implements EvaluateNdcThresholdCommand {
+
+    private static final Logger LOG =
+        LoggerFactory.getLogger(EvaluateNdcThresholdCommandHandler.class);
 
     private static final String NDC_USAGE_ALERT_SUBJECT = "NDC Usage Alert – Action Required";
 
@@ -45,6 +50,14 @@ public class EvaluateNdcThresholdCommandHandler
 
         NdcThresholdStateType previousState = state.getCurrentState();
 
+        int thresholdComparison = input.currentNdcUsed().compareTo(input.thresholdPercent());
+
+        LOG.info("NDC threshold decision input: participant={}, currency={}, currentBalance={}, "
+                     + "ndcUsedPercent={}, thresholdPercent={}, previousState={}, comparison={}",
+                 input.participantName(), input.currency(), input.currentBalance(),
+                 input.currentNdcUsed(), input.thresholdPercent(), previousState,
+                 thresholdComparison >= 0 ? "AT_OR_ABOVE_THRESHOLD" : "BELOW_THRESHOLD");
+
         state.recordEvaluation(
             input.currentBalance(),
             input.currentNdcUsed(),
@@ -55,7 +68,7 @@ public class EvaluateNdcThresholdCommandHandler
         boolean recovered = false;
         NdcAlertEvent alertEvent = null;
 
-        if (input.currentNdcUsed().compareTo(input.thresholdPercent()) >= 0) {
+        if (thresholdComparison >= 0) {
             alertCreated = state.breach(input.evaluatedAt(), input.actor());
 
             if (alertCreated) {
@@ -81,6 +94,23 @@ public class EvaluateNdcThresholdCommandHandler
         if (alertEvent != null) {
             alertEventRepository.saveAndFlush(alertEvent);
         }
+
+        String decision;
+        if (alertCreated) {
+            decision = "CREATE_ALERT";
+        } else if (recovered) {
+            decision = "RECOVERED";
+        } else if (state.getCurrentState() == NdcThresholdStateType.BREACHED) {
+            decision = "SUPPRESS_DUPLICATE";
+        } else {
+            decision = "NO_ALERT";
+        }
+
+        LOG.info("NDC threshold decision result: participant={}, currency={}, previousState={}, "
+                     + "currentState={}, breachCycle={}, decision={}, alertEventId={}",
+                 input.participantName(), input.currency(), previousState, state.getCurrentState(),
+                 state.getBreachCycleNo(), decision,
+                 alertEvent == null ? null : alertEvent.getNdcAlertEventId());
 
         return new Output(
             previousState,
