@@ -50,6 +50,8 @@ public abstract class ScheduledJob<I, O> {
 
     private static final ThreadLocal<AuditId> auditId = new InheritableThreadLocal<>();
 
+    private static final ThreadLocal<LocalDateTime> executionStartTime = new InheritableThreadLocal<>();
+
     private final CreateJobExecutionLogCommand createJobExecutionLogCommand;
 
     private final ModifyJobExecutionLogCommand modifyJobExecutionLogCommand;
@@ -77,6 +79,10 @@ public abstract class ScheduledJob<I, O> {
 
             O output = this.onExecute(schedulerConfigData);
 
+            if (this.deferExecutionLog() && this.shouldPersistExecutionLog(output)) {
+                this.createExecutionLog(schedulerConfigData);
+            }
+
             this.afterExecute(schedulerConfigData, output);
 
         } catch (Exception exception) {
@@ -85,6 +91,10 @@ public abstract class ScheduledJob<I, O> {
                      schedulerConfigData.name(), exception.getMessage());
 
             try {
+
+                if (this.deferExecutionLog() && ScheduledJob.jobExecutionLogId.get() == null) {
+                    this.createExecutionLog(schedulerConfigData);
+                }
 
                 JobExecutionLogId jobExecutionLogId = ScheduledJob.jobExecutionLogId.get();
 
@@ -123,6 +133,9 @@ public abstract class ScheduledJob<I, O> {
 
         } finally {
 
+            ScheduledJob.jobExecutionLogId.remove();
+            ScheduledJob.auditId.remove();
+            ScheduledJob.executionStartTime.remove();
             MDC.clear();
         }
 
@@ -139,11 +152,11 @@ public abstract class ScheduledJob<I, O> {
         LOG.info("Scheduler Job: [{}] initiated at: [{} ({})]",
                  schedulerConfigData.name(), startTime, schedulerConfigData.zoneId());
 
-        ScheduledJob.jobExecutionLogId.set(this.createJobExecutionLogCommand.execute(new CreateJobExecutionLogCommand.Input(
-                                                   schedulerConfigData.name(),
-                                                   JobStatus.STARTED,
-                                                   startTime))
-                                                                            .jobExecutionLogId());
+        ScheduledJob.executionStartTime.set(startTime);
+
+        if (!this.deferExecutionLog()) {
+            this.createExecutionLog(schedulerConfigData);
+        }
 
         var action = this.actionAuthorizationManager.getAction(new ActionCode(schedulerConfigData.jobName()));
 
@@ -183,14 +196,16 @@ public abstract class ScheduledJob<I, O> {
 
         JobExecutionLogId jobExecutionLogId = ScheduledJob.jobExecutionLogId.get();
 
-        String jobExecutionMessage = String.format("Job [%s] executed successfully at [%s (%s)]",
-                                                   schedulerConfigData.name(),
-                                                   endTime, schedulerConfigData.zoneId());
-
-        this.modifyJobExecutionLogCommand.execute(new ModifyJobExecutionLogCommand.Input(jobExecutionLogId,
-                                                                                         JobStatus.COMPLETED,
-                                                                                         jobExecutionMessage,
-                                                                                         endTime));
+        if (jobExecutionLogId != null) {
+            this.modifyJobExecutionLogCommand.execute(
+                new ModifyJobExecutionLogCommand.Input(
+                    jobExecutionLogId,
+                    JobStatus.COMPLETED,
+                    this.buildExecutionMessage(schedulerConfigData, output, endTime),
+                    endTime
+                )
+            );
+        }
 
         String outputJson, outputInfo;
 
@@ -212,6 +227,53 @@ public abstract class ScheduledJob<I, O> {
 
         }
 
+    }
+
+    private void createExecutionLog(SchedulerConfigData schedulerConfigData)
+        throws DomainException {
+
+        if (ScheduledJob.jobExecutionLogId.get() != null) {
+            return;
+        }
+
+        LocalDateTime startTime = ScheduledJob.executionStartTime.get();
+        if (startTime == null) {
+            startTime = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
+                                     .withNano(0);
+            ScheduledJob.executionStartTime.set(startTime);
+        }
+
+        ScheduledJob.jobExecutionLogId.set(
+            this.createJobExecutionLogCommand.execute(
+                new CreateJobExecutionLogCommand.Input(
+                    schedulerConfigData.name(),
+                    JobStatus.STARTED,
+                    startTime
+                )
+            ).jobExecutionLogId()
+        );
+    }
+
+    protected boolean deferExecutionLog() {
+
+        return false;
+    }
+
+    protected boolean shouldPersistExecutionLog(O output) {
+
+        return true;
+    }
+
+    protected String buildExecutionMessage(SchedulerConfigData schedulerConfigData,
+                                           O output,
+                                           LocalDateTime endTime) {
+
+        return String.format(
+            "Job [%s] executed successfully at [%s (%s)]",
+            schedulerConfigData.name(),
+            endTime,
+            schedulerConfigData.zoneId()
+        );
     }
 
     protected abstract O onExecute(SchedulerConfigData schedulerConfigData)

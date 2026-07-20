@@ -27,6 +27,7 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditComm
 import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcAlertEventRepository;
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcNotificationDispatchLogRepository;
+import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
 import com.thitsaworks.operation_portal.core.scheduler.command.CreateJobExecutionLogCommand;
 import com.thitsaworks.operation_portal.core.scheduler.command.ModifyJobExecutionLogCommand;
 import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
@@ -57,6 +58,8 @@ public class NdcNotificationDispatcher
 
     private final NdcNotificationDispatchService dispatchService;
 
+    private final ThresholdConfigurationQuery thresholdConfigurationQuery;
+
     public NdcNotificationDispatcher(
         CreateJobExecutionLogCommand createJobExecutionLogCommand,
         ModifyJobExecutionLogCommand modifyJobExecutionLogCommand,
@@ -67,7 +70,8 @@ public class NdcNotificationDispatcher
         ObjectMapper objectMapper,
         NdcAlertEventRepository alertEventRepository,
         NdcNotificationDispatchLogRepository dispatchLogRepository,
-        NdcNotificationDispatchService dispatchService) {
+        NdcNotificationDispatchService dispatchService,
+        ThresholdConfigurationQuery thresholdConfigurationQuery) {
 
         super(
             createJobExecutionLogCommand,
@@ -81,11 +85,21 @@ public class NdcNotificationDispatcher
         this.alertEventRepository = alertEventRepository;
         this.dispatchLogRepository = dispatchLogRepository;
         this.dispatchService = dispatchService;
+        this.thresholdConfigurationQuery = thresholdConfigurationQuery;
     }
 
     @Override
     protected DispatchSummary onExecute(SchedulerConfigData schedulerConfigData)
         throws DomainException {
+
+        boolean schemeEnabled =
+            thresholdConfigurationQuery.getSchemeConfiguration()
+                                       .map(configuration -> configuration.thresholdEnabled())
+                                       .orElse(false);
+
+        if (!schemeEnabled) {
+            return DispatchSummary.empty();
+        }
 
         int prepared = 0;
         int sent = 0;
@@ -143,16 +157,58 @@ public class NdcNotificationDispatcher
 
         return new DispatchSummary(
             undispatchedEvents.size(),
+            retryableLogs.size(),
             prepared,
             sent,
             failed,
             skipped);
     }
 
+    @Override
+    protected boolean deferExecutionLog() {
+
+        return true;
+    }
+
+    @Override
+    protected boolean shouldPersistExecutionLog(DispatchSummary summary) {
+
+        return summary.hasWork();
+    }
+
+    @Override
+    protected String buildExecutionMessage(SchedulerConfigData schedulerConfigData,
+                                           DispatchSummary summary,
+                                           LocalDateTime endTime) {
+
+        return String.format(
+            "NDC notification dispatcher completed: events=%d, retries=%d, prepared=%d, sent=%d, failed=%d, skipped=%d at [%s (%s)]",
+            summary.undispatchedEvents(),
+            summary.retryableDeliveries(),
+            summary.preparedRecipients(),
+            summary.sent(),
+            summary.failed(),
+            summary.skipped(),
+            endTime,
+            schedulerConfigData.zoneId()
+        );
+    }
+
     public record DispatchSummary(int undispatchedEvents,
+                                  int retryableDeliveries,
                                   int preparedRecipients,
                                   int sent,
                                   int failed,
                                   int skipped) {
+
+        public boolean hasWork() {
+
+            return this.undispatchedEvents > 0 || this.retryableDeliveries > 0;
+        }
+
+        public static DispatchSummary empty() {
+
+            return new DispatchSummary(0, 0, 0, 0, 0, 0);
+        }
     }
 }

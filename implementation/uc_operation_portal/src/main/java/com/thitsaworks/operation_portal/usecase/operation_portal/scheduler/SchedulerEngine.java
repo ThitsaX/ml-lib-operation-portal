@@ -48,6 +48,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SchedulerEngine {
 
+    private static final Set<String> SCHEME_GATED_NDC_JOBS = Set.of(
+        "NdcThresholdWorker",
+        "NdcNotificationDispatcher"
+    );
+
     private final ThreadPoolTaskScheduler taskScheduler;
 
     private final ApplicationContext applicationContext;
@@ -93,7 +98,7 @@ public class SchedulerEngine {
 
     private boolean isSchedulerAllowed(SchedulerConfigData schedulerConfigData) {
 
-        if (!"NdcThresholdWorker".equals(schedulerConfigData.jobName())) {
+        if (!SCHEME_GATED_NDC_JOBS.contains(schedulerConfigData.jobName())) {
             return true;
         }
 
