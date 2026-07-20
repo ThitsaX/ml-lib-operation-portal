@@ -16,6 +16,7 @@
 package com.thitsaworks.operation_portal.core.approval.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
 import com.thitsaworks.operation_portal.core.approval.model.ApprovalRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -24,6 +25,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ApprovalRequestRepository
@@ -52,4 +54,30 @@ public interface ApprovalRequestRepository
     List<ApprovalRequest> findByRequestedByAndTabCode(@Param("requestedById") Long requestedById,
                                                       @Param("tabCode") String tabCode,
                                                       @Param("amountTab") boolean amountTab);
+
+    @Query(
+        "SELECT DISTINCT request FROM ApprovalRequest request " +
+            "WHERE request.approvalRequestId = :approvalRequestId " +
+            "AND request.action = :pendingAction " +
+            "AND (" +
+            "(:amountTab = TRUE AND (" +
+            "EXISTS (" +
+            "SELECT detail FROM ApprovalRequestFieldDetail detail " +
+            "WHERE detail.approvalRequestId = request.approvalRequestId " +
+            "AND (detail.tabCode IS NULL OR detail.tabCode = :tabCode)" +
+            ") OR NOT EXISTS (" +
+            "SELECT existingDetail FROM ApprovalRequestFieldDetail existingDetail " +
+            "WHERE existingDetail.approvalRequestId = request.approvalRequestId" +
+            ") " +
+            ")) OR " +
+            "(:amountTab = FALSE AND EXISTS (" +
+            "SELECT detail FROM ApprovalRequestFieldDetail detail " +
+            "WHERE detail.approvalRequestId = request.approvalRequestId " +
+            "AND detail.tabCode = :tabCode" +
+            "))" +
+            ")")
+    Optional<ApprovalRequest> findPendingByIdAndTabCode(@Param("approvalRequestId") ApprovalRequestId approvalRequestId,
+                                                        @Param("pendingAction") ApprovalActionType pendingAction,
+                                                        @Param("tabCode") String tabCode,
+                                                        @Param("amountTab") boolean amountTab);
 }
