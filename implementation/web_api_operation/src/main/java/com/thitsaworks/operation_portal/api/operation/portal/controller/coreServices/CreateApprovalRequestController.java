@@ -78,10 +78,10 @@ public class CreateApprovalRequestController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @NotBlank @JsonProperty("requestedAction") String requestedAction,
-                          @JsonProperty("participantName") String participantName,
-                          @JsonProperty("currency") String currency,
-                          @JsonProperty("settlementCurrencyId") String settlementCurrencyId,
-                          @JsonProperty("positionCurrencyId") String positionCurrencyId,
+                          @NotBlank @JsonProperty("participantName") String participantName,
+                          @NotBlank @JsonProperty("currency") String currency,
+                          @NotBlank @JsonProperty("settlementCurrencyId") String settlementCurrencyId,
+                          @NotBlank @JsonProperty("positionCurrencyId") String positionCurrencyId,
                           @JsonProperty("amount") BigDecimal amount) implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
