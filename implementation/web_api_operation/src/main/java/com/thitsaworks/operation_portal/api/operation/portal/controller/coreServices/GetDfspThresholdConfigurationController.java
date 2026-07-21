@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -42,8 +42,8 @@ public class GetDfspThresholdConfigurationController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations/participant-currency/{participantCurrencyId}")
-    public ResponseEntity<Response> execute(@PathVariable("participantCurrencyId") Long participantCurrencyId)
+    @GetMapping("/secured/ndc/configurations/participant-currency")
+    public ResponseEntity<Response> execute(@RequestParam("participantCurrencyId") Long participantCurrencyId)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Get NDC DFSP Threshold Configuration Request : participantCurrencyId=[{}]",

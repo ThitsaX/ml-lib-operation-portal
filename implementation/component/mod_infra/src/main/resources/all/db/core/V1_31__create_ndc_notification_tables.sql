@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
         UNIQUE (scope_type, participant_currency_id),
     CONSTRAINT chk_threshold_config_scope
         CHECK (
-        scope_type = 'DFSP' AND participant_currency_id IS NOT NULL
+            (scope_type = 'SCHEME' AND participant_currency_id IS NULL AND color_code IS NULL)
+            OR (scope_type = 'DFSP' AND participant_currency_id IS NOT NULL)
         ),
     CONSTRAINT chk_threshold_config_scope_type
         CHECK (scope_type IN ('SCHEME', 'DFSP')),
