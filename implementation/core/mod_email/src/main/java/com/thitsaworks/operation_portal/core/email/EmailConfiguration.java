@@ -44,6 +44,11 @@ public class EmailConfiguration {
 
         private static final String DEFAULT_SENDER_NAME = "OP System";
 
+        public int smtpPort() {
+
+            return this.port == null ? 587 : this.port;
+        }
+
         public boolean smtpAuth() {
 
             return this.auth == null || this.auth;
