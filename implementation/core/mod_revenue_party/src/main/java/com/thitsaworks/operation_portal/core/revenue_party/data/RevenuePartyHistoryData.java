@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024-2026 ThitsaWorks Pte. Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.thitsaworks.operation_portal.core.revenue_party.data;
+
+import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyHistoryId;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
+import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyActionType;
+import com.thitsaworks.operation_portal.core.revenue_party.model.RevenuePartyHistory;
+import java.io.Serializable;
+import java.time.Instant;
+
+public record RevenuePartyHistoryData(RevenuePartyHistoryId revenuePartyHistoryId, RevenuePartyId revenuePartyId,
+                                      String partyCode, String partyName, String partyType, String description,
+                                      boolean isActive, UserId createdBy, Instant createdDate,
+                                      RevenuePartyActionType actionType, UserId changedBy,
+                                      Instant changedDate) implements Serializable {
+    public RevenuePartyHistoryData(RevenuePartyHistory history) {
+        this(history.getRevenuePartyHistoryId(), history.getRevenuePartyId(), history.getPartyCode(),
+             history.getPartyName(), history.getPartyType(), history.getDescription(), history.isActive(),
+             history.getCreatedBy(), history.getCreatedDate(), history.getActionType(), history.getChangedBy(),
+             history.getChangedDate());
+    }
+}

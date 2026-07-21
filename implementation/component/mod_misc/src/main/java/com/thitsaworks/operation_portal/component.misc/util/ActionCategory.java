@@ -48,6 +48,8 @@ public enum ActionCategory {
 
     SCHEDULER_AND_JOB_CONFIGURATION("Scheduler / Job Configuration"),
 
+    REVENUE_PARTY("Revenue Party"),
+
     SYSTEM_JOBS_AND_SCHEDULED_EXECUTORS("Scheduled Job Executors / System Jobs");
 
     private final String displayName;
