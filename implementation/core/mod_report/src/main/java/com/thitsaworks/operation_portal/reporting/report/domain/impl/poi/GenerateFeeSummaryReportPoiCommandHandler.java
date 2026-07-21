@@ -833,7 +833,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private void writeOptionalAmountCell(Row row, int columnIndex, BigDecimal value, CellStyle style) {
 
         Cell cell = row.createCell(columnIndex);
-        if (value != null) {
+        if (this.hasNonZeroAmount(value)) {
             cell.setCellValue(value.doubleValue());
         } else {
             cell.setCellValue("-");
@@ -1053,7 +1053,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
     private String formatOptionalAmount(BigDecimal value) {
 
-        return value == null ? "-" : new DecimalFormat(AMOUNT_FORMAT).format(value);
+        return this.hasNonZeroAmount(value) ? new DecimalFormat(AMOUNT_FORMAT).format(value) : "-";
     }
 
     private String formatBalanceAmount(BigDecimal value) {
@@ -1117,6 +1117,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private BigDecimal valueOrZero(BigDecimal value) {
 
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private boolean hasNonZeroAmount(BigDecimal value) {
+
+        return value != null && value.signum() != 0;
     }
 
     private record FeeSummaryRow(String senderDfspId,
