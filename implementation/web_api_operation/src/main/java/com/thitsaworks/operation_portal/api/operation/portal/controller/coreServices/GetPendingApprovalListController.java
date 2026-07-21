@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,7 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetPendingApprovalListController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GetPendingApprovalListController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(
+        GetPendingApprovalListController.class);
 
     private final GetPendingApprovalList getPendingApprovalList;
 
@@ -49,33 +51,34 @@ public class GetPendingApprovalListController {
 
         var output = this.getPendingApprovalList.execute(new GetPendingApprovalList.Input());
 
-        var response = new Response(output.pendingApprovalList()
-                                          .stream()
-                                          .sorted(Comparator.comparing(
-                                              request -> request.requestedDateTime()
-                                                                .getEpochSecond(),
-                                              Comparator.reverseOrder()))
-                                          .map(request -> new Response.PendingApproval(request.approvalRequestId()
-                                                                                              .getEntityId()
-                                                                                              .toString(),
-                                                                                       request.requestedAction(),
-                                                                                       request.participantName(),
-                                                                                       request.currency(),
-                                                                                       request.amount(),
-                                                                                       request.requestedBy(),
-                                                                                       request.requestedDateTime()
-                                                                                              .getEpochSecond(),
-                                                                                       request.action()
-                                                                                              .name()))
-                                          .toList());
+        var response = new Response(
+            output
+                .pendingApprovalList()
+                .stream()
+                .sorted(
+                    Comparator.comparing(request -> request.requestedDateTime().getEpochSecond(),
+                        Comparator.reverseOrder()))
+                .map(request -> new Response.PendingApproval(
+                    request.approvalRequestId().getEntityId().toString(), request.requestedAction(),
+                    request.participantName(), request.currency(), request.amount(),
+                    request.requestedBy(), request.requestedDateTime().getEpochSecond(),
+                    request.respondedBy(), request.respondedDateTime() == null ? null :
+                                               request.respondedDateTime().getEpochSecond(),
+                    request.action().name(), request.requestCategory(),
+                    request.details().stream().map(detail -> new Response.PendingApprovalDetail(
+                        detail.tabCode(), detail.fieldKey(), detail.fieldLabel(),
+                        detail.fieldValue(), detail.beforeValue(), detail.afterValue(),
+                        detail.valueType(), detail.displayOrder())).toList()))
+                .toList());
 
-        LOG.info("Get Pending Approval List Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info(
+            "Get Pending Approval List Response : [{}]",
+            this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
 
-    public record Request() implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(@JsonProperty("pendingApprovalList") List<PendingApproval> pendingApprovalList)
@@ -88,7 +91,22 @@ public class GetPendingApprovalListController {
                                       @JsonProperty("amount") BigDecimal amount,
                                       @JsonProperty("requestedBy") String requestedBy,
                                       @JsonProperty("requestedDateTime") long requestedDateTime,
-                                      @JsonProperty("action") String action) implements Serializable { }
+                                      @JsonProperty("respondedBy") String respondedBy,
+                                      @JsonProperty("respondedDateTime") Long respondedDateTime,
+                                      @JsonProperty("action") String action,
+                                      @JsonProperty("requestCategory") String requestCategory,
+                                      @JsonProperty("details") List<PendingApprovalDetail> details)
+            implements Serializable { }
+
+        public record PendingApprovalDetail(@JsonProperty("tabCode") String tabCode,
+                                            @JsonProperty("fieldKey") String fieldKey,
+                                            @JsonProperty("fieldLabel") String fieldLabel,
+                                            @JsonProperty("fieldValue") String fieldValue,
+                                            @JsonProperty("beforeValue") String beforeValue,
+                                            @JsonProperty("afterValue") String afterValue,
+                                            @JsonProperty("valueType") String valueType,
+                                            @JsonProperty("displayOrder") Integer displayOrder)
+            implements Serializable { }
 
     }
 

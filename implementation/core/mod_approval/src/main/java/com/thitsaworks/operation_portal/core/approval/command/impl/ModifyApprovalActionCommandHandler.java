@@ -44,6 +44,7 @@ public class ModifyApprovalActionCommandHandler implements ModifyApprovalActionC
 
         approvalRequest.action(input.action());
         approvalRequest.respondedBy(input.respondedBy());
+        approvalRequest.respondedDtm();
 
         this.approvalRequestRepository.saveAndFlush(approvalRequest);
 

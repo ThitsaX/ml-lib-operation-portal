@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalTabCode;
 import com.thitsaworks.operation_portal.component.common.type.PositionActionType;
 import com.thitsaworks.operation_portal.component.fspiop.model.Currency;
 import com.thitsaworks.operation_portal.component.fspiop.model.Extension;
@@ -125,7 +127,7 @@ public class ModifyApprovalActionHandler
             input.approvalRequestId());
 
         var approvalRequestData = this.approvalRequestQuery.getPendingApprovalRequestByID(
-            input.approvalRequestId());
+            input.approvalRequestId(), ApprovalTabCode.AMOUNT.name());
 
         LOG.info(
             "Get Pending Approval Response By Id Query Response : {}",
@@ -356,7 +358,8 @@ public class ModifyApprovalActionHandler
 
         return this.modifyApprovalActionCommand.execute(
             new ModifyApprovalActionCommand.Input(
-                input.approvalRequestId(), input.action(), input.responseUserId()));
+                input.approvalRequestId(), input.action(),
+                input.responseUserId()));
     }
 
 }

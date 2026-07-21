@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
@@ -23,7 +24,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-public interface GetPendingApprovalList extends UseCase<GetPendingApprovalList.Input, GetPendingApprovalList.Output> {
+public interface GetPendingApprovalList
+    extends UseCase<GetPendingApprovalList.Input, GetPendingApprovalList.Output> {
 
     record Input() { }
 
@@ -36,7 +38,20 @@ public interface GetPendingApprovalList extends UseCase<GetPendingApprovalList.I
                                       BigDecimal amount,
                                       String requestedBy,
                                       Instant requestedDateTime,
-                                      ApprovalActionType action) { }
+                                      String respondedBy,
+                                      Instant respondedDateTime,
+                                      ApprovalActionType action,
+                                      String requestCategory,
+                                      List<PendingApprovalDetail> details) { }
+
+        public record PendingApprovalDetail(String tabCode,
+                                            String fieldKey,
+                                            String fieldLabel,
+                                            String fieldValue,
+                                            String beforeValue,
+                                            String afterValue,
+                                            String valueType,
+                                            Integer displayOrder) { }
 
     }
 
