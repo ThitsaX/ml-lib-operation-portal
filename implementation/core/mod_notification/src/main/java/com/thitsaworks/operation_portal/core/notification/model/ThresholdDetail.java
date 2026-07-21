@@ -120,6 +120,12 @@ public class ThresholdDetail {
         this.updatedBy = requireText(updatedBy, "updatedBy");
     }
 
+    public void deactivate(String updatedBy) {
+
+        this.status = false;
+        this.updatedBy = requireText(updatedBy, "updatedBy");
+    }
+
     private static void validate(Long participantCurrencyId,
                                  String dfspId,
                                  String currency,

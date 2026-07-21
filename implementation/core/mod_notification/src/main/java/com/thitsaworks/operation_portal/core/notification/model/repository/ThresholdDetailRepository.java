@@ -32,12 +32,21 @@ public interface ThresholdDetailRepository
 
     List<ThresholdDetail> findAllByStatusTrueOrderByDfspIdAscCurrencyAsc();
 
+    List<ThresholdDetail> findAllByOrderByDfspIdAscCurrencyAsc();
+
+    List<ThresholdDetail> findAllByStatusOrderByDfspIdAscCurrencyAsc(boolean status);
+
     List<ThresholdDetail> findAllByThresholdConfigurationIdOrderByCurrencyAsc(
         ThresholdConfigurationId thresholdConfigurationId);
+
+    List<ThresholdDetail> findAllByThresholdConfigurationIdAndStatusOrderByCurrencyAsc(
+        ThresholdConfigurationId thresholdConfigurationId, boolean status);
 
     Optional<ThresholdDetail> findFirstByDfspIdAndCurrencyAndStatusTrue(
         String dfspId, String currency);
 
     boolean existsByThresholdConfigurationIdAndCurrency(
         ThresholdConfigurationId thresholdConfigurationId, String currency);
+
+    boolean existsByParticipantCurrencyId(Long participantCurrencyId);
 }

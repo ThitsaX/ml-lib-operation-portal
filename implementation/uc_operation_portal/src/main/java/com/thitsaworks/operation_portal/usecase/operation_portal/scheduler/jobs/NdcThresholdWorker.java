@@ -262,7 +262,7 @@ public class NdcThresholdWorker
 
     private boolean isDetailGateAllowed(ThresholdDetail detail) {
 
-        ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(detail.getDfspId());
+        ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(Long.valueOf(detail.getDfspId()));
         if (!gate.allowed()) {
             LOG.info("Skipping threshold detail [{} / {}]: {}",
                      detail.getDfspId(), detail.getCurrency(), gate.reason());
