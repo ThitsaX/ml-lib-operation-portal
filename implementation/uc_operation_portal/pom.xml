@@ -55,6 +55,10 @@
             <groupId>com.thitsaworks.operation_portal.core</groupId>
             <artifactId>mod_revenue_config</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.thitsaworks.operation_portal.core</groupId>
+            <artifactId>mod_revenue_party</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
