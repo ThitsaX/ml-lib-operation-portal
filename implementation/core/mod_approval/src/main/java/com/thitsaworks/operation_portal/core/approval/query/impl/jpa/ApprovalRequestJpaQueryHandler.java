@@ -99,19 +99,20 @@ public class ApprovalRequestJpaQueryHandler implements ApprovalRequestQuery {
     }
 
     @Override
-    public ApprovalRequestData getPendingApprovalRequestByID(ApprovalRequestId approvalRequestId)
+    public ApprovalRequestData getPendingApprovalRequestByID(ApprovalRequestId approvalRequestId,
+                                                             String tabCode)
         throws ApprovalException {
 
         if (approvalRequestId == null) {
             throw new ApprovalException(ApprovalErrors.INVALID_APPROVAL_REQUEST);
         }
 
-        BooleanExpression predicate = this.approvalRequest.approvalRequestId.eq(approvalRequestId)
-                                                                            .and(this.approvalRequest.action.eq(
-                                                                                ApprovalActionType.PENDING));
+        var normalizedTabCode = this.normalizeTabCode(tabCode);
 
-        return this.approvalRequestRepository.findOne(predicate)
-                                             .map(this::toData)
+        return this.approvalRequestRepository.findPendingByIdAndTabCode(
+                                                 approvalRequestId, ApprovalActionType.PENDING, normalizedTabCode,
+                                                 this.isAmountTabCode(normalizedTabCode))
+                                             .map(request -> this.toData(request, normalizedTabCode))
                                              .orElseThrow(() -> new ApprovalException(ApprovalErrors.APPROVAL_REQUEST_NOT_FOUND.format(
                                                  approvalRequestId.getId()
                                                                   .toString())));

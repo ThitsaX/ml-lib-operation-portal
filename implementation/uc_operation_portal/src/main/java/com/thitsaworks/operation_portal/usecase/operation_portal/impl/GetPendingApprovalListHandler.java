@@ -81,22 +81,18 @@ public class GetPendingApprovalListHandler
 
         var currentUser = this.userPermissionManager.getCurrentUser();
         var principalId = currentUser.principalId();
-        final var tabCode = this.normalizeTabCode(input.tabCode());
         final List<ApprovalRequestData> requests;
 
         if (hasApprovalPermissions(principalId)) {
 
-            requests =
-                this.isBlank(tabCode) ? this.approvalRequestQuery.getPendingApprovalRequests() :
-                    this.approvalRequestQuery.getPendingApprovalRequestsByTabCode(tabCode);
+            requests = this.approvalRequestQuery.getPendingApprovalRequestsByTabCode(
+                ApprovalTabCode.AMOUNT.name());
+
         } else {
 
             var userId = new UserId(principalId.getId());
-            requests = this.isBlank(tabCode) ?
-                           this.approvalRequestQuery.getPendingApprovalRequestsByRequestedId(
-                               userId) :
-                           this.approvalRequestQuery.getPendingApprovalRequestsByRequestedIdAndTabCode(
-                               userId, tabCode);
+            requests = this.approvalRequestQuery.getPendingApprovalRequestsByRequestedIdAndTabCode(
+                userId, ApprovalTabCode.AMOUNT.name());
         }
 
         return new Output(requests.stream().map(request -> new Output.PendingApproval(
@@ -113,16 +109,6 @@ public class GetPendingApprovalListHandler
                 fieldDetail.getFieldValue(), this.normalizeText(fieldDetail.getBeforeValue()),
                 this.normalizeText(fieldDetail.getAfterValue()), fieldDetail.getValueType(),
                 fieldDetail.getDisplayOrder())).toList())).toList());
-    }
-
-    private boolean isBlank(String value) {
-
-        return value == null || value.isBlank();
-    }
-
-    private String normalizeTabCode(ApprovalTabCode tabCode) {
-
-        return tabCode == null ? null : tabCode.name();
     }
 
     private BigDecimal normalize(BigDecimal value) {

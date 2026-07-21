@@ -20,10 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thitsaworks.operation_portal.component.common.type.ApprovalTabCode;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.core.approval.exception.ApprovalErrors;
-import com.thitsaworks.operation_portal.core.approval.exception.ApprovalException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetPendingApprovalList;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -31,14 +28,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 @RestController
 @RequiredArgsConstructor
@@ -52,42 +47,29 @@ public class GetPendingApprovalListController {
     private final ObjectMapper objectMapper;
 
     @GetMapping(value = "/secured/getPendingApprovalList")
-    public ResponseEntity<Response> execute(@RequestParam(
-        value = "tabCode",
-        required = false) String tabCode) throws DomainException, JsonProcessingException {
+    public ResponseEntity<Response> execute() throws DomainException, JsonProcessingException {
 
-        var output = this.getPendingApprovalList.execute(
-            new GetPendingApprovalList.Input(this.getApprovalTabCode(tabCode)));
+        var output = this.getPendingApprovalList.execute(new GetPendingApprovalList.Input());
 
-        var response = new Response(output
-                                        .pendingApprovalList()
-                                        .stream()
-                                        .sorted(
-                                            Comparator.comparing(
-                                                request -> request
-                                                               .requestedDateTime()
-                                                               .getEpochSecond(),
-                                                Comparator.reverseOrder()))
-                                        .map(request -> new Response.PendingApproval(
-                                            request.approvalRequestId().getEntityId().toString(),
-                                            request.requestedAction(), request.participantName(),
-                                            request.currency(), request.amount(),
-                                            request.requestedBy(),
-                                            request.requestedDateTime().getEpochSecond(),
-                                            request.respondedBy(),
-                                            request.respondedDateTime() == null ? null :
-                                                request.respondedDateTime().getEpochSecond(),
-                                            request.action().name(), request.requestCategory(),
-                                            request
-                                                .details()
-                                                .stream()
-                                                .map(detail -> new Response.PendingApprovalDetail(
-                                                    detail.tabCode(), detail.fieldKey(),
-                                                    detail.fieldLabel(), detail.fieldValue(),
-                                                    detail.beforeValue(), detail.afterValue(),
-                                                    detail.valueType(), detail.displayOrder()))
-                                                .toList()))
-                                        .toList());
+        var response = new Response(
+            output
+                .pendingApprovalList()
+                .stream()
+                .sorted(
+                    Comparator.comparing(request -> request.requestedDateTime().getEpochSecond(),
+                        Comparator.reverseOrder()))
+                .map(request -> new Response.PendingApproval(
+                    request.approvalRequestId().getEntityId().toString(), request.requestedAction(),
+                    request.participantName(), request.currency(), request.amount(),
+                    request.requestedBy(), request.requestedDateTime().getEpochSecond(),
+                    request.respondedBy(), request.respondedDateTime() == null ? null :
+                                               request.respondedDateTime().getEpochSecond(),
+                    request.action().name(), request.requestCategory(),
+                    request.details().stream().map(detail -> new Response.PendingApprovalDetail(
+                        detail.tabCode(), detail.fieldKey(), detail.fieldLabel(),
+                        detail.fieldValue(), detail.beforeValue(), detail.afterValue(),
+                        detail.valueType(), detail.displayOrder())).toList()))
+                .toList());
 
         LOG.info(
             "Get Pending Approval List Response : [{}]",
@@ -97,20 +79,6 @@ public class GetPendingApprovalListController {
 
     }
 
-    private ApprovalTabCode getApprovalTabCode(String tabCode) throws ApprovalException {
-
-        if (tabCode == null || tabCode.isBlank()) {
-            return null;
-        }
-
-        try {
-            return ApprovalTabCode.valueOf(tabCode.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            throw new ApprovalException(ApprovalErrors.INVALID_APPROVAL_TAB_CODE.format(tabCode));
-        }
-    }
-
-    public record Request() implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(@JsonProperty("pendingApprovalList") List<PendingApproval> pendingApprovalList)
