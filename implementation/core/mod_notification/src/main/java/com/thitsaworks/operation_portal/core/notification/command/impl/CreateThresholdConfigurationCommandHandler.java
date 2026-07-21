@@ -37,7 +37,7 @@ public class CreateThresholdConfigurationCommandHandler implements CreateThresho
 
         if (input.scopeType() == ThresholdScopeType.SCHEME
             && this.thresholdConfigurationRepository
-                   .existsByScopeTypeAndDfspIdIsNull(ThresholdScopeType.SCHEME)) {
+                   .existsByScopeTypeAndParticipantCurrencyIdIsNull(ThresholdScopeType.SCHEME)) {
 
             throw new InputException(
                 new ErrorMessage(
@@ -47,8 +47,11 @@ public class CreateThresholdConfigurationCommandHandler implements CreateThresho
 
         ThresholdConfiguration configuration = new ThresholdConfiguration(
             input.scopeType(),
-            input.dfspId(),
+            input.participantCurrencyId(),
             input.thresholdEnabled(),
+            input.colorCode(),
+            input.visualAlertPercent(),
+            input.notiAlertPercent(),
             input.createdBy());
 
         this.thresholdConfigurationRepository.save(configuration);

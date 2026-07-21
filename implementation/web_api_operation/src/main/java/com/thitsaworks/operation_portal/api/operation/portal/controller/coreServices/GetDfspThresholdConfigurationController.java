@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequiredArgsConstructor
 public class GetDfspThresholdConfigurationController {
@@ -40,21 +42,25 @@ public class GetDfspThresholdConfigurationController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations/dfsp/{dfspId}")
-    public ResponseEntity<Response> execute(@PathVariable("dfspId") String dfspId)
+    @GetMapping("/secured/ndc/configurations/participant-currency/{participantCurrencyId}")
+    public ResponseEntity<Response> execute(@PathVariable("participantCurrencyId") Long participantCurrencyId)
         throws DomainException, JsonProcessingException {
 
-        LOG.info("Get NDC DFSP Threshold Configuration Request : dfspId=[{}]", dfspId);
+        LOG.info("Get NDC DFSP Threshold Configuration Request : participantCurrencyId=[{}]",
+                 participantCurrencyId);
 
         GetDfspThresholdConfiguration.Output output =
             this.getDfspThresholdConfiguration.execute(
-                new GetDfspThresholdConfiguration.Input(dfspId));
+                new GetDfspThresholdConfiguration.Input(participantCurrencyId));
 
         var response = new Response(
                 output.thresholdConfigurationId().getEntityId(),
                 output.scopeType().toString(),
-                output.dfspId(),
+                output.participantCurrencyId(),
                 output.thresholdEnabled(),
+                output.colorCode(),
+                output.visualAlertPercent(),
+                output.notiAlertPercent(),
                 output.status().toString(),
                 output.createdBy(),
                 output.updatedBy()
@@ -71,8 +77,11 @@ public class GetDfspThresholdConfigurationController {
 
             @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
-            @JsonProperty("dfspId") String dfspId,
+            @JsonProperty("participantCurrencyId") Long participantCurrencyId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
+            @JsonProperty("colorCode") String colorCode,
+            @JsonProperty("visualAlertPercent") BigDecimal visualAlertPercent,
+            @JsonProperty("notiAlertPercent") BigDecimal notiAlertPercent,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
             @JsonProperty("createBy") String createdBy,
             @JsonProperty("updatedBy") String updatedBy

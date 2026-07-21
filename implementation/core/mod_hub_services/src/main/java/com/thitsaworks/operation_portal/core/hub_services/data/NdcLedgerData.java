@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.core.hub_services.data;
 import java.math.BigDecimal;
 
 public record NdcLedgerData(
+    Long participantCurrencyId,
     String participantName,
     String currency,
     BigDecimal currentBalance,

@@ -43,15 +43,16 @@ public class GetNdcLedgerDataJdbcQueryHandler
     public Output execute(Input input) throws HubServicesException {
 
         try {
-            if (input.participantNames() == null || input.participantNames().isEmpty()) {
+            if (input.participantCurrencyIds() == null || input.participantCurrencyIds().isEmpty()) {
                 return new Output(Collections.emptyList());
             }
 
-            String participantPlaceholders =
-                String.join(", ", Collections.nCopies(input.participantNames().size(), "?"));
+            String participantCurrencyPlaceholders =
+                String.join(", ", Collections.nCopies(input.participantCurrencyIds().size(), "?"));
 
             String sql = """
                 SELECT
+                    pc.participantCurrencyId AS participant_currency_id,
                     p.name AS participant_name,
                     pc.currencyId AS currency,
                     IFNULL(position_totals.current_balance, 0) AS current_balance,
@@ -82,9 +83,10 @@ public class GetNdcLedgerDataJdbcQueryHandler
                     GROUP BY pl.participantCurrencyId
                 ) limit_totals
                     ON limit_totals.participantCurrencyId = pc.participantCurrencyId
-                WHERE p.name IN (%s)
+                WHERE pc.participantCurrencyId IN (%s)
                 GROUP BY
                     p.participantId,
+                    pc.participantCurrencyId,
                     p.name,
                     pc.currencyId,
                     pc.isActive,
@@ -93,12 +95,12 @@ public class GetNdcLedgerDataJdbcQueryHandler
                 ORDER BY
                     p.name,
                     pc.currencyId
-                """.formatted(participantPlaceholders);
+                """.formatted(participantCurrencyPlaceholders);
 
             var data = jdbcTemplate.query(
                 sql,
                 new NdcLedgerDataMapper(),
-                input.participantNames().toArray()
+                input.participantCurrencyIds().toArray()
                                          );
 
             return new Output(data);

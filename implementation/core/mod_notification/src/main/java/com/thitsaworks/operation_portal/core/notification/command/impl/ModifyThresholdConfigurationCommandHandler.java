@@ -41,7 +41,13 @@ public class ModifyThresholdConfigurationCommandHandler implements ModifyThresho
                                                          "THRESHOLD_CONFIGURATION_NOT_FOUND",
                                                          "Threshold configuration was not found.")));
 
-        configuration.update(input.thresholdEnabled(), input.status(), input.updatedBy());
+        configuration.update(
+            input.thresholdEnabled(),
+            input.status(),
+            input.colorCode(),
+            input.visualAlertPercent(),
+            input.notiAlertPercent(),
+            input.updatedBy());
         this.thresholdConfigurationRepository.save(configuration);
 
         return new Output( configuration.getThresholdConfigurationId(),true);

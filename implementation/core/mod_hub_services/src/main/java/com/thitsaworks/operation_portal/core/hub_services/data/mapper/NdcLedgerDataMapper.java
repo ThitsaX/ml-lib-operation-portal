@@ -27,6 +27,7 @@ public class NdcLedgerDataMapper implements RowMapper<NdcLedgerData> {
     public NdcLedgerData mapRow(ResultSet rs, int rowNum) throws SQLException {
 
         return new NdcLedgerData(
+            rs.getObject("participant_currency_id", Long.class),
             rs.getString("participant_name"),
             rs.getString("currency"),
             rs.getBigDecimal("current_balance"),

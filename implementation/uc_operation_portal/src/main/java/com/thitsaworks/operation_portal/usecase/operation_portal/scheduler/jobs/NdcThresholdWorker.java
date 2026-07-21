@@ -119,29 +119,29 @@ public class NdcThresholdWorker
 
         LOG.info("Starting NDC threshold evaluation because the scheme gate is ON");
 
-        Set<String> enabledDfspIds = thresholdConfigurationQuery.getAll()
+        Set<Long> enabledParticipantCurrencyIds = thresholdConfigurationQuery.getAll()
                                                                 .stream()
                                                                 .filter(config -> config.scopeType() == ThresholdScopeType.DFSP)
                                                                 .filter(config -> config.status() == NdcConfigurationStatus.ACTIVE)
-                                                                .map(config -> config.dfspId())
-                                                                .filter(dfspId -> dfspId != null && !dfspId.isBlank())
+                                                                .map(config -> config.participantCurrencyId())
+                                                                .filter(participantCurrencyId -> participantCurrencyId != null)
                                                                 .filter(this::isGateAllowed)
                                                                 .collect(Collectors.toCollection(HashSet::new));
 
-        if (enabledDfspIds.isEmpty()) {
+        if (enabledParticipantCurrencyIds.isEmpty()) {
             LOG.info("Skipping NDC evaluation because no DFSP threshold gates are ON");
             return List.of();
         }
 
-        LOG.info("NDC enabled DFSPs resolved: count={}, participants={}",
-                 enabledDfspIds.size(), enabledDfspIds);
+        LOG.info("NDC enabled participant currencies resolved: count={}, participantCurrencyIds={}",
+                 enabledParticipantCurrencyIds.size(), enabledParticipantCurrencyIds);
 
         var result = ledgerDataQuery.execute(
-            new GetNdcLedgerDataQuery.Input(List.copyOf(enabledDfspIds))
+            new GetNdcLedgerDataQuery.Input(List.copyOf(enabledParticipantCurrencyIds))
         );
 
-        LOG.info("Central Ledger NDC data fetched: requestedDfspCount={}, recordCount={}",
-                 enabledDfspIds.size(), result.data().size());
+        LOG.info("Central Ledger NDC data fetched: requestedParticipantCurrencyCount={}, recordCount={}",
+                 enabledParticipantCurrencyIds.size(), result.data().size());
 
         List<NdcEvaluation> evaluations = new ArrayList<>();
         int skippedEvaluations = 0;
@@ -153,9 +153,9 @@ public class NdcThresholdWorker
                      data.participantName(), data.currency(), data.currentBalance(),
                      data.ndcLimitAmount(), data.active());
 
-            if (!enabledDfspIds.contains(data.participantName())) {
-                LOG.warn("Ignoring ledger participant [{}] because it is not an enabled configured DFSP",
-                         data.participantName());
+            if (!enabledParticipantCurrencyIds.contains(data.participantCurrencyId())) {
+                LOG.warn("Ignoring ledger participantCurrencyId [{}] because it is not an enabled configured gate",
+                         data.participantCurrencyId());
                 skippedEvaluations++;
                 continue;
             }
@@ -167,7 +167,7 @@ public class NdcThresholdWorker
                 continue;
             }
 
-            ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(data.participantName());
+            ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(data.participantCurrencyId());
             if (!gate.allowed()) {
                 LOG.info("Skipping NDC evaluation for DFSP [{}]: {}",
                          data.participantName(), gate.reason());
@@ -274,9 +274,9 @@ public class NdcThresholdWorker
         return evaluations;
     }
 
-    private boolean isGateAllowed(String dfspId) {
+    private boolean isGateAllowed(Long participantCurrencyId) {
 
-        return thresholdConfigurationQuery.checkGate(dfspId).allowed();
+        return thresholdConfigurationQuery.checkGate(participantCurrencyId).allowed();
     }
 
     private BigDecimal extractNdcUsedPercent(GetNdcUsedDataQuery.Output output, NdcLedgerData data) {

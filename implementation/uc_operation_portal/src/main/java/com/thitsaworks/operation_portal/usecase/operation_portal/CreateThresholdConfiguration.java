@@ -19,12 +19,17 @@ import com.thitsaworks.operation_portal.component.common.identifier.ThresholdCon
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
+import java.math.BigDecimal;
+
 public interface CreateThresholdConfiguration
     extends UseCase<CreateThresholdConfiguration.Input, CreateThresholdConfiguration.Output> {
 
     record Input(ThresholdScopeType scopeType,
-                 String dfspId,
+                 Long participantCurrencyId,
                  boolean thresholdEnabled,
+                 String colorCode,
+                 BigDecimal visualAlertPercent,
+                 BigDecimal notiAlertPercent,
                  String createdBy) { }
 
     record Output(ThresholdConfigurationId thresholdConfigurationId) { }

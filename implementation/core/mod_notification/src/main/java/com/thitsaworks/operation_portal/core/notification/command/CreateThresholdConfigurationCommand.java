@@ -18,11 +18,16 @@ package com.thitsaworks.operation_portal.core.notification.command;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 
+import java.math.BigDecimal;
+
 public interface CreateThresholdConfigurationCommand {
 
     record Input(ThresholdScopeType scopeType,
-                 String dfspId,
+                 Long participantCurrencyId,
                  boolean thresholdEnabled,
+                 String colorCode,
+                 BigDecimal visualAlertPercent,
+                 BigDecimal notiAlertPercent,
                  String createdBy) { }
 
     record Output(ThresholdConfigurationId thresholdConfigurationId) { }

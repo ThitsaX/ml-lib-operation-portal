@@ -27,8 +27,8 @@ public interface ThresholdConfigurationQuery {
 
     Optional<ThresholdConfigurationData> getSchemeConfiguration();
 
-    Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId);
+    Optional<ThresholdConfigurationData> getParticipantCurrencyConfiguration(Long participantCurrencyId);
 
-    ThresholdGateDecision checkGate(String dfspId);
+    ThresholdGateDecision checkGate(Long participantCurrencyId);
 
 }

@@ -20,6 +20,7 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface GetThresholdConfigurationList
@@ -32,8 +33,11 @@ public interface GetThresholdConfigurationList
     record NdcThresholdConfiguration(
             ThresholdConfigurationId thresholdConfigurationId,
             ThresholdScopeType scopeType,
-            String dfspId,
+            Long participantCurrencyId,
             boolean thresholdEnabled,
+            String colorCode,
+            BigDecimal visualAlertPercent,
+            BigDecimal notiAlertPercent,
             NdcConfigurationStatus status,
             String createdBy,
             String updatedBy

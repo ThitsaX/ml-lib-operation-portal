@@ -18,8 +18,11 @@ CREATE INDEX idx_job_execution_ndc_history
 CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
     id BIGINT NOT NULL,
     scope_type VARCHAR(20) NOT NULL,
-    dfsp_id VARCHAR(100) NULL,
+    participant_currency_id BIGINT NULL,
     threshold_enabled TINYINT(1) NOT NULL DEFAULT 0,
+    color_code VARCHAR(20) NULL,
+    visual_alert_percent DECIMAL(7,4) NOT NULL,
+    noti_alert_percent DECIMAL(7,4) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL,
     created_by VARCHAR(100) NOT NULL,
@@ -27,11 +30,10 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
     updated_by VARCHAR(100) NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_threshold_config_scope
-        UNIQUE (scope_type, dfsp_id),
+        UNIQUE (scope_type, participant_currency_id),
     CONSTRAINT chk_threshold_config_scope
         CHECK (
-            (scope_type = 'SCHEME' AND dfsp_id IS NULL)
-            OR (scope_type = 'DFSP' AND dfsp_id IS NOT NULL)
+        scope_type = 'DFSP' AND participant_currency_id IS NOT NULL
         ),
     CONSTRAINT chk_threshold_config_scope_type
         CHECK (scope_type IN ('SCHEME', 'DFSP')),
@@ -42,8 +44,8 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_configuration (
 CREATE INDEX idx_threshold_config_scope
     ON tbl_threshold_configuration (scope_type);
 
-CREATE INDEX idx_threshold_config_dfsp
-    ON tbl_threshold_configuration (dfsp_id);
+CREATE INDEX idx_threshold_config_participant_currency
+    ON tbl_threshold_configuration (participant_currency_id);
 
 CREATE INDEX idx_threshold_config_gate
     ON tbl_threshold_configuration (scope_type, threshold_enabled, status);

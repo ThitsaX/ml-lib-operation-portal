@@ -21,7 +21,7 @@ import java.util.List;
 
 public interface GetNdcLedgerDataQuery {
 
-    record Input(List<String> participantNames) {
+    record Input(List<Long> participantCurrencyIds) {
     }
 
     record Output(List<NdcLedgerData> data) {

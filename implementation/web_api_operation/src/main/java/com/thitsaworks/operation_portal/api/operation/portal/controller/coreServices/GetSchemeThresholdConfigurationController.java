@@ -29,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequiredArgsConstructor
 public class GetSchemeThresholdConfigurationController {
@@ -51,7 +53,7 @@ public class GetSchemeThresholdConfigurationController {
         var response = new Response(
                 output.thresholdConfigurationId().getEntityId(),
                 output.scopeType().toString(),
-                output.dfspId(),
+                output.participantCurrencyId(),
                 output.thresholdEnabled(),
                 output.status().toString(),
                 output.createdBy(),
@@ -68,7 +70,7 @@ public class GetSchemeThresholdConfigurationController {
     public record Response(
             @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
-            @JsonProperty("dfspId") String dfspId,
+            @JsonProperty("participantCurrencyId") Long participantCurrencyId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
             @JsonProperty("createBy") String createdBy,

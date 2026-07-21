@@ -58,6 +58,9 @@ public class ModifyThresholdConfigurationHandler
                 new ThresholdConfigurationId(input.id()),
                 input.thresholdEnabled(),
                 input.status() == null ? NdcConfigurationStatus.ACTIVE : input.status(),
+                input.colorCode(),
+                input.visualAlertPercent(),
+                input.notiAlertPercent(),
                 input.updatedBy()));
 
         this.schedulerEngine.refreshAllActive();

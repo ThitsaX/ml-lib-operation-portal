@@ -18,11 +18,16 @@ package com.thitsaworks.operation_portal.core.notification.command;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 
+import java.math.BigDecimal;
+
 public interface ModifyThresholdConfigurationCommand {
 
     record Input(ThresholdConfigurationId thresholdConfigurationId,
                  boolean thresholdEnabled,
                  NdcConfigurationStatus status,
+                 String colorCode,
+                 BigDecimal visualAlertPercent,
+                 BigDecimal notiAlertPercent,
                  String updatedBy) { }
 
     record Output(

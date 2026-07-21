@@ -54,7 +54,7 @@ public class GetSchemeThresholdConfigurationHandler
         return new Output(
                 thresholdConfiguration.get().thresholdConfigurationId(),
                 thresholdConfiguration.get().scopeType(),
-                thresholdConfiguration.get().dfspId(),
+                thresholdConfiguration.get().participantCurrencyId(),
                 thresholdConfiguration.get().thresholdEnabled(),
                 thresholdConfiguration.get().status(),
                 thresholdConfiguration.get().createdBy(),

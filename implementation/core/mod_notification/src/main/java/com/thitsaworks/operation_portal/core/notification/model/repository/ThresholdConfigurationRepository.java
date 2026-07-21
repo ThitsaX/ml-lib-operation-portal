@@ -34,9 +34,10 @@ public interface ThresholdConfigurationRepository
     Optional<ThresholdConfiguration> findFirstByScopeTypeAndStatus(ThresholdScopeType scopeType,
                                                                               NdcConfigurationStatus status);
 
-    Optional<ThresholdConfiguration> findFirstByScopeTypeAndDfspIdAndStatus(ThresholdScopeType scopeType,
-                                                                                      String dfspId,
-                                                                                      NdcConfigurationStatus status);
+    Optional<ThresholdConfiguration> findFirstByScopeTypeAndParticipantCurrencyIdAndStatus(
+        ThresholdScopeType scopeType,
+        Long participantCurrencyId,
+        NdcConfigurationStatus status);
 
-    boolean existsByScopeTypeAndDfspIdIsNull(ThresholdScopeType scopeType);
+    boolean existsByScopeTypeAndParticipantCurrencyIdIsNull(ThresholdScopeType scopeType);
 }
