@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-package com.thitsaworks.operation_portal.core.revenue_config.command;
-
-import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
+import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
-import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.Map;
 
-public interface ModifyRevenueConfigCommand {
+public interface CreateRevenueApprovalRequest
+    extends UseCase<CreateRevenueApprovalRequest.Input, CreateRevenueApprovalRequest.Output> {
 
-    record Input(RevenueConfigId revenueConfigId,
+    record Input(String requestedAction,
                  String taxCodeId,
                  String taxCodeDescription,
                  RevenueConfigCategory category,
-                 Long responsibleMinistryId,
-                 Long thirdPartyProviderId,
-                 BigDecimal golPercentage,
-                 BigDecimal ministryPercentage,
-                 BigDecimal thirdPartyPercentage,
-                 BigDecimal sendingDfspPercentage,
-                 UserId updatedBy,
-                 Instant startDate) { }
+                 String responsibleMinistryId,
+                 String thirdPartyProviderId,
+                 String startDate,
+                 Map<String, BigDecimal> percentages,
+                 UserId requestedBy) { }
 
-    record Output(RevenueConfigId revenueConfigId, boolean modified) { }
-
-    Output execute(Input input) throws DomainException;
-
+    record Output(ApprovalRequestId approvalRequestId) { }
 }

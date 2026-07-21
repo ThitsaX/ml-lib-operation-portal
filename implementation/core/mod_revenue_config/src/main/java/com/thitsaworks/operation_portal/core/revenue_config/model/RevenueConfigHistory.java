@@ -22,9 +22,11 @@ import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -36,6 +38,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "tbl_revenue_config_history")
@@ -127,6 +130,10 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         column = @Column(name = "updated_by"))
     private UserId updatedBy;
 
+    @Column(name = "start_date")
+    @Convert(converter = JpaInstantConverter.class)
+    protected Instant startDate;
+
     public RevenueConfigHistory(RevenueConfig revenueConfig) {
 
         this.revenueConfigHistoryId = new RevenueConfigHistoryId(Snowflake.get().nextId());
@@ -143,8 +150,8 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         this.status = revenueConfig.getStatus();
         this.createdBy = revenueConfig.getCreatedBy();
         this.updatedBy = revenueConfig.getUpdatedBy();
-        this.setCreatedAt(revenueConfig.getCreatedAt());
-        this.setUpdatedAt(revenueConfig.getUpdatedAt());
+        this.startDate = revenueConfig.getStartDate();
+
     }
 
     @Override

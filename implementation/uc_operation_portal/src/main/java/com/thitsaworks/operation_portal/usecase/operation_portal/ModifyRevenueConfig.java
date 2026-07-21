@@ -20,6 +20,7 @@ import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCateg
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public interface ModifyRevenueConfig
     extends UseCase<ModifyRevenueConfig.Input, ModifyRevenueConfig.Output> {
@@ -33,7 +34,8 @@ public interface ModifyRevenueConfig
                  BigDecimal golPercentage,
                  BigDecimal ministryPercentage,
                  BigDecimal thirdPartyPercentage,
-                 BigDecimal sendingDfspPercentage) { }
+                 BigDecimal sendingDfspPercentage,
+                 Instant startDate) { }
 
     record Output(boolean modified) { }
 }

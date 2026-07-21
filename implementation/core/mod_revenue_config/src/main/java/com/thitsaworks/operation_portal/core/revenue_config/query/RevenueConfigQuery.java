@@ -34,4 +34,6 @@ public interface RevenueConfigQuery {
 
     Optional<RevenueConfigData> findById(RevenueConfigId revenueConfigId);
 
+    Optional<RevenueConfigData> findByTaxCodeId(String taxCodeId);
+
 }

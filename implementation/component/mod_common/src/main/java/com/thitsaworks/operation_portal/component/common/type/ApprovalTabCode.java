@@ -2,5 +2,6 @@ package com.thitsaworks.operation_portal.component.common.type;
 
 public enum ApprovalTabCode {
 
-    AMOUNT
+    AMOUNT,
+    REVENUE
 }

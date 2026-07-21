@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
@@ -65,7 +66,7 @@ public class ModifyRevenueConfigStatusHandler
         var currentUser = this.userPermissionManager.getCurrentUser();
 
         this.modifyRevenueConfigStatusCommand.execute(new ModifyRevenueConfigStatusCommand.Input(
-            input.revenueConfigId(), input.active(),
+            input.revenueConfigId(), input.active() ? RevenueConfigStatus.ACTIVE : RevenueConfigStatus.INACTIVE,
             new UserId(currentUser.principalId().getId())));
 
         return new Output(true);

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-package com.thitsaworks.operation_portal.core.revenue_config.command;
-
-import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
+import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
-import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
+import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-public interface ModifyRevenueConfigStatusCommand {
+public interface ModifyRevenueApprovalAction
+    extends UseCase<ModifyRevenueApprovalAction.Input, ModifyRevenueApprovalAction.Output> {
 
-    record Input(RevenueConfigId revenueConfigId, RevenueConfigStatus status, UserId updatedBy) { }
+    record Input(ApprovalRequestId approvalRequestId,
+                 ApprovalActionType action,
+                 UserId responseUserId) { }
 
-    record Output(RevenueConfigId revenueConfigId) { }
-
-    Output execute(Input input) throws DomainException;
+    record Output(ApprovalRequestId approvalRequestId) { }
 
 }

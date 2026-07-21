@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
@@ -31,6 +32,8 @@ import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyRevenueCo
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_CONFIG)
@@ -68,7 +71,8 @@ public class ModifyRevenueConfigHandler
             input.revenueConfigId(), input.taxCodeId(), input.taxCodeDescription(),
             input.category(), input.responsibleMinistryId(), input.thirdPartyProviderId(),
             input.golPercentage(), input.ministryPercentage(), input.thirdPartyPercentage(),
-            input.sendingDfspPercentage(), new UserId(currentUser.principalId().getEntityId())));
+            input.sendingDfspPercentage(), new UserId(currentUser.principalId().getEntityId()),
+            input.startDate()));
 
         return new Output(output.modified());
     }

@@ -53,7 +53,7 @@ public class CreateRevenueConfigCommandHandler implements CreateRevenueConfigCom
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
             input.responsibleMinistryId(), input.thirdPartyProviderId(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
-            input.updatedBy());
+            input.updatedBy(), input.startDate(), input.status());
 
         this.revenueConfigRepository.save(revenueConfig);
 

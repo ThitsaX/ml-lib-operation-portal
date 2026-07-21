@@ -16,7 +16,6 @@
 
 package com.thitsaworks.operation_portal.core.revenue_config.command.impl;
 
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.revenue_config.command.ModifyRevenueConfigStatusCommand;
@@ -49,9 +48,8 @@ public class ModifyRevenueConfigStatusCommandHandler implements ModifyRevenueCon
 
         this.revenueConfigHistoryRepository.save(new RevenueConfigHistory(revenueConfig));
 
-        revenueConfig
-            .status(input.active() ? RevenueConfigStatus.ACTIVE : RevenueConfigStatus.INACTIVE)
-            .updatedBy(input.updatedBy());
+        revenueConfig.status(input.status())
+                     .updatedBy(input.updatedBy());
 
         this.revenueConfigRepository.saveAndFlush(revenueConfig);
 

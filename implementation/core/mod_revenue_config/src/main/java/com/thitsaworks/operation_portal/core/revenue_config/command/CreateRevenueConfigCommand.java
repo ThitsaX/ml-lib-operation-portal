@@ -19,9 +19,11 @@ package com.thitsaworks.operation_portal.core.revenue_config.command;
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public interface CreateRevenueConfigCommand {
 
@@ -34,7 +36,9 @@ public interface CreateRevenueConfigCommand {
                  BigDecimal ministryPercentage,
                  BigDecimal thirdPartyPercentage,
                  BigDecimal sendingDfspPercentage,
-                 UserId updatedBy) { }
+                 UserId updatedBy,
+                 Instant startDate,
+                 RevenueConfigStatus status) { }
 
     record Output(RevenueConfigId revenueConfigId) { }
 

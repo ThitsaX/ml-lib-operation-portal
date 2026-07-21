@@ -80,4 +80,11 @@ public class RevenueConfigJpaQueryHandler implements RevenueConfigQuery {
         return this.revenueConfigRepository.findById(revenueConfigId)
                                            .map(RevenueConfigData::new);
     }
+
+    @Override
+    public Optional<RevenueConfigData> findByTaxCodeId(String taxCodeId) {
+
+        return this.revenueConfigRepository.findByTaxCodeId(taxCodeId)
+                                           .map(RevenueConfigData::new);
+    }
 }

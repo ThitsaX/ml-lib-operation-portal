@@ -39,7 +39,8 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
                                 Instant createdAt,
                                 Instant updatedAt,
                                 UserId createdBy,
-                                UserId updatedBy) {
+                                UserId updatedBy,
+                                Instant startDate) {
 
     public RevenueConfigData(RevenueConfig revenueConfig) {
 
@@ -50,7 +51,7 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
             revenueConfig.getGolPercentage(), revenueConfig.getMinistryPercentage(),
             revenueConfig.getThirdPartyPercentage(), revenueConfig.getSendingDfspPercentage(),
             revenueConfig.getStatus(), revenueConfig.getCreatedAt(), revenueConfig.getUpdatedAt(),
-            revenueConfig.getCreatedBy(), revenueConfig.getUpdatedBy());
+            revenueConfig.getCreatedBy(), revenueConfig.getUpdatedBy(), revenueConfig.getStartDate());
     }
 
 }

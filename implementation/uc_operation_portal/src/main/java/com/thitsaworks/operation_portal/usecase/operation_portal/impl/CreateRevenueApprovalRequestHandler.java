@@ -1,0 +1,335 @@
+/*
+ * Copyright (c) 2024-2026 ThitsaWorks Pte. Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.type.ApprovalTabCode;
+import com.thitsaworks.operation_portal.component.common.type.RevenueActionType;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
+import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
+import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
+import com.thitsaworks.operation_portal.core.approval.command.CreateApprovalRequestByCategoryCommand;
+import com.thitsaworks.operation_portal.core.approval.command.CreateApprovalRequestFieldDetailCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
+import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
+import com.thitsaworks.operation_portal.core.revenue_config.command.CreateRevenueConfigCommand;
+import com.thitsaworks.operation_portal.core.revenue_config.command.ModifyRevenueConfigStatusCommand;
+import com.thitsaworks.operation_portal.core.revenue_config.data.RevenueConfigData;
+import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
+import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
+import com.thitsaworks.operation_portal.core.revenue_config.query.RevenueConfigQuery;
+import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
+import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueApprovalRequest;
+import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+
+@Service
+@ActionMetadata(category = ActionCategory.REVENUE_CONFIG)
+public class CreateRevenueApprovalRequestHandler
+    extends OperationPortalAuditableUseCase<CreateRevenueApprovalRequest.Input, CreateRevenueApprovalRequest.Output>
+    implements CreateRevenueApprovalRequest {
+
+    private static final String REQUEST_CATEGORY = "REVENUE_CONFIG";
+
+    private static final String PERCENTAGES_FIELD_KEY = "percentages";
+
+    private static final String PERCENTAGES_FIELD_LABEL = "Percentages";
+
+    private static final String START_DATE_FIELD_KEY = "start_date";
+
+    private final CreateApprovalRequestByCategoryCommand createApprovalRequestByCategoryCommand;
+
+    private final CreateApprovalRequestFieldDetailCommand createApprovalRequestFieldDetailCommand;
+
+    private final CreateRevenueConfigCommand createRevenueConfigCommand;
+
+    private final ModifyRevenueConfigStatusCommand modifyRevenueConfigStatusCommand;
+
+    private final RevenueConfigQuery revenueConfigQuery;
+
+    private final ObjectMapper objectMapper;
+
+    public CreateRevenueApprovalRequestHandler(CreateInputAuditCommand createInputAuditCommand,
+                                               CreateOutputAuditCommand createOutputAuditCommand,
+                                               CreateExceptionAuditCommand createExceptionAuditCommand,
+                                               ObjectMapper objectMapper,
+                                               PrincipalCache principalCache,
+                                               ActionAuthorizationManager actionAuthorizationManager,
+                                               CreateApprovalRequestByCategoryCommand createApprovalRequestByCategoryCommand,
+                                               CreateApprovalRequestFieldDetailCommand createApprovalRequestFieldDetailCommand,
+                                               CreateRevenueConfigCommand createRevenueConfigCommand,
+                                               ModifyRevenueConfigStatusCommand modifyRevenueConfigStatusCommand,
+                                               RevenueConfigQuery revenueConfigQuery) {
+
+        super(
+            createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
+            objectMapper, principalCache, actionAuthorizationManager);
+
+        this.createApprovalRequestByCategoryCommand = createApprovalRequestByCategoryCommand;
+        this.createApprovalRequestFieldDetailCommand = createApprovalRequestFieldDetailCommand;
+        this.createRevenueConfigCommand = createRevenueConfigCommand;
+        this.modifyRevenueConfigStatusCommand = modifyRevenueConfigStatusCommand;
+        this.revenueConfigQuery = revenueConfigQuery;
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    protected Output onExecute(Input input) throws DomainException, JsonProcessingException {
+
+        RevenueActionType requestedAction = this.toRequestedAction(input.requestedAction());
+        RevenueConfigData existingRevenueConfig = null;
+
+        if (requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG) {
+            this.createPendingRevenueConfig(input);
+        } else if (requestedAction == RevenueActionType.UPDATE_REVENUE_CONFIG) {
+            existingRevenueConfig = this.updatePendingRevenueConfigStatus(input);
+        }
+
+        var output = this.createApprovalRequestByCategoryCommand.execute(
+            new CreateApprovalRequestByCategoryCommand.Input(
+                requestedAction, input.requestedBy(),
+                REQUEST_CATEGORY));
+
+        if (requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG) {
+            this.createRequestDetails(output, input);
+        } else if (requestedAction == RevenueActionType.UPDATE_REVENUE_CONFIG) {
+            this.updateRequestDetails(output, input, existingRevenueConfig);
+        }
+
+        return new Output(output.approvalRequestId());
+    }
+
+    private void createPendingRevenueConfig(Input input) throws DomainException {
+
+        List<BigDecimal> percentages = this.percentageValues(input.percentages());
+        this.createRevenueConfigCommand.execute(new CreateRevenueConfigCommand.Input(
+            input.taxCodeId(), input.taxCodeDescription(), input.category(),
+            Long.valueOf(input.responsibleMinistryId()),
+            this.toNullableLong(input.thirdPartyProviderId()), percentages.get(0),
+            percentages.get(1), percentages.get(2), percentages.get(3), input.requestedBy(),
+            this.toNullableInstant(input.startDate()), RevenueConfigStatus.PENDING));
+    }
+
+    private RevenueConfigData updatePendingRevenueConfigStatus(Input input) throws DomainException {
+
+        RevenueConfigData revenueConfig = this.revenueConfigQuery
+                                              .findByTaxCodeId(input.taxCodeId())
+                                              .orElseThrow(() -> new RevenueConfigException(
+                                                  RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
+                                                      input.taxCodeId())));
+
+        this.modifyRevenueConfigStatusCommand.execute(
+            new ModifyRevenueConfigStatusCommand.Input(
+                revenueConfig.revenueConfigId(),
+                RevenueConfigStatus.PENDING, input.requestedBy()));
+
+        return revenueConfig;
+    }
+
+    private void createRequestDetails(CreateApprovalRequestByCategoryCommand.Output output,
+                                      Input input) throws JsonProcessingException {
+
+        this.createTextFieldDetail(output, "tax_code_id", "Tax Code ID", input.taxCodeId(), 1);
+        this.createTextFieldDetail(
+            output, "tax_code_description", "Tax Code ID (Description)",
+            input.taxCodeDescription(), 2);
+        this.createTextFieldDetail(output, "category", "Category", input.category().name(), 3);
+        this.createJsonFieldDetail(
+            output, PERCENTAGES_FIELD_KEY, PERCENTAGES_FIELD_LABEL, null,
+            this.objectMapper.writeValueAsString(this.toPercentageJson(input.percentages())), 7);
+    }
+
+    private void updateRequestDetails(CreateApprovalRequestByCategoryCommand.Output output,
+                                      Input input,
+                                      RevenueConfigData revenueConfig)
+        throws JsonProcessingException {
+
+        this.createTextFieldDetail(output, "tax_code_id", "Tax Code ID", input.taxCodeId(), 1);
+        this.createChangedTextFieldDetail(
+            output, "tax_code_description",
+            "Tax Code ID (Description)", revenueConfig.taxCodeDescription(),
+            input.taxCodeDescription(), 2);
+        this.createChangedTextFieldDetail(
+            output, "category", "Category", revenueConfig.category().name(),
+            input.category().name(), 3);
+        this.createChangedTextFieldDetail(
+            output, "responsible_ministry_id", "Responsible Ministry ID",
+            String.valueOf(revenueConfig.responsibleMinistryId()), input.responsibleMinistryId(),
+            4);
+        this.createChangedTextFieldDetail(
+            output, "third_party_provider_id", "Third Party Provider ID",
+            this.toNullableString(revenueConfig.thirdPartyProviderId()),
+            input.thirdPartyProviderId(), 5);
+        if (input.startDate() != null && !input.startDate().isBlank()) {
+            this.createChangedTextFieldDetail(
+                output, START_DATE_FIELD_KEY, "Start Date",
+                this.toNullableString(revenueConfig.startDate()),
+                this.toNullableString(this.toNullableInstant(input.startDate())), 6);
+        }
+        this.createChangedJsonFieldDetail(output, input, revenueConfig);
+    }
+
+    private void createTextFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                       String fieldKey,
+                                       String fieldLabel,
+                                       String afterValue,
+                                       Integer displayOrder) {
+
+        this.createApprovalRequestFieldDetailCommand.execute(
+            new CreateApprovalRequestFieldDetailCommand.Input(
+                output.approvalRequestId(), fieldKey, fieldLabel, null, null, afterValue, "TEXT",
+                displayOrder, ApprovalTabCode.REVENUE.name()));
+    }
+
+    private void createChangedTextFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                              String fieldKey,
+                                              String fieldLabel,
+                                              String beforeValue,
+                                              String afterValue,
+                                              Integer displayOrder) {
+
+        if (Objects.equals(beforeValue, afterValue)) {
+            return;
+        }
+
+        this.createApprovalRequestFieldDetailCommand.execute(
+            new CreateApprovalRequestFieldDetailCommand.Input(
+                output.approvalRequestId(), fieldKey, fieldLabel, null, beforeValue, afterValue,
+                "TEXT", displayOrder, ApprovalTabCode.REVENUE.name()));
+    }
+
+    private void createJsonFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                       String fieldKey,
+                                       String fieldLabel,
+                                       String beforeValue,
+                                       String afterValue,
+                                       Integer displayOrder) {
+
+        this.createApprovalRequestFieldDetailCommand.execute(
+            new CreateApprovalRequestFieldDetailCommand.Input(
+                output.approvalRequestId(), fieldKey, fieldLabel, null, beforeValue, afterValue,
+                "Json", displayOrder, ApprovalTabCode.REVENUE.name()));
+    }
+
+    private void createChangedJsonFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                              Input input,
+                                              RevenueConfigData revenueConfig)
+        throws JsonProcessingException {
+
+        Map<String, Object> beforePercentages = this.toPercentageJson(
+            input.percentages(), revenueConfig);
+        Map<String, Object> afterPercentages = this.toPercentageJson(input.percentages());
+        if (Objects.equals(beforePercentages, afterPercentages)) {
+            return;
+        }
+
+        this.createJsonFieldDetail(
+            output, PERCENTAGES_FIELD_KEY, PERCENTAGES_FIELD_LABEL,
+            this.objectMapper.writeValueAsString(beforePercentages),
+            this.objectMapper.writeValueAsString(afterPercentages), 7);
+    }
+
+    private RevenueActionType toRequestedAction(String value) {
+
+        return RevenueActionType.valueOf(this.toFieldKey(value).toUpperCase(Locale.ROOT));
+    }
+
+    private Map<String, Object> toPercentageJson(Map<String, BigDecimal> percentages) {
+
+        var percentageJson = new LinkedHashMap<String, Object>();
+        percentages.forEach((key, value) -> percentageJson.put(key, this.toJsonNumber(value)));
+        return percentageJson;
+    }
+
+    private Map<String, Object> toPercentageJson(Map<String, BigDecimal> requestedPercentages,
+                                                 RevenueConfigData revenueConfig) {
+
+        var percentageJson = new LinkedHashMap<String, Object>();
+        List<BigDecimal> existingPercentages = List.of(
+            revenueConfig.golPercentage(), revenueConfig.ministryPercentage(),
+            revenueConfig.thirdPartyPercentage(), revenueConfig.sendingDfspPercentage());
+        int index = 0;
+        for (String key : requestedPercentages.keySet()) {
+            BigDecimal existingPercentage =
+                index < existingPercentages.size() ? existingPercentages.get(index) :
+                    BigDecimal.ZERO;
+            percentageJson.put(key, this.toJsonNumber(existingPercentage));
+            index++;
+        }
+        return percentageJson;
+    }
+
+    private List<BigDecimal> percentageValues(Map<String, BigDecimal> percentages) {
+
+        var percentageValues = new ArrayList<>(percentages.values());
+        while (percentageValues.size() < 4) {
+            percentageValues.add(BigDecimal.ZERO);
+        }
+        return percentageValues;
+    }
+
+    private Object toJsonNumber(BigDecimal value) {
+
+        BigDecimal normalized = value.stripTrailingZeros();
+        if (normalized.scale() <= 0) {
+            return normalized.toBigIntegerExact();
+        }
+        return new BigDecimal(normalized.toPlainString());
+    }
+
+    private Long toNullableLong(String value) {
+
+        return value == null || value.isBlank() ? null : Long.valueOf(value);
+    }
+
+    private Instant toNullableInstant(String value) {
+
+        return value == null || value.isBlank() ? null : Instant.parse(value);
+    }
+
+    private String toNullableString(Long value) {
+
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private String toNullableString(Instant value) {
+
+        return value == null ? null : value.toString();
+    }
+
+    private String toFieldKey(String value) {
+
+        return value
+                   .toLowerCase(Locale.ROOT)
+                   .replaceAll("[^a-z0-9]+", "_")
+                   .replaceAll("^_+|_+$", "");
+    }
+
+}

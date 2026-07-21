@@ -21,9 +21,11 @@ import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -36,6 +38,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.Validate;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "tbl_revenue_config")
@@ -120,6 +123,10 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         column = @Column(name = "updated_by"))
     protected UserId updatedBy;
 
+    @Column(name = "start_date")
+    @Convert(converter = JpaInstantConverter.class)
+    protected Instant startDate;
+
     public RevenueConfig(String taxCodeId,
                          String taxCodeDescription,
                          RevenueConfigCategory category,
@@ -129,7 +136,9 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
                          BigDecimal sendingDfspPercentage,
-                         UserId updatedBy) {
+                         UserId updatedBy,
+                         Instant startDate,
+                         RevenueConfigStatus status) {
 
         this.revenueConfigId = new RevenueConfigId(Snowflake.get().nextId());
         this.taxCodeId(taxCodeId);
@@ -141,9 +150,10 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         this.ministryPercentage(ministryPercentage);
         this.thirdPartyPercentage(thirdPartyPercentage);
         this.sendingDfspPercentage(sendingDfspPercentage);
-        this.status = RevenueConfigStatus.ACTIVE;
+        this.status(status == null ? RevenueConfigStatus.ACTIVE : status);
         this.createdBy = updatedBy;
         this.updatedBy = updatedBy;
+        this.startDate(startDate);
     }
 
     @Override
@@ -223,6 +233,12 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         return this;
     }
 
+    public RevenueConfig startDate(Instant startDate) {
+
+        this.startDate = startDate;
+        return this;
+    }
+
     public RevenueConfig update(String taxCodeId,
                                 String taxCodeDescription,
                                 RevenueConfigCategory category,
@@ -232,7 +248,9 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                                 BigDecimal ministryPercentage,
                                 BigDecimal thirdPartyPercentage,
                                 BigDecimal sendingDfspPercentage,
-                                UserId updatedBy) {
+                                UserId updatedBy,
+                                Instant startDate,
+                                RevenueConfigStatus status) {
 
         return this
                    .taxCodeId(taxCodeId)
@@ -244,7 +262,8 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                    .ministryPercentage(ministryPercentage)
                    .thirdPartyPercentage(thirdPartyPercentage)
                    .sendingDfspPercentage(sendingDfspPercentage)
-                   .updatedBy(updatedBy);
+                   .updatedBy(updatedBy)
+                   .startDate(startDate);
     }
 
 }
