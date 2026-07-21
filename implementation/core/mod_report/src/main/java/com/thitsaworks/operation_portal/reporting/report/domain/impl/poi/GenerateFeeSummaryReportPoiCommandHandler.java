@@ -310,9 +310,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
               COUNT(DISTINCT rs.quoteId) AS totalTransactions,
               ROUND(SUM(rs.amount), 2) AS totalAmount,
               ROUND(SUM(
-                rs.totalPayerFee +
-                rs.totalPayeeFee +
-                rs.totalSchemeFee
+                COALESCE(rs.totalPayerFee, 0) +
+                COALESCE(rs.totalPayeeFee, 0) +
+                COALESCE(rs.totalSchemeFee, 0)
               ), 2) AS totalFee,
               ROUND(SUM(rs.totalPayerFee), 2) AS totalPayerFee,
               ROUND(SUM(rs.totalPayeeFee), 2) AS totalPayeeFee,
@@ -333,9 +333,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 END AS payeeFSPName,
                 q.amount,
                 MAX(CASE WHEN LOWER(qe.`key`) = 'feepolicytiername' THEN qe.value END) AS feePolicy,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalPayerFee,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalPayeeFee,
-                COALESCE(MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,2)) END), 0) AS totalSchemeFee,
+                MAX(CASE WHEN LOWER(qe.`key`) = 'payerfee' THEN CAST(qe.value AS DECIMAL(18,2)) END) AS totalPayerFee,
+                MAX(CASE WHEN LOWER(qe.`key`) = 'payeefee' THEN CAST(qe.value AS DECIMAL(18,2)) END) AS totalPayeeFee,
+                MAX(CASE WHEN LOWER(qe.`key`) = 'schemefee' THEN CAST(qe.value AS DECIMAL(18,2)) END) AS totalSchemeFee,
                 q.currencyId
               FROM quote q
               INNER JOIN quoteExtension qe
@@ -655,9 +655,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 detailTable.addCell(this.pdfCell(this.formatCount(row.totalTransactions()), normalFont, Element.ALIGN_RIGHT));
                 detailTable.addCell(this.pdfCell(this.formatAmount(row.totalAmount()), normalFont, Element.ALIGN_RIGHT));
                 detailTable.addCell(this.pdfCell(this.formatAmount(row.totalFee()), normalFont, Element.ALIGN_RIGHT));
-                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalPayerFee()), normalFont, Element.ALIGN_RIGHT));
-                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalPayeeFee()), normalFont, Element.ALIGN_RIGHT));
-                detailTable.addCell(this.pdfCell(this.formatAmount(row.totalSchemeFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatOptionalAmount(row.totalPayerFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatOptionalAmount(row.totalPayeeFee()), normalFont, Element.ALIGN_RIGHT));
+                detailTable.addCell(this.pdfCell(this.formatOptionalAmount(row.totalSchemeFee()), normalFont, Element.ALIGN_RIGHT));
                 detailTable.addCell(this.pdfCell(row.currency(), normalFont, Element.ALIGN_LEFT));
             }
             detailTable.setSpacingAfter(10f);
@@ -722,9 +722,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
         this.writeIntegerCell(row, REPORT_START_COLUMN + 5, data.totalTransactions(), integerCellStyle);
         this.writeAmountCell(row, REPORT_START_COLUMN + 6, data.totalAmount(), amountCellStyle);
         this.writeAmountCell(row, REPORT_START_COLUMN + 7, data.totalFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 8, data.totalPayerFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 9, data.totalPayeeFee(), amountCellStyle);
-        this.writeAmountCell(row, REPORT_START_COLUMN + 10, data.totalSchemeFee(), amountCellStyle);
+        this.writeOptionalAmountCell(row, REPORT_START_COLUMN + 8, data.totalPayerFee(), amountCellStyle);
+        this.writeOptionalAmountCell(row, REPORT_START_COLUMN + 9, data.totalPayeeFee(), amountCellStyle);
+        this.writeOptionalAmountCell(row, REPORT_START_COLUMN + 10, data.totalSchemeFee(), amountCellStyle);
         this.writeTextCell(row, REPORT_START_COLUMN + 11, data.currency(), textCellStyle);
     }
 
@@ -826,6 +826,17 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             cell.setCellValue(value.doubleValue());
         } else {
             cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private void writeOptionalAmountCell(Row row, int columnIndex, BigDecimal value, CellStyle style) {
+
+        Cell cell = row.createCell(columnIndex);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
+        } else {
+            cell.setCellValue("-");
         }
         cell.setCellStyle(style);
     }
@@ -1038,6 +1049,11 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private String formatAmount(BigDecimal value) {
 
         return value == null ? "" : new DecimalFormat(AMOUNT_FORMAT).format(value);
+    }
+
+    private String formatOptionalAmount(BigDecimal value) {
+
+        return value == null ? "-" : new DecimalFormat(AMOUNT_FORMAT).format(value);
     }
 
     private String formatBalanceAmount(BigDecimal value) {
