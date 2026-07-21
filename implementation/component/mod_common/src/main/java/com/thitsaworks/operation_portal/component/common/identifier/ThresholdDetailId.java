@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.core.hub_services.query;
+package com.thitsaworks.operation_portal.component.common.identifier;
 
-import com.thitsaworks.operation_portal.core.hub_services.data.NdcLedgerData;
-import com.thitsaworks.operation_portal.core.hub_services.exception.HubServicesException;
-import java.util.List;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public interface GetNdcLedgerDataQuery {
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@Embeddable
+public class ThresholdDetailId extends JpaId<Long> {
 
-    record Input(List<Long> participantCurrencyIds) {
+    @Column(name = "id")
+    private Long id;
+
+    @Override
+    public Long getEntityId() {
+
+        return this.id;
     }
-
-    record Output(List<NdcLedgerData> data) {
-    }
-
-    Output execute(Input input) throws HubServicesException;
 }

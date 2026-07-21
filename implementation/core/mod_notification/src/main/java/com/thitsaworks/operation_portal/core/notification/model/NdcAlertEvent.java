@@ -117,7 +117,7 @@ public class NdcAlertEvent {
         this.previousState = NdcThresholdStateType.SAFE;
         this.currentState = NdcThresholdStateType.BREACHED;
         this.thresholdPercent = Objects.requireNonNull(thresholdPercent, "thresholdPercent is required");
-        this.currentBalance = Objects.requireNonNull(currentBalance, "currentBalance is required");
+        this.currentBalance = currentBalance;
         this.currentNdcUsed = Objects.requireNonNull(currentNdcUsed, "currentNdcUsed is required");
         this.eventMessage = eventMessage;
         this.eventTime = Objects.requireNonNull(eventTime, "eventTime is required");

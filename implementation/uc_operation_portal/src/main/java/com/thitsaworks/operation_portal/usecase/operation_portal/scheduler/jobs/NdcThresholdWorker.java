@@ -17,21 +17,19 @@ package com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.type.JobStatus;
-import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
-import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
-import com.thitsaworks.operation_portal.core.hub_services.data.NdcLedgerData;
 import com.thitsaworks.operation_portal.core.hub_services.data.NdcUsedData;
-import com.thitsaworks.operation_portal.core.hub_services.query.GetNdcLedgerDataQuery;
 import com.thitsaworks.operation_portal.core.hub_services.query.GetNdcUsedDataQuery;
 import com.thitsaworks.operation_portal.core.notification.command.EvaluateNdcThresholdCommand;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
+import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
+import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdDetailRepository;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
 import com.thitsaworks.operation_portal.core.participant.model.ParticipantNDC;
 import com.thitsaworks.operation_portal.core.participant.query.ParticipantNDCQuery;
@@ -48,9 +46,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component("NdcThresholdWorker")
@@ -62,8 +61,6 @@ public class NdcThresholdWorker
 
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
-    private final GetNdcLedgerDataQuery ledgerDataQuery;
-
     private final EvaluateNdcThresholdCommand evaluateNdcThresholdCommand;
 
     private final ParticipantNDCQuery participantNDCQuery;
@@ -74,6 +71,8 @@ public class NdcThresholdWorker
 
     private final GetNdcUsedDataQuery ndcUsedDataQuery;
 
+    private final ThresholdDetailRepository thresholdDetailRepository;
+
     public NdcThresholdWorker(
         CreateJobExecutionLogCommand createJobExecutionLogCommand,
         ModifyJobExecutionLogCommand modifyJobExecutionLogCommand,
@@ -82,11 +81,11 @@ public class NdcThresholdWorker
         CreateExceptionAuditCommand createExceptionAuditCommand,
         ActionAuthorizationManager actionAuthorizationManager,
         ObjectMapper objectMapper,
-        GetNdcLedgerDataQuery ledgerDataQuery,
         ThresholdConfigurationQuery thresholdConfigurationQuery,
         EvaluateNdcThresholdCommand evaluateNdcThresholdCommand,
         ParticipantNDCQuery participantNDCQuery,
-        GetNdcUsedDataQuery getNdcUsedDataQuery) {
+        GetNdcUsedDataQuery getNdcUsedDataQuery,
+        ThresholdDetailRepository thresholdDetailRepository) {
         super(
             createJobExecutionLogCommand,
             modifyJobExecutionLogCommand,
@@ -97,13 +96,13 @@ public class NdcThresholdWorker
             objectMapper
         );
 
-        this.ledgerDataQuery = ledgerDataQuery;
         this.thresholdConfigurationQuery = thresholdConfigurationQuery;
         this.evaluateNdcThresholdCommand = evaluateNdcThresholdCommand;
         this.participantNDCQuery = participantNDCQuery;
         this.evaluationLogCreateCommand = createJobExecutionLogCommand;
         this.evaluationLogModifyCommand = modifyJobExecutionLogCommand;
         this.ndcUsedDataQuery = getNdcUsedDataQuery;
+        this.thresholdDetailRepository = thresholdDetailRepository;
     }
 
     @Override
@@ -119,180 +118,157 @@ public class NdcThresholdWorker
 
         LOG.info("Starting NDC threshold evaluation because the scheme gate is ON");
 
-        Set<Long> enabledParticipantCurrencyIds = thresholdConfigurationQuery.getAll()
-                                                                .stream()
-                                                                .filter(config -> config.scopeType() == ThresholdScopeType.DFSP)
-                                                                .filter(config -> config.status() == NdcConfigurationStatus.ACTIVE)
-                                                                .map(config -> config.participantCurrencyId())
-                                                                .filter(participantCurrencyId -> participantCurrencyId != null)
-                                                                .filter(this::isGateAllowed)
-                                                                .collect(Collectors.toCollection(HashSet::new));
+        List<ThresholdDetail> enabledDetails = thresholdDetailRepository
+            .findAllByStatusTrueOrderByDfspIdAscCurrencyAsc()
+            .stream()
+            .filter(this::isDetailGateAllowed)
+            .toList();
 
-        if (enabledParticipantCurrencyIds.isEmpty()) {
-            LOG.info("Skipping NDC evaluation because no DFSP threshold gates are ON");
+        if (enabledDetails.isEmpty()) {
+            LOG.info("Skipping NDC evaluation because no active DFSP/currency threshold details are enabled");
             return List.of();
         }
 
-        LOG.info("NDC enabled participant currencies resolved: count={}, participantCurrencyIds={}",
-                 enabledParticipantCurrencyIds.size(), enabledParticipantCurrencyIds);
+        Map<String, List<ThresholdDetail>> detailsByDfsp = enabledDetails.stream()
+            .collect(Collectors.groupingBy(
+                ThresholdDetail::getDfspId,
+                LinkedHashMap::new,
+                Collectors.toList()
+            ));
 
-        var result = ledgerDataQuery.execute(
-            new GetNdcLedgerDataQuery.Input(List.copyOf(enabledParticipantCurrencyIds))
-        );
-
-        LOG.info("Central Ledger NDC data fetched: requestedParticipantCurrencyCount={}, recordCount={}",
-                 enabledParticipantCurrencyIds.size(), result.data().size());
+        LOG.info("NDC threshold details resolved: dfspCount={}, currencyConfigCount={}",
+                 detailsByDfsp.size(), enabledDetails.size());
 
         List<NdcEvaluation> evaluations = new ArrayList<>();
         int skippedEvaluations = 0;
+        int ndcUsedRecords = 0;
 
-        for (NdcLedgerData data : result.data()) {
+        for (Map.Entry<String, List<ThresholdDetail>> entry : detailsByDfsp.entrySet()) {
 
-            LOG.info("NDC ledger input: participant={}, currency={}, currentBalance={}, "
-                         + "ndcLimitAmount={}, active={}",
-                     data.participantName(), data.currency(), data.currentBalance(),
-                     data.ndcLimitAmount(), data.active());
+            String dfspId = entry.getKey();
+            GetNdcUsedDataQuery.Output output = ndcUsedDataQuery.execute(
+                new GetNdcUsedDataQuery.Input(dfspId));
 
-            if (!enabledParticipantCurrencyIds.contains(data.participantCurrencyId())) {
-                LOG.warn("Ignoring ledger participantCurrencyId [{}] because it is not an enabled configured gate",
-                         data.participantCurrencyId());
-                skippedEvaluations++;
+            if (output == null || output.getNdcUsedData() == null) {
+                LOG.warn("Skipping NDC evaluation because no NDC used data exists for DFSP [{}]", dfspId);
+                skippedEvaluations += entry.getValue().size();
                 continue;
             }
 
-            if (!data.active()) {
-                LOG.warn("Skipping inactive Central Ledger account for [{} / {}]",
-                         data.participantName(), data.currency());
-                skippedEvaluations++;
-                continue;
-            }
+            Map<String, NdcUsedData> ndcUsedByCurrency = output.getNdcUsedData()
+                .stream()
+                .filter(NdcUsedData::isActive)
+                .collect(Collectors.toMap(
+                    NdcUsedData::currency,
+                    Function.identity(),
+                    (first, ignored) -> first,
+                    LinkedHashMap::new
+                ));
 
-            ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(data.participantCurrencyId());
-            if (!gate.allowed()) {
-                LOG.info("Skipping NDC evaluation for DFSP [{}]: {}",
-                         data.participantName(), gate.reason());
-                skippedEvaluations++;
-                continue;
-            }
+            ndcUsedRecords += ndcUsedByCurrency.size();
 
-            ParticipantNDC participantNDC = participantNDCQuery
-                .get(data.participantName(), data.currency())
-                .orElse(null);
+            for (ThresholdDetail detail : entry.getValue()) {
 
-            if (participantNDC == null || participantNDC.getNdcPercent() == null) {
-                LOG.warn("Skipping NDC evaluation because no NDC configuration exists for [{} / {}]",
-                         data.participantName(), data.currency());
-                skippedEvaluations++;
-                continue;
-            }
+                NdcUsedData ndcUsedData = ndcUsedByCurrency.get(detail.getCurrency());
+                if (ndcUsedData == null || ndcUsedData.ndcUsed() == null) {
+                    LOG.warn("Skipping NDC evaluation because NDC used percent is missing for [{} / {}]",
+                             detail.getDfspId(), detail.getCurrency());
+                    skippedEvaluations++;
+                    continue;
+                }
 
-            if (data.ndcLimitAmount() == null || data.ndcLimitAmount().signum() <= 0) {
-                LOG.warn("Skipping NDC evaluation because ledger NDC limit is missing or invalid for [{} / {}]",
-                         data.participantName(), data.currency());
-                skippedEvaluations++;
-                continue;
-            }
+                // Retained temporarily until runtime tables reference threshold_detail_id.
+                ParticipantNDC participantNDC = participantNDCQuery
+                    .get(detail.getDfspId(), detail.getCurrency())
+                    .orElse(null);
 
-            LocalDateTime evaluatedAt = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
-                                                      .withNano(0);
-            var output = this.ndcUsedDataQuery.execute(new GetNdcUsedDataQuery.Input(data.participantName()));
-            BigDecimal ndcUsedPercent = this.extractNdcUsedPercent(output, data);
+                if (participantNDC == null) {
+                    LOG.warn("Skipping NDC evaluation because the legacy runtime identity is missing for [{} / {}]",
+                             detail.getDfspId(), detail.getCurrency());
+                    skippedEvaluations++;
+                    continue;
+                }
 
-            if (ndcUsedPercent == null) {
-                LOG.warn("Skipping NDC evaluation because NDC used percent is missing for [{} / {}]",
-                         data.participantName(), data.currency());
-                skippedEvaluations++;
-                continue;
-            }
+                LocalDateTime evaluatedAt = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
+                                                          .withNano(0);
+                BigDecimal ndcUsedPercent = ndcUsedData.ndcUsed();
+                String comparison = ndcUsedPercent.compareTo(detail.getNdcConfig()) >= 0
+                    ? "AT_OR_ABOVE_THRESHOLD"
+                    : "BELOW_THRESHOLD";
 
-            String comparison = ndcUsedPercent.compareTo(participantNDC.getNdcPercent()) >= 0
-                ? "AT_OR_ABOVE_THRESHOLD"
-                : "BELOW_THRESHOLD";
+                LOG.info("NDC calculation result: participant={}, currency={}, ndcUsedPercent={}, "
+                             + "thresholdPercent={}, comparison={}, calculationSource=GetNdcUsedDataQuery",
+                         detail.getDfspId(), detail.getCurrency(), ndcUsedPercent,
+                         detail.getNdcConfig(), comparison);
 
-            LOG.info("NDC calculation result: participant={}, currency={}, ndcUsedPercent={}, "
-                         + "thresholdPercent={}, comparison={}, calculationSource=GetNdcUsedDataQuery",
-                     data.participantName(), data.currency(), ndcUsedPercent,
-                     participantNDC.getNdcPercent(), comparison);
+                EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
+                    new EvaluateNdcThresholdCommand.Input(
+                        participantNDC.getParticipantNDCId(),
+                        detail.getDfspId(),
+                        detail.getCurrency(),
+                        null,
+                        ndcUsedPercent,
+                        detail.getNdcConfig(),
+                        evaluatedAt,
+                        "system"
+                    )
+                );
 
-            EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
-                new EvaluateNdcThresholdCommand.Input(
-                    participantNDC.getParticipantNDCId(),
-                    data.participantName(),
-                    data.currency(),
-                    data.currentBalance(),
+                NdcEvaluation evaluation = new NdcEvaluation(
+                    detail.getDfspId(),
+                    detail.getCurrency(),
                     ndcUsedPercent,
-                    participantNDC.getNdcPercent(),
-                    evaluatedAt,
-                    "system"
-                )
-            );
+                    detail.getNdcConfig(),
+                    thresholdOutput.previousState(),
+                    thresholdOutput.currentState(),
+                    thresholdOutput.breachCycleNo(),
+                    thresholdOutput.alertCreated(),
+                    thresholdOutput.recovered(),
+                    thresholdOutput.alertEventId()
+                );
 
-            NdcEvaluation evaluation = new NdcEvaluation(
-                data.participantName(),
-                data.currency(),
-                data.currentBalance(),
-                data.ndcLimitAmount(),
-                ndcUsedPercent,
-                participantNDC.getNdcPercent(),
-                thresholdOutput.previousState(),
-                thresholdOutput.currentState(),
-                thresholdOutput.breachCycleNo(),
-                thresholdOutput.alertCreated(),
-                thresholdOutput.recovered(),
-                thresholdOutput.alertEventId()
-            );
+                String decision;
+                if (thresholdOutput.alertCreated()) {
+                    decision = "CREATE_ALERT";
+                } else if (thresholdOutput.recovered()) {
+                    decision = "RECOVERED";
+                } else if (thresholdOutput.currentState() == NdcThresholdStateType.BREACHED) {
+                    decision = "SUPPRESS_DUPLICATE";
+                } else {
+                    decision = "NO_ALERT";
+                }
 
-            String decision;
-            if (thresholdOutput.alertCreated()) {
-                decision = "CREATE_ALERT";
-            } else if (thresholdOutput.recovered()) {
-                decision = "RECOVERED";
-            } else if (thresholdOutput.currentState() == NdcThresholdStateType.BREACHED) {
-                decision = "SUPPRESS_DUPLICATE";
-            } else {
-                decision = "NO_ALERT";
+                LOG.info("NDC evaluation decision: participant={}, currency={}, previousState={}, "
+                             + "currentState={}, breachCycle={}, decision={}, alertEventId={}",
+                         evaluation.participantName(), evaluation.currency(), evaluation.previousState(),
+                         evaluation.currentState(), evaluation.breachCycleNo(), decision,
+                         evaluation.alertEventId());
+
+                persistEvaluationLog(schedulerConfigData, evaluation, evaluatedAt);
+                evaluations.add(evaluation);
             }
-
-            LOG.info("NDC evaluation decision: participant={}, currency={}, previousState={}, "
-                         + "currentState={}, breachCycle={}, decision={}, alertEventId={}",
-                     evaluation.participantName(), evaluation.currency(), evaluation.previousState(),
-                     evaluation.currentState(), evaluation.breachCycleNo(), decision,
-                     evaluation.alertEventId());
-
-            persistEvaluationLog(schedulerConfigData, evaluation, evaluatedAt);
-            evaluations.add(evaluation);
         }
 
         long alertsCreated = evaluations.stream().filter(NdcEvaluation::alertCreated).count();
         long recoveries = evaluations.stream().filter(NdcEvaluation::recovered).count();
 
-        LOG.info("NDC worker completed: ledgerRecords={}, evaluated={}, skipped={}, "
+        LOG.info("NDC worker completed: ndcUsedRecords={}, evaluated={}, skipped={}, "
                      + "alertsCreated={}, recovered={}",
-                 result.data().size(), evaluations.size(), skippedEvaluations,
+                 ndcUsedRecords, evaluations.size(), skippedEvaluations,
                  alertsCreated, recoveries);
 
         return evaluations;
     }
 
-    private boolean isGateAllowed(Long participantCurrencyId) {
+    private boolean isDetailGateAllowed(ThresholdDetail detail) {
 
-        return thresholdConfigurationQuery.checkGate(participantCurrencyId).allowed();
-    }
-
-    private BigDecimal extractNdcUsedPercent(GetNdcUsedDataQuery.Output output, NdcLedgerData data) {
-
-        if (output == null || output.getNdcUsedData() == null) {
-            return null;
+        ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(detail.getDfspId());
+        if (!gate.allowed()) {
+            LOG.info("Skipping threshold detail [{} / {}]: {}",
+                     detail.getDfspId(), detail.getCurrency(), gate.reason());
         }
 
-        return output.getNdcUsedData()
-                     .stream()
-                     .filter(NdcUsedData::isActive)
-                     .filter(ndcUsedData -> data.currency().equals(ndcUsedData.currency()))
-                     .map(NdcUsedData::ndcUsed)
-                     .filter(ndcUsed -> ndcUsed != null)
-                     .findFirst()
-                     .orElse(null);
+        return gate.allowed();
     }
 
     private void persistEvaluationLog(SchedulerConfigData schedulerConfigData,
@@ -338,8 +314,6 @@ public class NdcThresholdWorker
     public record NdcEvaluation(
         String participantName,
         String currency,
-        BigDecimal currentBalance,
-        BigDecimal ndcLimitAmount,
         BigDecimal ndcUsedPercent,
         BigDecimal thresholdPercent,
         NdcThresholdStateType previousState,
