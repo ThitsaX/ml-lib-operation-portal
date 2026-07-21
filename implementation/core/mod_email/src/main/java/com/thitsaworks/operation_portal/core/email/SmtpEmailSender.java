@@ -26,6 +26,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 public class SmtpEmailSender implements EmailSender {
@@ -51,7 +52,7 @@ public class SmtpEmailSender implements EmailSender {
                 receiverEmail, subject, this.settings.host(), this.settings.smtpPort());
 
             MimeMessage message = new MimeMessage(this.session());
-            message.setFrom(new InternetAddress(this.settings.senderEmail()));
+            message.setFrom(this.senderAddress());
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(receiverEmail));
             message.setSubject(subject);
             message.setText(content);
@@ -65,6 +66,17 @@ public class SmtpEmailSender implements EmailSender {
             LOG.error("Failed to send email via SMTP: receiverEmail=[{}], subject=[{}]", receiverEmail, subject, e);
 
             throw new IllegalStateException("Failed to send email.", e);
+        }
+    }
+
+    InternetAddress senderAddress() {
+
+        try {
+            return new InternetAddress(
+                this.settings.senderEmail(),
+                this.settings.displaySenderName());
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Failed to build sender email address.", e);
         }
     }
 

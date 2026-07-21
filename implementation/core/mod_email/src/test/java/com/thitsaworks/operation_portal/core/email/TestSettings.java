@@ -35,6 +35,7 @@ public class TestSettings {
         return new EmailConfiguration.EmailSettings(
             "smtp.gmail.com",
             587,
+            "OP System",
             "nweni2203@gmail.com",
             "irjb ulzm lwzc mrvj",
             true,

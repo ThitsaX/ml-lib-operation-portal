@@ -58,19 +58,19 @@ public class NdcNotificationDispatchService {
     public List<NdcNotificationDispatchLogId> createDispatchLogs(
         NdcAlertEvent alertEvent) {
 
-        LOG.info("createDispatchLogs ");
         Map<Long, UserData> recipients = resolveRecipients(alertEvent);
 
         return recipients.values()
                          .stream()
                          .map(user -> createDispatchLog(alertEvent, user))
                          .toList();
+
     }
 
     @CoreWriteTransactional
     public DeliveryResult deliver(NdcNotificationDispatchLogId dispatchLogId) {
 
-        LOG.info("NDC email delivery ");
+        LOG.info("NDC email delivery.");
 
         NdcNotificationDispatchLog dispatchLog =
             dispatchLogRepository.findByIdForUpdate(dispatchLogId)
@@ -104,12 +104,8 @@ public class NdcNotificationDispatchService {
 
             emailService.sendNdcUsageAlertToEmail(
                 dispatchLog.getRecipientEmail(),
-                alertEvent.getParticipantName(),
-                alertEvent.getCurrency(),
                 alertMessage.subject(),
-                alertMessage.content(),
-                alertEvent.getCurrentNdcUsed(),
-                alertEvent.getThresholdPercent());
+                alertMessage.content());
 
             dispatchLog.markSent(LocalDateTime.now(), SYSTEM_USER);
             dispatchLogRepository.saveAndFlush(dispatchLog);
@@ -168,6 +164,8 @@ public class NdcNotificationDispatchService {
                 user.email().getValue(),
                 SYSTEM_USER);
 
+        LOG.info("Create Dispatch Logs.");
+
         return dispatchLogRepository.saveAndFlush(dispatchLog)
                                     .getNdcNotificationDispatchLogId();
     }
@@ -188,10 +186,14 @@ public class NdcNotificationDispatchService {
             }
 
             String participantName = user.participantName().getValue();
+
+            LOG.info("User participantName", user.participantName());
+
             boolean hubUser = participantName.toUpperCase(Locale.ROOT).contains("HUB");
             boolean breachedDfspUser = participantName.equals(breachedDfsp);
 
             if (hubUser || breachedDfspUser) {
+                LOG.info("TRUE");
                 recipients.put(user.userId().getId(), user);
             }
         }

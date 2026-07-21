@@ -36,7 +36,7 @@ public class EmailServiceUnitTest {
     public void test_sendNdcUsageAlertToUserSuccessfully() throws Exception {
 
         this.emailService.sendNdcUsageAlertToEmail(
-            "test@thitsa.com", "wallet2", "USD", "", "",  new BigDecimal("80.00"), new BigDecimal("80.00"));
+            "test@thitsa.com", "", "");
     }
 
 }

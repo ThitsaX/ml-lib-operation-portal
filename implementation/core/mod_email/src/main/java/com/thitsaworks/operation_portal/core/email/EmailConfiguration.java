@@ -35,16 +35,14 @@ public class EmailConfiguration {
 
     public record EmailSettings(String host,
                            Integer port,
+                           String senderName,
                            String senderEmail,
                            String password,
                            Boolean auth,
                            Boolean startTlsEnable,
                            Boolean sslEnable) {
 
-        public int smtpPort() {
-
-            return this.port == null ? 587 : this.port;
-        }
+        private static final String DEFAULT_SENDER_NAME = "OP System";
 
         public boolean smtpAuth() {
 
@@ -59,6 +57,13 @@ public class EmailConfiguration {
         public boolean smtpSslEnable() {
 
             return this.sslEnable != null && this.sslEnable;
+        }
+
+        public String displaySenderName() {
+
+            return this.senderName == null || this.senderName.isBlank()
+                ? DEFAULT_SENDER_NAME
+                : this.senderName;
         }
 
     }

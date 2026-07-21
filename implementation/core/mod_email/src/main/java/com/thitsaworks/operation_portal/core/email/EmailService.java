@@ -39,39 +39,21 @@ public class EmailService {
     }
 
     public void sendNdcUsageAlertToEmail(String receiverEmail,
-                                         String dfspName,
-                                         String currency,
                                          String subject,
-                                         String message,
-                                         BigDecimal ndcUsedPercentage,
-                                         BigDecimal thresholdPercentage) {
+                                         String message) {
 
 
         if (receiverEmail == null || receiverEmail.isBlank()) {
             throw new IllegalArgumentException("receiverEmail is required");
         }
 
-        if (dfspName == null || dfspName.isBlank()) {
-            throw new IllegalArgumentException("dfspName is required");
-        }
-
-        if (currency == null || currency.isBlank()) {
-            throw new IllegalArgumentException("currency is required");
-        }
-
-        if (ndcUsedPercentage == null || thresholdPercentage == null) {
-            throw new IllegalArgumentException("NDC percentages are required");
-        }
-
         LOG.info(
-            "Sending NDC usage alert email: receiverEmail=[{}], dfspName=[{}], currency=[{}], ndcUsedPercentage=[{}], thresholdPercentage=[{}]",
-            receiverEmail, dfspName, currency, ndcUsedPercentage, thresholdPercentage);
+            "Sending NDC usage alert email: receiverEmail=[{}]", receiverEmail);
 
         this.emailSender.send(receiverEmail, subject, message);
 
         LOG.info(
-            "NDC usage alert email sent: receiverEmail=[{}], dfspName=[{}], currency=[{}]",
-            receiverEmail, dfspName, currency);
+            "NDC usage alert email sent: receiverEmail=[{}]", receiverEmail);
     }
 
 }
