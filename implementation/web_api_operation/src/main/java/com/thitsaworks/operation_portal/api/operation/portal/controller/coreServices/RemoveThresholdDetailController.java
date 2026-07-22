@@ -45,7 +45,7 @@ public class RemoveThresholdDetailController {
     private final ObjectMapper objectMapper;
 
     @DeleteMapping("/secured/ndc/thresholdDetails")
-    public ResponseEntity<Response> execute(@RequestParam("id") Long id)
+    public ResponseEntity<Response> execute(@RequestParam("id") String id)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Remove NDC Threshold Detail Request : id=[{}]", id);
@@ -56,9 +56,9 @@ public class RemoveThresholdDetailController {
                                                .getDetails();
 
         RemoveThresholdDetail.Output output = this.removeThresholdDetail.execute(
-            new RemoveThresholdDetail.Input(id, userContext.userId().toString()));
+            new RemoveThresholdDetail.Input(Long.parseLong(id), userContext.userId().toString()));
 
-        var response = new Response(output.thresholdDetailId().getEntityId(), output.removed());
+        var response = new Response(String.valueOf(output.thresholdDetailId().getEntityId()), output.removed());
 
         LOG.info("Remove NDC Threshold Detail Response : [{}]", this.objectMapper.writeValueAsString(response));
 
@@ -67,7 +67,7 @@ public class RemoveThresholdDetailController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-        @JsonProperty("thresholdDetailId") Long thresholdDetailId,
+        @JsonProperty("thresholdDetailId") String thresholdDetailId,
         @JsonProperty("removed") boolean removed
     ) implements Serializable { }
 }

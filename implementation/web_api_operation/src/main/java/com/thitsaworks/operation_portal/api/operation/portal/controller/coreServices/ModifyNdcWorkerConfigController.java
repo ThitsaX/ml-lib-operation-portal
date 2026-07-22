@@ -41,13 +41,13 @@ public class ModifyNdcWorkerConfigController {
     private final ModifySchedulerConfig modifySchedulerConfig;
 
     @PutMapping("/secured/ndc/worker-config/{id}")
-    public ResponseEntity<Response> execute(@PathVariable("id") Long id,
+    public ResponseEntity<Response> execute(@PathVariable("id") String id,
                                             @Valid @RequestBody Request request) throws DomainException {
 
         NdcWorkerConfigRequestValidator.Values values = NdcWorkerConfigRequestValidator.validate(request.runEvery());
 
         ModifySchedulerConfig.Output output = this.modifySchedulerConfig.execute(
-            new ModifySchedulerConfig.Input(new SchedulerConfigId(id),
+            new ModifySchedulerConfig.Input(new SchedulerConfigId(Long.parseLong(id)),
                                             request.name(),
                                             request.jobName(),
                                             request.description(),

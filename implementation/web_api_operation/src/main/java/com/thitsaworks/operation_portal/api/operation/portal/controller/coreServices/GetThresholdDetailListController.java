@@ -45,7 +45,7 @@ public class GetThresholdDetailListController {
 
     @GetMapping(value = "/secured/ndc/thresholdDetails", params = "!id")
     public ResponseEntity<Response> execute(
-        @RequestParam(value = "thresholdConfigurationId", required = false) Long thresholdConfigurationId,
+        @RequestParam(value = "thresholdConfigurationId", required = false) String thresholdConfigurationId,
         @RequestParam(value = "status", required = false) Boolean status)
         throws DomainException, JsonProcessingException {
 
@@ -54,12 +54,13 @@ public class GetThresholdDetailListController {
 
         GetThresholdDetailList.Output output =
             this.getThresholdDetailList.execute(
-                new GetThresholdDetailList.Input(thresholdConfigurationId, status));
+                new GetThresholdDetailList.Input(
+                    thresholdConfigurationId == null ? null : Long.parseLong(thresholdConfigurationId), status));
 
         var response = new Response(output.thresholdDetails().stream()
             .map(thresholdDetail -> new ThresholdDetail(
-                thresholdDetail.thresholdDetailId(),
-                thresholdDetail.thresholdConfigurationId(),
+                String.valueOf(thresholdDetail.thresholdDetailId()),
+                String.valueOf(thresholdDetail.thresholdConfigurationId()),
                 thresholdDetail.currency(),
                 thresholdDetail.visualConfig(),
                 thresholdDetail.ndcConfig(),
@@ -78,8 +79,8 @@ public class GetThresholdDetailListController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ThresholdDetail(
-        @JsonProperty("id") Long id,
-        @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
+        @JsonProperty("id") String id,
+        @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,

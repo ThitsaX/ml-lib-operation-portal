@@ -43,17 +43,17 @@ public class GetThresholdDetailController {
     private final ObjectMapper objectMapper;
 
     @GetMapping(value = "/secured/ndc/thresholdDetails", params = "id")
-    public ResponseEntity<Response> execute(@RequestParam("id") Long id)
+    public ResponseEntity<Response> execute(@RequestParam("id") String id)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Get NDC Threshold Detail Request : id=[{}]", id);
 
         GetThresholdDetail.Output output =
-            this.getThresholdDetail.execute(new GetThresholdDetail.Input(id));
+            this.getThresholdDetail.execute(new GetThresholdDetail.Input(Long.parseLong(id)));
 
         var response = new Response(new ThresholdDetail(
-            output.thresholdDetail().thresholdDetailId(),
-            output.thresholdDetail().thresholdConfigurationId(),
+            String.valueOf(output.thresholdDetail().thresholdDetailId()),
+            String.valueOf(output.thresholdDetail().thresholdConfigurationId()),
             output.thresholdDetail().currency(),
             output.thresholdDetail().visualConfig(),
             output.thresholdDetail().ndcConfig(),
@@ -72,8 +72,8 @@ public class GetThresholdDetailController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ThresholdDetail(
-        @JsonProperty("thresholdDetailId") Long thresholdDetailId,
-        @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
+        @JsonProperty("thresholdDetailId") String thresholdDetailId,
+        @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,

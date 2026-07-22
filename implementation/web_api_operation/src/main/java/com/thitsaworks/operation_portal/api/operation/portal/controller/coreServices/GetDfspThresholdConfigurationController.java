@@ -51,7 +51,7 @@ public class GetDfspThresholdConfigurationController {
                 new GetDfspThresholdConfiguration.Input(dfspId));
 
         var response = new Response(
-                output.thresholdConfigurationId().getEntityId(),
+                String.valueOf(output.thresholdConfigurationId().getEntityId()),
                 output.scopeType().toString(),
                 output.dfspId(),
                 output.thresholdEnabled(),
@@ -69,7 +69,7 @@ public class GetDfspThresholdConfigurationController {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
 
-            @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
+            @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,

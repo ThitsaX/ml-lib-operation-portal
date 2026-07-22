@@ -52,7 +52,7 @@ public class ModifyThresholdDetailController {
     private final ObjectMapper objectMapper;
 
     @PutMapping("/secured/ndc/thresholdDetails")
-    public ResponseEntity<Response> execute(@RequestParam("id") Long id,
+    public ResponseEntity<Response> execute(@RequestParam("id") String id,
                                             @Valid @RequestBody Request request)
         throws DomainException, JsonProcessingException {
 
@@ -66,14 +66,14 @@ public class ModifyThresholdDetailController {
 
         ModifyThresholdDetail.Output output = this.modifyThresholdDetail.execute(
             new ModifyThresholdDetail.Input(
-                id,
+                Long.parseLong(id),
                 request.currency(),
                 request.visualConfig(),
                 request.ndcConfig(),
                 request.status(),
                 userContext.userId().toString()));
 
-        var response = new Response(output.thresholdDetailId().getEntityId(), output.modified());
+        var response = new Response(String.valueOf(output.thresholdDetailId().getEntityId()), output.modified());
 
         LOG.info("Modify NDC Threshold Detail Response : [{}]", this.objectMapper.writeValueAsString(response));
 
@@ -92,7 +92,7 @@ public class ModifyThresholdDetailController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-        @JsonProperty("thresholdDetailId") Long thresholdDetailId,
+        @JsonProperty("thresholdDetailId") String thresholdDetailId,
         @JsonProperty("modified") boolean modified
     ) implements Serializable { }
 }

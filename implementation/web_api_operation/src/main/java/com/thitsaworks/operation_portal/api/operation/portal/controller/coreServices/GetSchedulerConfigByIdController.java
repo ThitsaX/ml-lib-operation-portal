@@ -44,13 +44,13 @@ public class GetSchedulerConfigByIdController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("/secured/getSchedulerConfigById")
-    public ResponseEntity<Response> execute(@Valid @RequestParam Long schedulerConfigId)
+    public ResponseEntity<Response> execute(@Valid @RequestParam String schedulerConfigId)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Get Scheduler Config by Id Request : schedulerConfigId = [{}]", schedulerConfigId);
 
         GetSchedulerConfigById.Output output = this.getSchedulerConfigById.execute(
-                new GetSchedulerConfigById.Input(new SchedulerConfigId(schedulerConfigId))
+                new GetSchedulerConfigById.Input(new SchedulerConfigId(Long.parseLong(schedulerConfigId)))
                                                                                   );
 
         var response = new Response(output.config());
