@@ -29,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -54,11 +53,8 @@ public class GetThresholdConfigurationListController {
             .map(config -> new NdcThresholdConfiguration(
                 config.thresholdConfigurationId().getEntityId(),
                 config.scopeType().toString(),
-                config.participantCurrencyId(),
+                config.dfspId(),
                 config.thresholdEnabled(),
-                config.colorCode(),
-                config.visualAlertPercent(),
-                config.notiAlertPercent(),
                 config.status().toString(),
                 config.updatedBy()
             ))
@@ -80,11 +76,8 @@ public class GetThresholdConfigurationListController {
     public record NdcThresholdConfiguration(
             @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
             @JsonProperty("thresholdScopeType") String thresholdScopeType,
-            @JsonProperty("participantCurrencyId") Long participantCurrencyId,
+            @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
-            @JsonProperty("colorCode") String colorCode,
-            @JsonProperty("visualAlertPercent") BigDecimal visualAlertPercent,
-            @JsonProperty("notiAlertPercent") BigDecimal notiAlertPercent,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
             @JsonProperty("updatedBy") String updatedBy
     ) { }

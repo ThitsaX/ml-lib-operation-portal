@@ -53,11 +53,8 @@ public class CreateThresholdConfigurationHandler
         CreateThresholdConfigurationCommand.Output output = this.createThresholdConfigurationCommand.execute(
             new CreateThresholdConfigurationCommand.Input(
                 input.scopeType(),
-                input.participantCurrencyId(),
+                input.dfspId(),
                 input.thresholdEnabled(),
-                input.colorCode(),
-                input.visualAlertPercent(),
-                input.notiAlertPercent(),
                 input.createdBy()));
 
         this.schedulerEngine.refreshAllActive();

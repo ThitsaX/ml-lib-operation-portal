@@ -56,23 +56,23 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
     }
 
     @Override
-    public Optional<ThresholdConfigurationData> getParticipantCurrencyConfiguration(Long participantCurrencyId) {
+    public Optional<ThresholdConfigurationData> getDfspConfiguration(String dfspId) {
 
         return this.thresholdConfigurationRepository
-                   .findFirstByScopeTypeAndParticipantCurrencyIdAndStatus(
-                       ThresholdScopeType.DFSP, participantCurrencyId, NdcConfigurationStatus.ACTIVE)
+                   .findFirstByScopeTypeAndDfspIdAndStatus(
+                       ThresholdScopeType.DFSP, dfspId, NdcConfigurationStatus.ACTIVE)
                    .map(ThresholdConfigurationData::new);
     }
 
     @Override
-    public ThresholdGateDecision checkGate(Long participantCurrencyId) {
+    public ThresholdGateDecision checkGate(String dfspId) {
 
-        if (participantCurrencyId == null) {
+        if (dfspId == null || dfspId.isBlank()) {
             return new ThresholdGateDecision(
                 false,
                 false,
                 false,
-                "PARTICIPANT_CURRENCY_ID_MISSING"
+                "DFSP_ID_MISSING"
             );
         }
 
@@ -96,7 +96,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
             );
         }
 
-        var dfspConfiguration = getParticipantCurrencyConfiguration(participantCurrencyId);
+        var dfspConfiguration = getDfspConfiguration(dfspId);
 
         if (dfspConfiguration.isEmpty()) {
             return new ThresholdGateDecision(

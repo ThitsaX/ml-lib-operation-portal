@@ -31,7 +31,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -49,20 +48,11 @@ public class ThresholdConfiguration {
     private ThresholdScopeType scopeType;
 
 
-    @Column(name = "participant_currency_id")
-    private Long participantCurrencyId;
+    @Column(name = "dfsp_id")
+    private String dfspId;
 
     @Column(name = "threshold_enabled", nullable = false)
     private boolean thresholdEnabled;
-
-    @Column(name = "color_code")
-    private String colorCode;
-
-    @Column(name = "visual_alert_percent")
-    private BigDecimal visualAlertPercent;
-
-    @Column(name = "noti_alert_percent")
-    private BigDecimal notiAlertPercent;
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -81,46 +71,28 @@ public class ThresholdConfiguration {
     private String updatedBy;
 
     public ThresholdConfiguration(ThresholdScopeType scopeType,
-                                  Long participantCurrencyId,
+                                  String dfspId,
                                   boolean thresholdEnabled,
-                                  String colorCode,
-                                  BigDecimal visualAlertPercent,
-                                  BigDecimal notiAlertPercent,
                                   String createdBy) {
 
         Objects.requireNonNull(scopeType, "scopeType is required");
         Objects.requireNonNull(createdBy, "createdBy is required");
-        validateScope(scopeType, participantCurrencyId, colorCode);
-        validatePercent(visualAlertPercent, "visualAlertPercent");
-        validatePercent(notiAlertPercent, "notiAlertPercent");
+        validateScope(scopeType, dfspId);
 
         this.thresholdConfigurationId = new ThresholdConfigurationId(Snowflake.get().nextId());
         this.scopeType = scopeType;
-        this.participantCurrencyId = participantCurrencyId;
+        this.dfspId = dfspId;
         this.thresholdEnabled = thresholdEnabled;
-        this.colorCode = normalizeColorCode(scopeType, colorCode);
-        this.visualAlertPercent = visualAlertPercent;
-        this.notiAlertPercent = notiAlertPercent;
         this.status = NdcConfigurationStatus.ACTIVE;
         this.createdBy = createdBy;
     }
 
     public void update(boolean thresholdEnabled,
                        NdcConfigurationStatus status,
-                       String colorCode,
-                       BigDecimal visualAlertPercent,
-                       BigDecimal notiAlertPercent,
                        String updatedBy) {
-
-        validateScope(this.scopeType, this.participantCurrencyId, colorCode);
-        validatePercent(visualAlertPercent, "visualAlertPercent");
-        validatePercent(notiAlertPercent, "notiAlertPercent");
 
         this.thresholdEnabled = thresholdEnabled;
         this.status = Objects.requireNonNull(status, "status is required");
-        this.colorCode = normalizeColorCode(this.scopeType, colorCode);
-        this.visualAlertPercent = visualAlertPercent;
-        this.notiAlertPercent = notiAlertPercent;
         this.updatedBy = Objects.requireNonNull(updatedBy, "updatedBy is required");
     }
 
@@ -129,47 +101,20 @@ public class ThresholdConfiguration {
         return this.thresholdEnabled && this.status == NdcConfigurationStatus.ACTIVE;
     }
 
-    private static void validateScope(ThresholdScopeType scopeType,
-                                      Long participantCurrencyId,
-                                      String colorCode) {
+    private static void validateScope(ThresholdScopeType scopeType, String dfspId) {
 
         if (scopeType == ThresholdScopeType.SCHEME
-            && participantCurrencyId != null) {
+            && dfspId != null
+            && !dfspId.isBlank()) {
 
-            throw new IllegalArgumentException("SCHEME configuration cannot have participantCurrencyId");
-        }
-
-        if (scopeType == ThresholdScopeType.SCHEME
-            && colorCode != null
-            && !colorCode.isBlank()) {
-
-            throw new IllegalArgumentException("SCHEME configuration cannot have colorCode");
+            throw new IllegalArgumentException("SCHEME configuration cannot have dfspId");
         }
 
         if (scopeType == ThresholdScopeType.DFSP
-            && participantCurrencyId == null) {
+            && (dfspId == null || dfspId.isBlank())) {
 
-            throw new IllegalArgumentException("DFSP configuration requires participantCurrencyId");
+            throw new IllegalArgumentException("DFSP configuration requires dfspId");
         }
-    }
-
-    private static void validatePercent(BigDecimal percent, String fieldName) {
-
-        Objects.requireNonNull(percent, fieldName + " is required");
-
-        if (percent.compareTo(BigDecimal.ZERO) < 0
-            || percent.compareTo(BigDecimal.valueOf(100)) > 0) {
-
-            throw new IllegalArgumentException(fieldName + " must be between 0 and 100");
-        }
-    }
-
-    private static String normalizeColorCode(ThresholdScopeType scopeType, String colorCode) {
-
-        if (scopeType == ThresholdScopeType.SCHEME || colorCode == null || colorCode.isBlank()) {
-            return null;
-        }
-        return colorCode.trim();
     }
 
     @PrePersist

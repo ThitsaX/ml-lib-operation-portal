@@ -24,8 +24,6 @@ import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateThresholdConfiguration;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -36,8 +34,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.math.BigDecimal;
 
 @RestController
 @RequiredArgsConstructor
@@ -61,14 +57,11 @@ public class CreateThresholdConfigurationController {
                         .getAuthentication()
                         .getDetails();
         CreateThresholdConfiguration.Output output = this.createThresholdConfiguration.execute(
-                new CreateThresholdConfiguration.Input(
-                    request.scopeType(),
-                    request.participantCurrencyId(),
-                    request.thresholdEnabled(),
-                    request.colorCode(),
-                    request.visualAlertPercent(),
-                    request.notiAlertPercent(),
-                    userContext.userId().toString()));
+            new CreateThresholdConfiguration.Input(
+                request.scopeType(),
+                request.dfspId(),
+                request.thresholdEnabled(),
+                userContext.userId().toString()));
 
         var response = new Response(output.thresholdConfigurationId().getEntityId());
 
@@ -80,11 +73,8 @@ public class CreateThresholdConfigurationController {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
         @NotNull @JsonProperty("scopeType") ThresholdScopeType scopeType,
-        @JsonProperty("participantCurrencyId") Long participantCurrencyId,
-        @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
-        @JsonProperty("colorCode") String colorCode,
-        @NotNull @JsonProperty("visualAlertPercent") BigDecimal visualAlertPercent,
-        @NotNull @JsonProperty("notiAlertPercent") BigDecimal notiAlertPercent
+        @JsonProperty("dfspId") String dfspId,
+        @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled
     ) { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -24,8 +24,6 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyThresholdConfiguration;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -39,7 +37,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 @RestController
 @RequiredArgsConstructor
@@ -69,9 +66,6 @@ public class ModifyThresholdConfigurationController {
                 id,
                 request.thresholdEnabled(),
                 request.status(),
-                request.colorCode(),
-                request.visualAlertPercent(),
-                request.notiAlertPercent(),
                 userContext.userId().toString()));
 
         var response = new Response(output.thresholdConfigurationId().getEntityId(), output.modified());
@@ -84,12 +78,7 @@ public class ModifyThresholdConfigurationController {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
         @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
-        @NotNull @JsonProperty("status") NdcConfigurationStatus status,
-        @JsonProperty("colorCode") String colorCode,
-        @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
-        @JsonProperty("visualAlertPercent") BigDecimal visualAlertPercent,
-        @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
-        @JsonProperty("notiAlertPercent") BigDecimal notiAlertPercent
+        @NotNull @JsonProperty("status") NdcConfigurationStatus status
     ) { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

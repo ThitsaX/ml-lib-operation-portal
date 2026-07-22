@@ -30,20 +30,13 @@ public interface ThresholdDetailRepository
     extends JpaRepository<ThresholdDetail, ThresholdDetailId>,
             QuerydslPredicateExecutor<ThresholdDetail> {
 
-    List<ThresholdDetail> findAllByStatusTrueOrderByDfspIdAscCurrencyAsc();
-
-    List<ThresholdDetail> findAllByOrderByDfspIdAscCurrencyAsc();
-
-    List<ThresholdDetail> findAllByStatusOrderByDfspIdAscCurrencyAsc(boolean status);
+    List<ThresholdDetail> findAllByStatusTrueOrderByCurrencyAsc();
 
     List<ThresholdDetail> findAllByThresholdConfigurationIdOrderByCurrencyAsc(
         ThresholdConfigurationId thresholdConfigurationId);
 
-    List<ThresholdDetail> findAllByThresholdConfigurationIdAndStatusOrderByCurrencyAsc(
-        ThresholdConfigurationId thresholdConfigurationId, boolean status);
-
-    Optional<ThresholdDetail> findFirstByDfspIdAndCurrencyAndStatusTrue(
-        String dfspId, String currency);
+    Optional<ThresholdDetail> findFirstByThresholdConfigurationIdAndCurrencyAndStatusTrue(
+        ThresholdConfigurationId thresholdConfigurationId, String currency);
 
     boolean existsByThresholdConfigurationIdAndCurrency(
         ThresholdConfigurationId thresholdConfigurationId, String currency);

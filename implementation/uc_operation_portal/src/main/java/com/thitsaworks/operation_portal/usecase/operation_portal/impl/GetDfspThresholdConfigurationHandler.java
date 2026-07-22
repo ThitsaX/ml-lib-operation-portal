@@ -50,18 +50,14 @@ public class GetDfspThresholdConfigurationHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        Optional<ThresholdConfigurationData> thresholdConfiguration =
-            this.thresholdConfigurationQuery.getParticipantCurrencyConfiguration(input.participantCurrencyId());
+        Optional<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getDfspConfiguration(input.dfspId());
 
 
         return new Output(
                 thresholdConfiguration.get().thresholdConfigurationId(),
                 thresholdConfiguration.get().scopeType(),
-                thresholdConfiguration.get().participantCurrencyId(),
+                thresholdConfiguration.get().dfspId(),
                 thresholdConfiguration.get().thresholdEnabled(),
-                thresholdConfiguration.get().colorCode(),
-                thresholdConfiguration.get().visualAlertPercent(),
-                thresholdConfiguration.get().notiAlertPercent(),
                 thresholdConfiguration.get().status(),
                 thresholdConfiguration.get().createdBy(),
                 thresholdConfiguration.get().updatedBy()

@@ -55,11 +55,8 @@ public class GetThresholdConfigurationListHandler
       return new Output(thresholdConfiguration.stream().map(tc -> new GetThresholdConfigurationList.NdcThresholdConfiguration(
               tc.thresholdConfigurationId(),
               tc.scopeType(),
-              tc.participantCurrencyId(),
+              tc.dfspId(),
               tc.thresholdEnabled(),
-              tc.colorCode(),
-              tc.visualAlertPercent(),
-              tc.notiAlertPercent(),
               tc.status(),
               tc.createdBy(),
               tc.updatedBy()

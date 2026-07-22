@@ -19,17 +19,12 @@ import com.thitsaworks.operation_portal.component.common.identifier.ThresholdCon
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-import java.math.BigDecimal;
-
 public interface ModifyThresholdConfiguration
     extends UseCase<ModifyThresholdConfiguration.Input, ModifyThresholdConfiguration.Output> {
 
     record Input(Long id,
                  Boolean thresholdEnabled,
                  NdcConfigurationStatus status,
-                 String colorCode,
-                 BigDecimal visualAlertPercent,
-                 BigDecimal notiAlertPercent,
                  String updatedBy) { }
 
     record Output(

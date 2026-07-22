@@ -16,8 +16,10 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.JobStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
+import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
@@ -27,6 +29,7 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditComm
 import com.thitsaworks.operation_portal.core.hub_services.data.NdcUsedData;
 import com.thitsaworks.operation_portal.core.hub_services.query.GetNdcUsedDataQuery;
 import com.thitsaworks.operation_portal.core.notification.command.EvaluateNdcThresholdCommand;
+import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdDetailRepository;
@@ -118,10 +121,19 @@ public class NdcThresholdWorker
 
         LOG.info("Starting NDC threshold evaluation because the scheme gate is ON");
 
+        Map<ThresholdConfigurationId, ThresholdConfigurationData> dfspConfigurationsById =
+            thresholdConfigurationQuery.getAll()
+                .stream()
+                .filter(configuration -> configuration.scopeType() == ThresholdScopeType.DFSP)
+                .collect(Collectors.toMap(
+                    ThresholdConfigurationData::thresholdConfigurationId,
+                    Function.identity()
+                ));
+
         List<ThresholdDetail> enabledDetails = thresholdDetailRepository
-            .findAllByStatusTrueOrderByDfspIdAscCurrencyAsc()
+            .findAllByStatusTrueOrderByCurrencyAsc()
             .stream()
-            .filter(this::isDetailGateAllowed)
+            .filter(detail -> isDetailGateAllowed(detail, dfspConfigurationsById))
             .toList();
 
         if (enabledDetails.isEmpty()) {
@@ -131,7 +143,7 @@ public class NdcThresholdWorker
 
         Map<String, List<ThresholdDetail>> detailsByDfsp = enabledDetails.stream()
             .collect(Collectors.groupingBy(
-                ThresholdDetail::getDfspId,
+                detail -> dfspConfigurationsById.get(detail.getThresholdConfigurationId()).dfspId(),
                 LinkedHashMap::new,
                 Collectors.toList()
             ));
@@ -172,19 +184,19 @@ public class NdcThresholdWorker
                 NdcUsedData ndcUsedData = ndcUsedByCurrency.get(detail.getCurrency());
                 if (ndcUsedData == null || ndcUsedData.ndcUsed() == null) {
                     LOG.warn("Skipping NDC evaluation because NDC used percent is missing for [{} / {}]",
-                             detail.getDfspId(), detail.getCurrency());
+                             dfspId, detail.getCurrency());
                     skippedEvaluations++;
                     continue;
                 }
 
                 // Retained temporarily until runtime tables reference threshold_detail_id.
                 ParticipantNDC participantNDC = participantNDCQuery
-                    .get(detail.getDfspId(), detail.getCurrency())
+                    .get(dfspId, detail.getCurrency())
                     .orElse(null);
 
                 if (participantNDC == null) {
                     LOG.warn("Skipping NDC evaluation because the legacy runtime identity is missing for [{} / {}]",
-                             detail.getDfspId(), detail.getCurrency());
+                             dfspId, detail.getCurrency());
                     skippedEvaluations++;
                     continue;
                 }
@@ -198,13 +210,13 @@ public class NdcThresholdWorker
 
                 LOG.info("NDC calculation result: participant={}, currency={}, ndcUsedPercent={}, "
                              + "thresholdPercent={}, comparison={}, calculationSource=GetNdcUsedDataQuery",
-                         detail.getDfspId(), detail.getCurrency(), ndcUsedPercent,
+                         dfspId, detail.getCurrency(), ndcUsedPercent,
                          detail.getNdcConfig(), comparison);
 
                 EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
                     new EvaluateNdcThresholdCommand.Input(
                         participantNDC.getParticipantNDCId(),
-                        detail.getDfspId(),
+                        dfspId,
                         detail.getCurrency(),
                         null,
                         ndcUsedPercent,
@@ -215,7 +227,7 @@ public class NdcThresholdWorker
                 );
 
                 NdcEvaluation evaluation = new NdcEvaluation(
-                    detail.getDfspId(),
+                    dfspId,
                     detail.getCurrency(),
                     ndcUsedPercent,
                     detail.getNdcConfig(),
@@ -260,12 +272,23 @@ public class NdcThresholdWorker
         return evaluations;
     }
 
-    private boolean isDetailGateAllowed(ThresholdDetail detail) {
+    private boolean isDetailGateAllowed(
+        ThresholdDetail detail,
+        Map<ThresholdConfigurationId, ThresholdConfigurationData> dfspConfigurationsById) {
 
-        ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(Long.valueOf(detail.getDfspId()));
+        ThresholdConfigurationData configuration =
+            dfspConfigurationsById.get(detail.getThresholdConfigurationId());
+
+        if (configuration == null) {
+            LOG.warn("Skipping threshold detail [{}]: linked DFSP configuration [{}] is missing",
+                     detail.getThresholdDetailId(), detail.getThresholdConfigurationId());
+            return false;
+        }
+
+        ThresholdGateDecision gate = thresholdConfigurationQuery.checkGate(configuration.dfspId());
         if (!gate.allowed()) {
             LOG.info("Skipping threshold detail [{} / {}]: {}",
-                     detail.getDfspId(), detail.getCurrency(), gate.reason());
+                     configuration.dfspId(), detail.getCurrency(), gate.reason());
         }
 
         return gate.allowed();

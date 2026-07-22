@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_detail (
     id BIGINT NOT NULL,
     threshold_id BIGINT NOT NULL,
     participant_currency_id BIGINT NOT NULL,
-    dfsp_id VARCHAR(100) NOT NULL,
     currency VARCHAR(100) NOT NULL,
     visual_config DECIMAL(7,4) NOT NULL,
     ndc_config DECIMAL(7,4) NOT NULL,
@@ -31,8 +30,8 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_detail (
         CHECK (visual_config <= ndc_config)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_threshold_detail_dfsp_status
-    ON tbl_threshold_detail (dfsp_id, status);
+CREATE INDEX idx_threshold_detail_threshold_status
+    ON tbl_threshold_detail (threshold_id, status);
 
 CREATE INDEX idx_threshold_detail_currency_status
     ON tbl_threshold_detail (currency, status);

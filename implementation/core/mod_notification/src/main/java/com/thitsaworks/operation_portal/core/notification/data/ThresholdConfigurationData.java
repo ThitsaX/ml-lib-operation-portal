@@ -20,15 +20,10 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfiguration;
 
-import java.math.BigDecimal;
-
 public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfigurationId,
                                          ThresholdScopeType scopeType,
-                                         Long participantCurrencyId,
+                                         String dfspId,
                                          boolean thresholdEnabled,
-                                         String colorCode,
-                                         BigDecimal visualAlertPercent,
-                                         BigDecimal notiAlertPercent,
                                          NdcConfigurationStatus status,
                                          String createdBy,
                                          String updatedBy) {
@@ -37,11 +32,8 @@ public record ThresholdConfigurationData(ThresholdConfigurationId thresholdConfi
 
         this(thresholdConfiguration.getThresholdConfigurationId(),
              thresholdConfiguration.getScopeType(),
-             thresholdConfiguration.getParticipantCurrencyId(),
+             thresholdConfiguration.getDfspId(),
              thresholdConfiguration.isThresholdEnabled(),
-             thresholdConfiguration.getColorCode(),
-             thresholdConfiguration.getVisualAlertPercent(),
-             thresholdConfiguration.getNotiAlertPercent(),
              thresholdConfiguration.getStatus(),
              thresholdConfiguration.getCreatedBy(),
              thresholdConfiguration.getUpdatedBy());

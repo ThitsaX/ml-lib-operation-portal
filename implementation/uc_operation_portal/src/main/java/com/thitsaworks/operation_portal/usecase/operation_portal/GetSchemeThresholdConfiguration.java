@@ -28,7 +28,7 @@ public interface GetSchemeThresholdConfiguration
     record Output(
             ThresholdConfigurationId thresholdConfigurationId,
             ThresholdScopeType scopeType,
-            Long participantCurrencyId,
+            String dfspId,
             boolean thresholdEnabled,
             NdcConfigurationStatus status,
             String createdBy,
