@@ -71,7 +71,7 @@ public class GetSchemeThresholdConfigurationController {
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
-            @JsonProperty("createBy") String createdBy,
+            @JsonProperty("createdBy") String createdBy,
             @JsonProperty("updatedBy") String updatedBy
             ) { }
 
