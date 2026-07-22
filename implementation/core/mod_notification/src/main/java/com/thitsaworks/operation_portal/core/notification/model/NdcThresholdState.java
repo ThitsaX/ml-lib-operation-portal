@@ -16,12 +16,9 @@
 package com.thitsaworks.operation_portal.core.notification.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
-import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,9 +43,11 @@ public class NdcThresholdState {
     @EmbeddedId
     private NdcThresholdStateId ndcThresholdStateId;
 
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "participant_ndc_id", nullable = false))
-    private ParticipantNDCId participantNDCId;
+    @Column(name = "participant_name", nullable = false, length = 100)
+    private String participantName;
+
+    @Column(name = "currency", nullable = false, length = 100)
+    private String currency;
 
     @Column(name = "current_state", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -81,21 +80,23 @@ public class NdcThresholdState {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    public NdcThresholdState(ParticipantNDCId participantNDCId,
+    public NdcThresholdState(String participantName,
+                             String currency,
                              String createdBy) {
 
         this.ndcThresholdStateId = new NdcThresholdStateId(Snowflake.get().nextId());
-        this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
+        this.participantName = Objects.requireNonNull(participantName, "participantName is required");
+        this.currency = Objects.requireNonNull(currency, "currency is required");
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
         this.currentState = NdcThresholdStateType.SAFE;
         this.breachCycleNo = 0L;
     }
 
-    public void recordEvaluation(BigDecimal balance,
+    public void recordEvaluation(BigDecimal currentPosition,
                                  BigDecimal ndcUsedPercent,
                                  String updatedBy) {
 
-        this.lastEvaluatedBalance = balance;
+        this.lastEvaluatedBalance = currentPosition;
         this.lastEvaluatedNdcUsed = ndcUsedPercent;
         this.updatedBy = updatedBy;
     }

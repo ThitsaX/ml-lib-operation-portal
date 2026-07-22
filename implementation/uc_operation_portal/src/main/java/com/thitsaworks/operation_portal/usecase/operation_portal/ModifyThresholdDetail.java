@@ -24,7 +24,6 @@ public interface ModifyThresholdDetail
     extends UseCase<ModifyThresholdDetail.Input, ModifyThresholdDetail.Output> {
 
     record Input(Long id,
-                 Long participantCurrencyId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

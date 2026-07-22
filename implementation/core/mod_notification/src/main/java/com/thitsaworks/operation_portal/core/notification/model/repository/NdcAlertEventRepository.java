@@ -16,7 +16,6 @@
 package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
 import org.springframework.data.domain.Pageable;
@@ -42,8 +41,10 @@ public interface NdcAlertEventRepository
         """)
     Optional<NdcAlertEvent> get(@Param("alertEventId") NdcAlertEventId alertEventId);
 
-    Optional<NdcAlertEvent> findByParticipantNDCIdAndBreachCycleNo(ParticipantNDCId participantNDCId,
-                                                                   long breachCycleNo);
+    Optional<NdcAlertEvent> findByParticipantNameAndCurrencyAndBreachCycleNo(
+        String participantName,
+        String currency,
+        long breachCycleNo);
 
     @Query("""
         select e

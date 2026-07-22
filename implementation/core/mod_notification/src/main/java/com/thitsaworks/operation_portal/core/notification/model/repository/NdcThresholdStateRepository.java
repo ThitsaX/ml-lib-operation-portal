@@ -16,7 +16,6 @@
 package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.core.notification.model.NdcThresholdState;
 import jakarta.persistence.LockModeType;
@@ -35,28 +34,26 @@ public interface NdcThresholdStateRepository
     extends JpaRepository<NdcThresholdState, NdcThresholdStateId>,
             QuerydslPredicateExecutor<NdcThresholdState> {
 
-    Optional<NdcThresholdState> findByParticipantNDCId(ParticipantNDCId participantNDCId);
-
     @Query("""
-        select s, p.participantName, p.currency
+        select s
         from NdcThresholdState s
-        join ParticipantNDC p on p.participantNDCId = s.participantNDCId
-        where (:participantName is null or p.participantName = :participantName)
-          and (:currency is null or p.currency = :currency)
+        where (:participantName is null or s.participantName = :participantName)
+          and (:currency is null or s.currency = :currency)
           and (:currentState is null or s.currentState = :currentState)
         order by s.updatedAt desc
         """)
-    List<Object[]> search(@Param("participantName") String participantName,
-                          @Param("currency") String currency,
-                          @Param("currentState") NdcThresholdStateType currentState);
+    List<NdcThresholdState> search(@Param("participantName") String participantName,
+                                   @Param("currency") String currency,
+                                   @Param("currentState") NdcThresholdStateType currentState);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE) // This will lock the data not to update until this is unlock
     @Query("""
     select s
     from NdcThresholdState s
-    where s.participantNDCId = :participantNDCId
+    where s.participantName = :participantName
+      and s.currency = :currency
     """)
-    Optional<NdcThresholdState> findByParticipantNDCIdForUpdate(
-        @Param("participantNDCId") ParticipantNDCId participantNDCId
-                                                               );
+    Optional<NdcThresholdState> findByParticipantAndCurrencyForUpdate(
+        @Param("participantName") String participantName,
+        @Param("currency") String currency);
 }

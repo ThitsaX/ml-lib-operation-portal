@@ -64,7 +64,6 @@ public class CreateThresholdDetailController {
         CreateThresholdDetail.Output output = this.createThresholdDetail.execute(
             new CreateThresholdDetail.Input(
                 request.thresholdConfigurationId(),
-                request.participantCurrencyId(),
                 request.currency(),
                 request.visualConfig(),
                 request.ndcConfig(),
@@ -80,7 +79,6 @@ public class CreateThresholdDetailController {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
         @NotNull @Positive @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
-        @NotNull @Positive @JsonProperty("participantCurrencyId") Long participantCurrencyId,
         @NotBlank @JsonProperty("currency") String currency,
         @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
         @JsonProperty("visualConfig") BigDecimal visualConfig,

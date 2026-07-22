@@ -34,8 +34,6 @@ import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDeci
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdDetailRepository;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
-import com.thitsaworks.operation_portal.core.participant.model.ParticipantNDC;
-import com.thitsaworks.operation_portal.core.participant.query.ParticipantNDCQuery;
 import com.thitsaworks.operation_portal.core.scheduler.command.CreateJobExecutionLogCommand;
 import com.thitsaworks.operation_portal.core.scheduler.command.ModifyJobExecutionLogCommand;
 import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
@@ -66,8 +64,6 @@ public class NdcThresholdWorker
 
     private final EvaluateNdcThresholdCommand evaluateNdcThresholdCommand;
 
-    private final ParticipantNDCQuery participantNDCQuery;
-
     private final CreateJobExecutionLogCommand evaluationLogCreateCommand;
 
     private final ModifyJobExecutionLogCommand evaluationLogModifyCommand;
@@ -86,7 +82,6 @@ public class NdcThresholdWorker
         ObjectMapper objectMapper,
         ThresholdConfigurationQuery thresholdConfigurationQuery,
         EvaluateNdcThresholdCommand evaluateNdcThresholdCommand,
-        ParticipantNDCQuery participantNDCQuery,
         GetNdcUsedDataQuery getNdcUsedDataQuery,
         ThresholdDetailRepository thresholdDetailRepository) {
         super(
@@ -101,7 +96,6 @@ public class NdcThresholdWorker
 
         this.thresholdConfigurationQuery = thresholdConfigurationQuery;
         this.evaluateNdcThresholdCommand = evaluateNdcThresholdCommand;
-        this.participantNDCQuery = participantNDCQuery;
         this.evaluationLogCreateCommand = createJobExecutionLogCommand;
         this.evaluationLogModifyCommand = modifyJobExecutionLogCommand;
         this.ndcUsedDataQuery = getNdcUsedDataQuery;
@@ -189,18 +183,6 @@ public class NdcThresholdWorker
                     continue;
                 }
 
-                // Retained temporarily until runtime tables reference threshold_detail_id.
-                ParticipantNDC participantNDC = participantNDCQuery
-                    .get(dfspId, detail.getCurrency())
-                    .orElse(null);
-
-                if (participantNDC == null) {
-                    LOG.warn("Skipping NDC evaluation because the legacy runtime identity is missing for [{} / {}]",
-                             dfspId, detail.getCurrency());
-                    skippedEvaluations++;
-                    continue;
-                }
-
                 LocalDateTime evaluatedAt = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
                                                           .withNano(0);
                 BigDecimal ndcUsedPercent = ndcUsedData.ndcUsed();
@@ -208,17 +190,18 @@ public class NdcThresholdWorker
                     ? "AT_OR_ABOVE_THRESHOLD"
                     : "BELOW_THRESHOLD";
 
-                LOG.info("NDC calculation result: participant={}, currency={}, ndcUsedPercent={}, "
-                             + "thresholdPercent={}, comparison={}, calculationSource=GetNdcUsedDataQuery",
-                         dfspId, detail.getCurrency(), ndcUsedPercent,
+                LOG.info("NDC calculation result: participant={}, currency={}, currentPosition={}, "
+                             + "ndcLimit={}, ndcUsedPercent={}, thresholdPercent={}, comparison={}, "
+                             + "calculationSource=GetNdcUsedDataQuery",
+                         dfspId, detail.getCurrency(), ndcUsedData.currentPosition(), ndcUsedData.ndc(), ndcUsedPercent,
                          detail.getNdcConfig(), comparison);
 
                 EvaluateNdcThresholdCommand.Output thresholdOutput = evaluateNdcThresholdCommand.execute(
                     new EvaluateNdcThresholdCommand.Input(
-                        participantNDC.getParticipantNDCId(),
                         dfspId,
                         detail.getCurrency(),
-                        null,
+                        ndcUsedData.currentPosition(),
+                        ndcUsedData.ndc(),
                         ndcUsedPercent,
                         detail.getNdcConfig(),
                         evaluatedAt,

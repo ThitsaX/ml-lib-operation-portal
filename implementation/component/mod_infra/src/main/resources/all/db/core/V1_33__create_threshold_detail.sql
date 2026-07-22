@@ -5,7 +5,6 @@
 CREATE TABLE IF NOT EXISTS tbl_threshold_detail (
     id BIGINT NOT NULL,
     threshold_id BIGINT NOT NULL,
-    participant_currency_id BIGINT NOT NULL,
     currency VARCHAR(100) NOT NULL,
     visual_config DECIMAL(7,4) NOT NULL,
     ndc_config DECIMAL(7,4) NOT NULL,
@@ -20,8 +19,6 @@ CREATE TABLE IF NOT EXISTS tbl_threshold_detail (
         REFERENCES tbl_threshold_configuration (id),
     CONSTRAINT uk_threshold_detail_currency
         UNIQUE (threshold_id, currency),
-    CONSTRAINT uk_threshold_detail_participant_currency
-        UNIQUE (participant_currency_id),
     CONSTRAINT chk_threshold_detail_visual
         CHECK (visual_config >= 0 AND visual_config <= 100),
     CONSTRAINT chk_threshold_detail_ndc
@@ -35,7 +32,3 @@ CREATE INDEX idx_threshold_detail_threshold_status
 
 CREATE INDEX idx_threshold_detail_currency_status
     ON tbl_threshold_detail (currency, status);
-
-/* The simplified worker no longer fetches a current position separately. */
-ALTER TABLE tbl_ndc_alert_event
-    MODIFY COLUMN current_balance DECIMAL(18,4) NULL;

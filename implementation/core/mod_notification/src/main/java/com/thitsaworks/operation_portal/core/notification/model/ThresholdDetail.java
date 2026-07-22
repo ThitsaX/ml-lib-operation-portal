@@ -50,9 +50,6 @@ public class ThresholdDetail {
     @AttributeOverride(name = "id", column = @Column(name = "threshold_id", nullable = false))
     private ThresholdConfigurationId thresholdConfigurationId;
 
-    @Column(name = "participant_currency_id", nullable = false)
-    private Long participantCurrencyId;
-
     @Column(name = "currency", nullable = false, length = 100)
     private String currency;
 
@@ -78,18 +75,16 @@ public class ThresholdDetail {
     private String updatedBy;
 
     public ThresholdDetail(ThresholdConfigurationId thresholdConfigurationId,
-                           Long participantCurrencyId,
                            String currency,
                            BigDecimal visualConfig,
                            BigDecimal ndcConfig,
                            String createdBy) {
 
-        validate(participantCurrencyId, currency, visualConfig, ndcConfig);
+        validate(currency, visualConfig, ndcConfig);
 
         this.thresholdDetailId = new ThresholdDetailId(Snowflake.get().nextId());
         this.thresholdConfigurationId = Objects.requireNonNull(
             thresholdConfigurationId, "thresholdConfigurationId is required");
-        this.participantCurrencyId = participantCurrencyId;
         this.currency = normalizeCurrency(currency);
         this.visualConfig = visualConfig;
         this.ndcConfig = ndcConfig;
@@ -97,16 +92,14 @@ public class ThresholdDetail {
         this.createdBy = requireText(createdBy, "createdBy");
     }
 
-    public void update(Long participantCurrencyId,
-                       String currency,
+    public void update(String currency,
                        BigDecimal visualConfig,
                        BigDecimal ndcConfig,
                        boolean status,
                        String updatedBy) {
 
-        validate(participantCurrencyId, currency, visualConfig, ndcConfig);
+        validate(currency, visualConfig, ndcConfig);
 
-        this.participantCurrencyId = participantCurrencyId;
         this.currency = normalizeCurrency(currency);
         this.visualConfig = visualConfig;
         this.ndcConfig = ndcConfig;
@@ -120,14 +113,9 @@ public class ThresholdDetail {
         this.updatedBy = requireText(updatedBy, "updatedBy");
     }
 
-    private static void validate(Long participantCurrencyId,
-                                 String currency,
+    private static void validate(String currency,
                                  BigDecimal visualConfig,
                                  BigDecimal ndcConfig) {
-
-        if (participantCurrencyId == null || participantCurrencyId <= 0) {
-            throw new IllegalArgumentException("participantCurrencyId must be greater than zero");
-        }
 
         normalizeCurrency(currency);
         validatePercentage(visualConfig, "visualConfig");

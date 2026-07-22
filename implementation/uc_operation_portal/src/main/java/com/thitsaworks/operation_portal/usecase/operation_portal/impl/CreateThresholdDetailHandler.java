@@ -34,16 +34,16 @@ public class CreateThresholdDetailHandler
 
     private final CreateThresholdDetailCommand createThresholdDetailCommand;
 
-    private final ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator;
+    private final ThresholdDetailCurrencyValidator currencyValidator;
 
     public CreateThresholdDetailHandler(PrincipalCache principalCache,
                                         ActionAuthorizationManager actionAuthorizationManager,
                                         CreateThresholdDetailCommand createThresholdDetailCommand,
-                                        ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator) {
+                                        ThresholdDetailCurrencyValidator currencyValidator) {
 
         super(principalCache, actionAuthorizationManager);
         this.createThresholdDetailCommand = createThresholdDetailCommand;
-        this.participantCurrencyValidator = participantCurrencyValidator;
+        this.currencyValidator = currencyValidator;
     }
 
     @Override
@@ -51,13 +51,12 @@ public class CreateThresholdDetailHandler
 
         ThresholdConfigurationId thresholdConfigurationId =
             new ThresholdConfigurationId(input.thresholdConfigurationId());
-        String currency = this.participantCurrencyValidator.validateForConfiguration(
-            thresholdConfigurationId, input.participantCurrencyId(), input.currency());
+        String currency = this.currencyValidator.validateForConfiguration(
+            thresholdConfigurationId, input.currency());
 
         CreateThresholdDetailCommand.Output output = this.createThresholdDetailCommand.execute(
             new CreateThresholdDetailCommand.Input(
                 thresholdConfigurationId,
-                input.participantCurrencyId(),
                 currency,
                 input.visualConfig(),
                 input.ndcConfig(),

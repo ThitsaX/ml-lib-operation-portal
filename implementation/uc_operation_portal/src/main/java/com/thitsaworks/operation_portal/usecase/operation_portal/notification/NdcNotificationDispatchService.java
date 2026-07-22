@@ -157,7 +157,6 @@ public class NdcNotificationDispatchService {
         NdcNotificationDispatchLog dispatchLog =
             new NdcNotificationDispatchLog(
                 alertEvent.getNdcAlertEventId(),
-                alertEvent.getParticipantNDCId(),
                 recipientType,
                 recipientUserId,
                 user.name(),

@@ -16,12 +16,9 @@
 package com.thitsaworks.operation_portal.core.notification.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
-import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,10 +43,6 @@ public class NdcAlertEvent {
     @EmbeddedId
     private NdcAlertEventId ndcAlertEventId;
 
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "participant_ndc_id", nullable = false))
-    private ParticipantNDCId participantNDCId;
-
     @Column(name = "participant_name", nullable = false)
     private String participantName;
 
@@ -70,8 +63,11 @@ public class NdcAlertEvent {
     @Column(name = "threshold_percent", nullable = false, precision = 7, scale = 4)
     private BigDecimal thresholdPercent;
 
-    @Column(name = "current_balance", nullable = false, precision = 18, scale = 4)
-    private BigDecimal currentBalance;
+    @Column(name = "current_position", nullable = false, precision = 18, scale = 4)
+    private BigDecimal currentPosition;
+
+    @Column(name = "ndc_limit", nullable = false, precision = 18, scale = 4)
+    private BigDecimal ndcLimit;
 
     @Column(name = "current_ndc_used", nullable = false, precision = 7, scale = 4)
     private BigDecimal currentNdcUsed;
@@ -94,12 +90,12 @@ public class NdcAlertEvent {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    public NdcAlertEvent(ParticipantNDCId participantNDCId,
-                         String participantName,
+    public NdcAlertEvent(String participantName,
                          String currency,
                          long breachCycleNo,
                          BigDecimal thresholdPercent,
-                         BigDecimal currentBalance,
+                         BigDecimal currentPosition,
+                         BigDecimal ndcLimit,
                          BigDecimal currentNdcUsed,
                          String eventMessage,
                          LocalDateTime eventTime,
@@ -110,14 +106,14 @@ public class NdcAlertEvent {
         }
 
         this.ndcAlertEventId = new NdcAlertEventId(Snowflake.get().nextId());
-        this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.participantName = Objects.requireNonNull(participantName, "participantName is required");
         this.currency = Objects.requireNonNull(currency, "currency is required");
         this.breachCycleNo = breachCycleNo;
         this.previousState = NdcThresholdStateType.SAFE;
         this.currentState = NdcThresholdStateType.BREACHED;
         this.thresholdPercent = Objects.requireNonNull(thresholdPercent, "thresholdPercent is required");
-        this.currentBalance = currentBalance;
+        this.currentPosition = Objects.requireNonNull(currentPosition, "currentPosition is required");
+        this.ndcLimit = Objects.requireNonNull(ndcLimit, "ndcLimit is required");
         this.currentNdcUsed = Objects.requireNonNull(currentNdcUsed, "currentNdcUsed is required");
         this.eventMessage = eventMessage;
         this.eventTime = Objects.requireNonNull(eventTime, "eventTime is required");

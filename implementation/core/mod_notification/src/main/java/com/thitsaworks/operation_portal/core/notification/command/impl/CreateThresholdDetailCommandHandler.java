@@ -64,16 +64,8 @@ public class CreateThresholdDetailCommandHandler implements CreateThresholdDetai
                     "Threshold detail already exists for this configuration and currency."));
         }
 
-        if (this.thresholdDetailRepository.existsByParticipantCurrencyId(input.participantCurrencyId())) {
-            throw new InputException(
-                new ErrorMessage(
-                    "THRESHOLD_DETAIL_PARTICIPANT_CURRENCY_ALREADY_EXISTS",
-                    "Threshold detail already exists for this participant currency."));
-        }
-
         ThresholdDetail detail = new ThresholdDetail(
             input.thresholdConfigurationId(),
-            input.participantCurrencyId(),
             currency,
             input.visualConfig(),
             input.ndcConfig(),

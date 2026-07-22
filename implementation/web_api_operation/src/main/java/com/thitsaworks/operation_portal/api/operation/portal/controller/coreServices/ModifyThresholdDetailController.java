@@ -27,7 +27,6 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,6 @@ public class ModifyThresholdDetailController {
         ModifyThresholdDetail.Output output = this.modifyThresholdDetail.execute(
             new ModifyThresholdDetail.Input(
                 id,
-                request.participantCurrencyId(),
                 request.currency(),
                 request.visualConfig(),
                 request.ndcConfig(),
@@ -84,7 +82,6 @@ public class ModifyThresholdDetailController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
-        @NotNull @Positive @JsonProperty("participantCurrencyId") Long participantCurrencyId,
         @NotBlank @JsonProperty("currency") String currency,
         @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
         @JsonProperty("visualConfig") BigDecimal visualConfig,

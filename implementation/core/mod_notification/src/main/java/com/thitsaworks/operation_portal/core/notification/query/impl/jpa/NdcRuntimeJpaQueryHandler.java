@@ -52,22 +52,18 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
 
         return this.ndcThresholdStateRepository.search(participantName, currency, currentState)
                                               .stream()
-                                              .map(row -> {
-                                                  NdcThresholdState state = (NdcThresholdState) row[0];
-                                                  return new NdcThresholdStateData(
-                                                      state.getNdcThresholdStateId(),
-                                                      state.getParticipantNDCId(),
-                                                      (String) row[1],
-                                                      (String) row[2],
-                                                      state.getCurrentState(),
-                                                      state.getBreachCycleNo(),
-                                                      state.getLastEvaluatedBalance(),
-                                                      state.getLastEvaluatedNdcUsed(),
-                                                      state.getLastBreachedAt(),
-                                                      state.getLastRecoveredAt(),
-                                                      state.getCreatedAt(),
-                                                      state.getUpdatedAt());
-                                              })
+                                              .map(state -> new NdcThresholdStateData(
+                                                  state.getNdcThresholdStateId(),
+                                                  state.getParticipantName(),
+                                                  state.getCurrency(),
+                                                  state.getCurrentState(),
+                                                  state.getBreachCycleNo(),
+                                                  state.getLastEvaluatedBalance(),
+                                                  state.getLastEvaluatedNdcUsed(),
+                                                  state.getLastBreachedAt(),
+                                                  state.getLastRecoveredAt(),
+                                                  state.getCreatedAt(),
+                                                  state.getUpdatedAt()))
                                               .toList();
     }
 
@@ -99,7 +95,6 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
                                                             return new NdcNotificationDispatchLogData(
                                                                 log.getNdcNotificationDispatchLogId(),
                                                                 log.getAlertEventId(),
-                                                                log.getParticipantNDCId(),
                                                                 (String) row[1],
                                                                 (String) row[2],
                                                                 log.getRecipientType(),
@@ -121,14 +116,14 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
 
         return new NdcAlertEventData(
             event.getNdcAlertEventId(),
-            event.getParticipantNDCId(),
             event.getParticipantName(),
             event.getCurrency(),
             event.getBreachCycleNo(),
             event.getPreviousState(),
             event.getCurrentState(),
             event.getThresholdPercent(),
-            event.getCurrentBalance(),
+            event.getCurrentPosition(),
+            event.getNdcLimit(),
             event.getCurrentNdcUsed(),
             event.getEventMessage(),
             event.getEventTime(),

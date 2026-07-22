@@ -1,7 +1,6 @@
 package com.thitsaworks.operation_portal.core.notification.command;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
@@ -11,10 +10,10 @@ import java.time.LocalDateTime;
 public interface EvaluateNdcThresholdCommand {
 
     record Input(
-        ParticipantNDCId participantNDCId,
         String participantName,
         String currency,
-        BigDecimal currentBalance,
+        BigDecimal currentPosition,
+        BigDecimal ndcLimit,
         BigDecimal currentNdcUsed,
         BigDecimal thresholdPercent,
         LocalDateTime evaluatedAt,

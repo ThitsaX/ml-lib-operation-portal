@@ -17,7 +17,6 @@ package com.thitsaworks.operation_portal.core.notification.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
@@ -50,10 +49,6 @@ public class NdcNotificationDispatchLog {
     @Embedded
     @AttributeOverride(name = "id", column = @Column(name = "alert_event_id", nullable = false))
     private NdcAlertEventId alertEventId;
-
-    @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "participant_ndc_id", nullable = false))
-    private ParticipantNDCId participantNDCId;
 
     @Column(name = "recipient_type", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -97,7 +92,6 @@ public class NdcNotificationDispatchLog {
     private String updatedBy;
 
     public NdcNotificationDispatchLog(NdcAlertEventId alertEventId,
-                                      ParticipantNDCId participantNDCId,
                                       NdcRecipientType recipientType,
                                       String recipientUserId,
                                       String recipientName,
@@ -106,7 +100,6 @@ public class NdcNotificationDispatchLog {
 
         this.ndcNotificationDispatchLogId = new NdcNotificationDispatchLogId(Snowflake.get().nextId());
         this.alertEventId = Objects.requireNonNull(alertEventId, "alertEventId is required");
-        this.participantNDCId = Objects.requireNonNull(participantNDCId, "participantNDCId is required");
         this.recipientType = Objects.requireNonNull(recipientType, "recipientType is required");
         this.recipientUserId = recipientUserId;
         this.recipientName = recipientName;

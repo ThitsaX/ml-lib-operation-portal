@@ -17,7 +17,6 @@ package com.thitsaworks.operation_portal.core.notification.data;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
 
@@ -25,7 +24,6 @@ import java.time.LocalDateTime;
 
 public record NdcNotificationDispatchLogData(NdcNotificationDispatchLogId ndcNotificationDispatchLogId,
                                              NdcAlertEventId alertEventId,
-                                             ParticipantNDCId participantNDCId,
                                              String participantName,
                                              String currency,
                                              NdcRecipientType recipientType,

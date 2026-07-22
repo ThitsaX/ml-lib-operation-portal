@@ -16,14 +16,12 @@
 package com.thitsaworks.operation_portal.core.notification.data;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record NdcThresholdStateData(NdcThresholdStateId ndcThresholdStateId,
-                                    ParticipantNDCId participantNDCId,
                                     String participantName,
                                     String currency,
                                     NdcThresholdStateType currentState,

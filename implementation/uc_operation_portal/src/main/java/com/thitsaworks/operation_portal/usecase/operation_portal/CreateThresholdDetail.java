@@ -24,7 +24,6 @@ public interface CreateThresholdDetail
     extends UseCase<CreateThresholdDetail.Input, CreateThresholdDetail.Output> {
 
     record Input(Long thresholdConfigurationId,
-                 Long participantCurrencyId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

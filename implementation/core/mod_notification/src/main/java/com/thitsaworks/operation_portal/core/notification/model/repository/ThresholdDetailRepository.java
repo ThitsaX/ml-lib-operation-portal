@@ -48,14 +48,9 @@ public interface ThresholdDetailRepository
     boolean existsByThresholdConfigurationIdAndCurrency(
         ThresholdConfigurationId thresholdConfigurationId, String currency);
 
-    boolean existsByParticipantCurrencyId(Long participantCurrencyId);
-
     boolean existsByThresholdConfigurationIdAndCurrencyAndThresholdDetailIdNot(
         ThresholdConfigurationId thresholdConfigurationId,
         String currency,
         ThresholdDetailId thresholdDetailId);
 
-    boolean existsByParticipantCurrencyIdAndThresholdDetailIdNot(
-        Long participantCurrencyId,
-        ThresholdDetailId thresholdDetailId);
 }

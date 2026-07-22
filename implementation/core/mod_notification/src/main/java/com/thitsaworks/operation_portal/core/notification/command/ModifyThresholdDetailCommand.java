@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 public interface ModifyThresholdDetailCommand {
 
     record Input(ThresholdDetailId thresholdDetailId,
-                 Long participantCurrencyId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

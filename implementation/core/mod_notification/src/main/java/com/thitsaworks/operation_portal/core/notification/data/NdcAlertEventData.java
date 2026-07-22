@@ -16,21 +16,20 @@
 package com.thitsaworks.operation_portal.core.notification.data;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantNDCId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record NdcAlertEventData(NdcAlertEventId ndcAlertEventId,
-                                ParticipantNDCId participantNDCId,
                                 String participantName,
                                 String currency,
                                 long breachCycleNo,
                                 NdcThresholdStateType previousState,
                                 NdcThresholdStateType currentState,
                                 BigDecimal thresholdPercent,
-                                BigDecimal currentBalance,
+                                BigDecimal currentPosition,
+                                BigDecimal ndcLimit,
                                 BigDecimal currentNdcUsed,
                                 String eventMessage,
                                 LocalDateTime eventTime,

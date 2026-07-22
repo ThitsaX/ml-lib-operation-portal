@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ThresholdDetailParticipantCurrencyValidator {
+public class ThresholdDetailCurrencyValidator {
 
     private static final Integer POSITION_ACCOUNT_TYPE_ID = 1;
 
@@ -43,7 +43,6 @@ public class ThresholdDetailParticipantCurrencyValidator {
     private final HubParticipantQuery hubParticipantQuery;
 
     public String validateForConfiguration(ThresholdConfigurationId thresholdConfigurationId,
-                                           Long participantCurrencyId,
                                            String currency) throws DomainException {
 
         ThresholdConfigurationData configuration = this.thresholdConfigurationQuery
@@ -67,19 +66,18 @@ public class ThresholdDetailParticipantCurrencyValidator {
             .filter(participant -> configuration.dfspId().equals(participant.getParticipantName()))
             .map(HubParticipantDetailData::getAccounts)
             .flatMap(java.util.Collection::stream)
-            .anyMatch(account -> matches(account, participantCurrencyId, normalizedCurrency));
+            .anyMatch(account -> matches(account, normalizedCurrency));
 
         if (!valid) {
             throw inputException(
-                "THRESHOLD_DETAIL_PARTICIPANT_CURRENCY_INVALID",
-                "Participant currency does not belong to the configured DFSP position account.");
+                "THRESHOLD_DETAIL_CURRENCY_INVALID",
+                "Currency does not belong to the configured DFSP position account.");
         }
 
         return normalizedCurrency;
     }
 
     public String validateForDetail(ThresholdDetailId thresholdDetailId,
-                                    Long participantCurrencyId,
                                     String currency) throws DomainException {
 
         var detail = this.thresholdDetailQuery.get(thresholdDetailId)
@@ -87,18 +85,13 @@ public class ThresholdDetailParticipantCurrencyValidator {
                 "THRESHOLD_DETAIL_NOT_FOUND",
                 "Threshold detail was not found."));
 
-        return validateForConfiguration(
-            detail.thresholdConfigurationId(), participantCurrencyId, currency);
+        return validateForConfiguration(detail.thresholdConfigurationId(), currency);
     }
 
     private static boolean matches(HubParticipantDetailData.AccountData account,
-                                   Long participantCurrencyId,
                                    String currency) {
 
-        return account.getParticipantCurrencyId() != null
-            && participantCurrencyId != null
-            && account.getParticipantCurrencyId().longValue() == participantCurrencyId
-            && currency.equalsIgnoreCase(account.getCurrencyId())
+        return currency.equalsIgnoreCase(account.getCurrencyId())
             && POSITION_ACCOUNT_TYPE_ID.equals(account.getLedgerAccountTypeId());
     }
 

@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 public interface CreateThresholdDetailCommand {
 
     record Input(ThresholdConfigurationId thresholdConfigurationId,
-                 Long participantCurrencyId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

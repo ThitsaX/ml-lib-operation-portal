@@ -67,11 +67,11 @@ public interface NdcNotificationDispatchLogRepository
         @Param("id") NdcNotificationDispatchLogId id);
 
     @Query("""
-        select d, p.participantName, p.currency
+        select d, e.participantName, e.currency
         from NdcNotificationDispatchLog d
-        join ParticipantNDC p on p.participantNDCId = d.participantNDCId
-        where (:participantName is null or p.participantName = :participantName)
-          and (:currency is null or p.currency = :currency)
+        join NdcAlertEvent e on e.ndcAlertEventId = d.alertEventId
+        where (:participantName is null or e.participantName = :participantName)
+          and (:currency is null or e.currency = :currency)
           and (:deliveryStatus is null or d.deliveryStatus = :deliveryStatus)
           and (:fromTime is null or d.createdAt >= :fromTime)
           and (:toTime is null or d.createdAt <= :toTime)

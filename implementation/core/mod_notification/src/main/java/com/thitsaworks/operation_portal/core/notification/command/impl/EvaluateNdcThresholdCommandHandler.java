@@ -32,7 +32,10 @@ public class EvaluateNdcThresholdCommandHandler
     @CoreWriteTransactional
     public Output execute(Input input) {
 
-        Objects.requireNonNull(input.participantNDCId());
+        Objects.requireNonNull(input.participantName());
+        Objects.requireNonNull(input.currency());
+        Objects.requireNonNull(input.currentPosition());
+        Objects.requireNonNull(input.ndcLimit());
         Objects.requireNonNull(input.currentNdcUsed());
         Objects.requireNonNull(input.thresholdPercent());
 
@@ -42,9 +45,11 @@ public class EvaluateNdcThresholdCommandHandler
         }
 
         NdcThresholdState state =
-            stateRepository.findByParticipantNDCIdForUpdate(input.participantNDCId())
+            stateRepository.findByParticipantAndCurrencyForUpdate(
+                               input.participantName(), input.currency())
                            .orElseGet(() -> new NdcThresholdState(
-                               input.participantNDCId(),
+                               input.participantName(),
+                               input.currency(),
                                input.actor()
                            ));
 
@@ -52,14 +57,14 @@ public class EvaluateNdcThresholdCommandHandler
 
         int thresholdComparison = input.currentNdcUsed().compareTo(input.thresholdPercent());
 
-        LOG.info("NDC threshold decision input: participant={}, currency={}, currentBalance={}, "
-                     + "ndcUsedPercent={}, thresholdPercent={}, previousState={}, comparison={}",
-                 input.participantName(), input.currency(), input.currentBalance(),
+        LOG.info("NDC threshold decision input: participant={}, currency={}, currentPosition={}, "
+                     + "ndcLimit={}, ndcUsedPercent={}, thresholdPercent={}, previousState={}, comparison={}",
+                 input.participantName(), input.currency(), input.currentPosition(), input.ndcLimit(),
                  input.currentNdcUsed(), input.thresholdPercent(), previousState,
                  thresholdComparison >= 0 ? "AT_OR_ABOVE_THRESHOLD" : "BELOW_THRESHOLD");
 
         state.recordEvaluation(
-            input.currentBalance(),
+            input.currentPosition(),
             input.currentNdcUsed(),
             input.actor()
                               );
@@ -73,12 +78,12 @@ public class EvaluateNdcThresholdCommandHandler
 
             if (alertCreated) {
                 alertEvent = new NdcAlertEvent(
-                    input.participantNDCId(),
                     input.participantName(),
                     input.currency(),
                     state.getBreachCycleNo(),
                     input.thresholdPercent(),
-                    input.currentBalance(),
+                    input.currentPosition(),
+                    input.ndcLimit(),
                     input.currentNdcUsed(),
                     buildNdcUsageAlertEventMessage(input),
                     input.evaluatedAt(),

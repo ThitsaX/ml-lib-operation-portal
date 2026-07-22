@@ -60,7 +60,6 @@ public class GetThresholdDetailListController {
             .map(thresholdDetail -> new ThresholdDetail(
                 thresholdDetail.thresholdDetailId(),
                 thresholdDetail.thresholdConfigurationId(),
-                thresholdDetail.participantCurrencyId(),
                 thresholdDetail.currency(),
                 thresholdDetail.visualConfig(),
                 thresholdDetail.ndcConfig(),
@@ -81,7 +80,6 @@ public class GetThresholdDetailListController {
     public record ThresholdDetail(
         @JsonProperty("id") Long id,
         @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
-        @JsonProperty("participantCurrencyId") Long participantCurrencyId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,

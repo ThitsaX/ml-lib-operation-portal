@@ -54,7 +54,6 @@ public class GetThresholdDetailController {
         var response = new Response(new ThresholdDetail(
             output.thresholdDetail().thresholdDetailId(),
             output.thresholdDetail().thresholdConfigurationId(),
-            output.thresholdDetail().participantCurrencyId(),
             output.thresholdDetail().currency(),
             output.thresholdDetail().visualConfig(),
             output.thresholdDetail().ndcConfig(),
@@ -75,7 +74,6 @@ public class GetThresholdDetailController {
     public record ThresholdDetail(
         @JsonProperty("thresholdDetailId") Long thresholdDetailId,
         @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
-        @JsonProperty("participantCurrencyId") Long participantCurrencyId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,

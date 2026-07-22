@@ -25,7 +25,6 @@ import java.time.LocalDateTime;
 public record ThresholdDetailData(
     ThresholdDetailId thresholdDetailId,
     ThresholdConfigurationId thresholdConfigurationId,
-    Long participantCurrencyId,
     String currency,
     BigDecimal visualConfig,
     BigDecimal ndcConfig,
@@ -41,7 +40,6 @@ public record ThresholdDetailData(
         this(
             detail.getThresholdDetailId(),
             detail.getThresholdConfigurationId(),
-            detail.getParticipantCurrencyId(),
             detail.getCurrency(),
             detail.getVisualConfig(),
             detail.getNdcConfig(),

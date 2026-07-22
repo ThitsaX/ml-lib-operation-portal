@@ -34,29 +34,28 @@ public class ModifyThresholdDetailHandler
 
     private final ModifyThresholdDetailCommand modifyThresholdDetailCommand;
 
-    private final ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator;
+    private final ThresholdDetailCurrencyValidator currencyValidator;
 
     public ModifyThresholdDetailHandler(PrincipalCache principalCache,
                                         ActionAuthorizationManager actionAuthorizationManager,
                                         ModifyThresholdDetailCommand modifyThresholdDetailCommand,
-                                        ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator) {
+                                        ThresholdDetailCurrencyValidator currencyValidator) {
 
         super(principalCache, actionAuthorizationManager);
         this.modifyThresholdDetailCommand = modifyThresholdDetailCommand;
-        this.participantCurrencyValidator = participantCurrencyValidator;
+        this.currencyValidator = currencyValidator;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
         ThresholdDetailId thresholdDetailId = new ThresholdDetailId(input.id());
-        String currency = this.participantCurrencyValidator.validateForDetail(
-            thresholdDetailId, input.participantCurrencyId(), input.currency());
+        String currency = this.currencyValidator.validateForDetail(
+            thresholdDetailId, input.currency());
 
         ModifyThresholdDetailCommand.Output output = this.modifyThresholdDetailCommand.execute(
             new ModifyThresholdDetailCommand.Input(
                 thresholdDetailId,
-                input.participantCurrencyId(),
                 currency,
                 input.visualConfig(),
                 input.ndcConfig(),

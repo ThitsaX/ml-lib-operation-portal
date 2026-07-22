@@ -53,17 +53,7 @@ public class ModifyThresholdDetailCommandHandler implements ModifyThresholdDetai
                     "Threshold detail already exists for this configuration and currency."));
         }
 
-        if (this.thresholdDetailRepository.existsByParticipantCurrencyIdAndThresholdDetailIdNot(
-            input.participantCurrencyId(), detail.getThresholdDetailId())) {
-
-            throw new InputException(
-                new ErrorMessage(
-                    "THRESHOLD_DETAIL_PARTICIPANT_CURRENCY_ALREADY_EXISTS",
-                    "Threshold detail already exists for this participant currency."));
-        }
-
         detail.update(
-            input.participantCurrencyId(),
             currency,
             input.visualConfig(),
             input.ndcConfig(),
