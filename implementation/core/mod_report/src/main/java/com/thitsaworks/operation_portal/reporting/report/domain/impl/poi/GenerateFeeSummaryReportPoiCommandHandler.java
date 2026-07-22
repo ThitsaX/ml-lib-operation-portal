@@ -58,6 +58,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +87,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
     private static final DateTimeFormatter HEADER_DATE_FORMAT = DateTimeFormatter.ofPattern(
         "yyyy-MM-dd'T'HH:mm:ssXXX");
+
+    private static final DateTimeFormatter PRINTED_DATE_FORMAT = DateTimeFormatter.ofPattern(
+        "dd/MM/yyyy hh:mm a");
 
     private static final String[] SUMMARY_HEADERS = {
         "Sender DFSP ID",
@@ -190,15 +194,32 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     @Override
     public Output exportAll(Input input, int totalRowCount, int pageSize) throws ReportException {
 
-        return this.execute(new Input(
-            input.startDate(),
-            input.endDate(),
-            input.dfspId(),
-            input.timezone(),
-            input.fileType(),
-            input.loginDfspId(),
-            input.offset(),
-            input.limit()));
+        if (totalRowCount <= 0) {
+            throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+        }
+
+        try {
+            List<FeeSummaryRow> rows = this.fetchRowsAcrossPages(input, totalRowCount, pageSize);
+            if (rows.isEmpty()) {
+                throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+            }
+
+            if (FILE_TYPE_XLSX.equalsIgnoreCase(input.fileType())) {
+                return new Output(this.exportXlsx(input, rows));
+            }
+
+            if (FILE_TYPE_PDF.equalsIgnoreCase(input.fileType())) {
+                return new Output(this.exportPdf(input, rows));
+            }
+
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+
+        } catch (ReportException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            LOG.error("Error generating full fee summary report", exception);
+            throw new ReportException(ReportErrors.FEE_SUMMARY_REPORT_FAILURE_EXCEPTION);
+        }
     }
 
     @Override
@@ -225,6 +246,29 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
             this.queryParams(input));
     }
 
+    private List<FeeSummaryRow> fetchRowsAcrossPages(Input input, int totalRowCount, int pageSize) {
+
+        int normalizedPageSize = pageSize <= 0 ? totalRowCount : pageSize;
+        int baseOffset = input.offset() == null ? 0 : input.offset();
+        List<FeeSummaryRow> rows = new ArrayList<>();
+
+        for (int offset = 0; offset < totalRowCount; offset += normalizedPageSize) {
+            int limit = Math.min(normalizedPageSize, totalRowCount - offset);
+            rows.addAll(this.fetchFeeSummaryRows(new Input(
+                input.startDate(),
+                input.endDate(),
+                input.dfspId(),
+                input.timezone(),
+                input.fileType(),
+                input.loginDfspId(),
+                baseOffset + offset,
+                limit,
+                input.userName())));
+        }
+
+        return rows;
+    }
+
     private Integer countFeeSummaryRows(String startDate,
                                         String endDate,
                                         String dfspId,
@@ -239,6 +283,9 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                     dfspId,
                     timezone,
                     "xlsx",
+                    null,
+                    null,
+                    null,
                     null)),
             Integer.class);
     }
@@ -619,7 +666,7 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
 
         try (OutputStream outputStream = Files.newOutputStream(tempFile)) {
             Document document = new Document(PageSize.A3.rotate(), 18, 18, 18, 18);
-            PdfWriter.getInstance(document, outputStream);
+            PdfWriter writer = PdfWriter.getInstance(document, outputStream);
             document.open();
 
             Font labelFont = new Font(Font.HELVETICA, 8, Font.BOLD);
@@ -681,6 +728,17 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 summaryTable.addCell(this.pdfCell(row.currency(), normalFont, Element.ALIGN_LEFT));
             }
             document.add(summaryTable);
+
+            Phrase footer = new Phrase(this.buildPrintedByText(input), normalFont);
+            PdfPTable footerTable = new PdfPTable(1);
+            footerTable.setTotalWidth(document.right() - document.left());
+            PdfPCell footerCell = new PdfPCell(footer);
+            footerCell.setBorder(0);
+            footerCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            footerCell.setPaddingBottom(1f);
+            footerTable.addCell(footerCell);
+            footerTable.writeSelectedRows(0, -1, document.left(), document.bottom() + 15f,
+                                          writer.getDirectContent());
 
             document.close();
             return Files.readAllBytes(tempFile);
@@ -1096,6 +1154,24 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
                 return trimmedValue;
             }
         }
+    }
+
+    private String buildPrintedByText(Input input) {
+
+        String user = this.safe(input.userName());
+        if (user.isBlank()) {
+            user = this.safe(input.loginDfspId());
+        }
+
+        String formatted = Instant.now()
+                                  .atOffset(this.parseOffset(input.timezone()))
+                                  .format(PRINTED_DATE_FORMAT);
+        return "Printed by: " + user + " on " + formatted;
+    }
+
+    private String safe(String value) {
+
+        return value == null ? "" : value.trim();
     }
 
     private ZoneOffset parseOffset(String rawOffset) {

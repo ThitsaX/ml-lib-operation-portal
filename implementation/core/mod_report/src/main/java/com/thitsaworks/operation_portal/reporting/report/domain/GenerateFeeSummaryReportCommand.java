@@ -27,18 +27,8 @@ public interface GenerateFeeSummaryReportCommand {
                  String fileType,
                  String loginDfspId,
                  Integer offset,
-                 Integer limit) {
-
-        public Input(String startDate,
-                     String endDate,
-                     String dfspId,
-                     String timezone,
-                     String fileType,
-                     String loginDfspId) {
-
-            this(startDate, endDate, dfspId, timezone, fileType, loginDfspId, null, null);
-        }
-    }
+                 Integer limit,
+                 String userName) { }
 
     record Output(byte[] feeSummaryRptByte) { }
 

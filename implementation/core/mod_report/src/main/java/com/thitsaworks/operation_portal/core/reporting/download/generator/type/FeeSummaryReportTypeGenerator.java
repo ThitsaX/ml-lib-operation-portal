@@ -74,13 +74,14 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
             this.reportGeneratorSupport.requireParam(params, "dfspId"));
         String timezoneOffset = params.getOrDefault("timezoneOffset", "+0000");
         String loginDfspId = params.getOrDefault("loginDfspId", dfspId);
+        String userName = params.getOrDefault("userName", "");
 
         int pageSize = this.settings.reportPageSize();
         int totalRowCount = this.generateFeeSummaryReportCommand.countRows(
             new GenerateFeeSummaryReportCommand.CountInput(startDate, endDate, dfspId, timezoneOffset));
         GenerateFeeSummaryReportCommand.Input input =
             new GenerateFeeSummaryReportCommand.Input(
-                startDate, endDate, dfspId, timezoneOffset, fileType, loginDfspId);
+                startDate, endDate, dfspId, timezoneOffset, fileType, loginDfspId, 0, pageSize, userName);
 
         if (totalRowCount <= pageSize) {
             GenerateFeeSummaryReportCommand.Output output =
@@ -96,6 +97,7 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
                                          timezoneOffset,
                                          fileType,
                                          loginDfspId,
+                                         userName,
                                          totalRowCount,
                                          pageSize);
         }
@@ -112,6 +114,7 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
                                                  String timezoneOffset,
                                                  String fileType,
                                                  String loginDfspId,
+                                                 String userName,
                                                  int totalRowCount,
                                                  int pageSize) throws ReportException, IOException {
 
@@ -131,7 +134,8 @@ class FeeSummaryReportTypeGenerator implements ReportTypeGenerator {
                         fileType,
                         loginDfspId,
                         offset,
-                        rowsInPart), rowsInPart, pageSize);
+                        rowsInPart,
+                        userName), rowsInPart, pageSize);
 
                 String entryName = "fee_summary_part_" + partNumber + "." + fileType;
                 ZipEntry entry = new ZipEntry(entryName);
