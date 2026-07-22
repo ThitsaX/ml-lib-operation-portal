@@ -25,7 +25,8 @@ public interface ModifyRevenueApprovalAction
 
     record Input(ApprovalRequestId approvalRequestId,
                  ApprovalActionType action,
-                 UserId responseUserId) { }
+                 UserId responseUserId,
+                 String reason) { }
 
     record Output(ApprovalRequestId approvalRequestId) { }
 

@@ -32,6 +32,9 @@ public interface RevenueConfigRepository extends JpaRepository<RevenueConfig, Re
 
     Optional<RevenueConfig> findByTaxCodeId(String taxCodeId);
 
+    Optional<RevenueConfig> findByRevenueConfigIdAndStatusIn(RevenueConfigId revenueConfigId,
+                                                             Collection<RevenueConfigStatus> statuses);
+
     boolean existsByTaxCodeId(String taxCodeId);
 
     List<RevenueConfig> findByStatusIn(Collection<RevenueConfigStatus> statuses, Sort sort);

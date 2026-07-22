@@ -15,9 +15,9 @@
  */
 package com.thitsaworks.operation_portal.core.revenue_config.validator;
 
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,8 +36,8 @@ public class RevenueConfigValidator {
     private final PartyRegistryValidator partyRegistryValidator;
 
     public void validate(RevenueConfigCategory category,
-                         Long responsibleMinistryId,
-                         Long thirdPartyProviderId,
+                         String responsibleMinistryCode,
+                         String thirdPartyProviderCode,
                          BigDecimal golPercentage,
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
@@ -47,21 +47,23 @@ public class RevenueConfigValidator {
             throw new RevenueConfigException(RevenueConfigErrors.INVALID_REVENUE_CONFIG_CATEGORY);
         }
 
-        validatePartyRegistryReferences(responsibleMinistryId, thirdPartyProviderId);
+        validatePartyRegistryReferences(responsibleMinistryCode, thirdPartyProviderCode);
         validatePercentages(golPercentage, ministryPercentage, thirdPartyPercentage, sendingDfspPercentage);
     }
 
-    private void validatePartyRegistryReferences(Long responsibleMinistryId, Long thirdPartyProviderId)
+    private void validatePartyRegistryReferences(String responsibleMinistryCode,
+                                                 String thirdPartyProviderCode)
         throws RevenueConfigException {
 
-        if (!this.partyRegistryValidator.isActiveResponsibleMinistry(responsibleMinistryId)) {
+        if (!this.partyRegistryValidator.isActiveResponsibleMinistry(responsibleMinistryCode)) {
             throw new RevenueConfigException(RevenueConfigErrors.INVALID_RESPONSIBLE_MINISTRY.format(
-                String.valueOf(responsibleMinistryId)));
+                responsibleMinistryCode));
         }
 
-        if (thirdPartyProviderId != null && !this.partyRegistryValidator.isActiveThirdPartyProvider(thirdPartyProviderId)) {
+        if (thirdPartyProviderCode != null && !thirdPartyProviderCode.isBlank() &&
+                !this.partyRegistryValidator.isActiveThirdPartyProvider(thirdPartyProviderCode)) {
             throw new RevenueConfigException(RevenueConfigErrors.INVALID_THIRD_PARTY_PROVIDER.format(
-                String.valueOf(thirdPartyProviderId)));
+                thirdPartyProviderCode));
         }
     }
 

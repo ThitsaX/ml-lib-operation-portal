@@ -63,7 +63,7 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
         }
 
         this.revenueConfigValidator.validate(
-            input.category(), input.responsibleMinistryId(), input.thirdPartyProviderId(),
+            input.category(), input.responsibleMinistryCode(), input.thirdPartyProviderCode(),
             input.golPercentage(), input.ministryPercentage(), input.thirdPartyPercentage(),
             input.sendingDfspPercentage());
 
@@ -71,7 +71,7 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
 
         revenueConfig.update(
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
-            input.responsibleMinistryId(), input.thirdPartyProviderId(), input.golPercentage(),
+            input.responsibleMinistryCode(), input.thirdPartyProviderCode(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
             input.updatedBy(), input.startDate());
 

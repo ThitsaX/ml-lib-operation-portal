@@ -69,12 +69,15 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
     protected RevenueConfigCategory category;
 
     @Column(
-        name = "responsible_ministry_id",
-        nullable = false)
-    protected Long responsibleMinistryId;
+        name = "responsible_ministry_code",
+        nullable = false,
+        length = 50)
+    protected String responsibleMinistryCode;
 
-    @Column(name = "third_party_provider_id")
-    protected Long thirdPartyProviderId;
+    @Column(
+        name = "third_party_provider_code",
+        length = 50)
+    protected String thirdPartyProviderCode;
 
     @Column(
         name = "gol_percentage",
@@ -130,13 +133,13 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
     public RevenueConfig(String taxCodeId,
                          String taxCodeDescription,
                          RevenueConfigCategory category,
-                         Long responsibleMinistryId,
-                         Long thirdPartyProviderId,
+                         String responsibleMinistryCode,
+                         String thirdPartyProviderCode,
                          BigDecimal golPercentage,
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
                          BigDecimal sendingDfspPercentage,
-                         UserId updatedBy,
+                         UserId createdBy,
                          Instant startDate,
                          RevenueConfigStatus status) {
 
@@ -144,15 +147,14 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         this.taxCodeId(taxCodeId);
         this.taxCodeDescription(taxCodeDescription);
         this.category(category);
-        this.responsibleMinistryId(responsibleMinistryId);
-        this.thirdPartyProviderId(thirdPartyProviderId);
+        this.responsibleMinistryCode(responsibleMinistryCode);
+        this.thirdPartyProviderCode(thirdPartyProviderCode);
         this.golPercentage(golPercentage);
         this.ministryPercentage(ministryPercentage);
         this.thirdPartyPercentage(thirdPartyPercentage);
         this.sendingDfspPercentage(sendingDfspPercentage);
         this.status(status == null ? RevenueConfigStatus.ACTIVE : status);
-        this.createdBy = updatedBy;
-        this.updatedBy = updatedBy;
+        this.createdBy = createdBy;
         this.startDate(startDate);
     }
 
@@ -183,16 +185,16 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         return this;
     }
 
-    public RevenueConfig responsibleMinistryId(Long responsibleMinistryId) {
+    public RevenueConfig responsibleMinistryCode(String responsibleMinistryCode) {
 
-        Validate.notNull(responsibleMinistryId);
-        this.responsibleMinistryId = responsibleMinistryId;
+        Validate.notBlank(responsibleMinistryCode);
+        this.responsibleMinistryCode = responsibleMinistryCode;
         return this;
     }
 
-    public RevenueConfig thirdPartyProviderId(Long thirdPartyProviderId) {
+    public RevenueConfig thirdPartyProviderCode(String thirdPartyProviderCode) {
 
-        this.thirdPartyProviderId = thirdPartyProviderId;
+        this.thirdPartyProviderCode = thirdPartyProviderCode;
         return this;
     }
 
@@ -242,22 +244,21 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
     public RevenueConfig update(String taxCodeId,
                                 String taxCodeDescription,
                                 RevenueConfigCategory category,
-                                Long responsibleMinistryId,
-                                Long thirdPartyProviderId,
+                                String responsibleMinistryCode,
+                                String thirdPartyProviderCode,
                                 BigDecimal golPercentage,
                                 BigDecimal ministryPercentage,
                                 BigDecimal thirdPartyPercentage,
                                 BigDecimal sendingDfspPercentage,
                                 UserId updatedBy,
-                                Instant startDate,
-                                RevenueConfigStatus status) {
+                                Instant startDate) {
 
         return this
                    .taxCodeId(taxCodeId)
                    .taxCodeDescription(taxCodeDescription)
                    .category(category)
-                   .responsibleMinistryId(responsibleMinistryId)
-                   .thirdPartyProviderId(thirdPartyProviderId)
+                   .responsibleMinistryCode(responsibleMinistryCode)
+                   .thirdPartyProviderCode(thirdPartyProviderCode)
                    .golPercentage(golPercentage)
                    .ministryPercentage(ministryPercentage)
                    .thirdPartyPercentage(thirdPartyPercentage)

@@ -41,6 +41,7 @@ public interface GetPendingRevenueApprovalList
                                       String respondedBy,
                                       Instant respondedDateTime,
                                       ApprovalActionType action,
+                                      String reason,
                                       String requestCategory,
                                       List<PendingApprovalDetail> details) { }
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -48,32 +49,36 @@ public class GetRevenueConfigByIdController {
     public ResponseEntity<Response> execute(@Valid @RequestParam Long revenueConfigurationId)
         throws DomainException, JsonProcessingException {
 
-        LOG.info("Get Revenue Config by Id Request : revenueConfigurationId = [{}]", revenueConfigurationId);
+        LOG.info(
+            "Get Revenue Config by Id Request : revenueConfigurationId = [{}]",
+            revenueConfigurationId);
 
         GetRevenueConfigById.Output output = this.getRevenueConfigById.execute(
             new GetRevenueConfigById.Input(new RevenueConfigId(revenueConfigurationId)));
 
         Response response = Response.from(output.revenueConfig());
 
-        LOG.info("Get Revenue Config by Id Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info(
+            "Get Revenue Config by Id Response : [{}]",
+            this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("id") Long id,
+    public record Response(@JsonProperty("id") String id,
                            @JsonProperty("taxCodeId") String taxCodeId,
                            @JsonProperty("taxCodeDescription") String taxCodeDescription,
                            @JsonProperty("category") String category,
-                           @JsonProperty("responsibleMinistryId") Long responsibleMinistryId,
+                           @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
                            @JsonProperty("responsibleMinistryName") String responsibleMinistryName,
-                           @JsonProperty("thirdPartyProviderId") Long thirdPartyProviderId,
+                           @JsonProperty("thirdPartyProviderCode") String thirdPartyProviderCode,
                            @JsonProperty("thirdPartyProviderName") String thirdPartyProviderName,
                            @JsonProperty("golPercentage") BigDecimal golPercentage,
                            @JsonProperty("ministryPercentage") BigDecimal ministryPercentage,
                            @JsonProperty("thirdPartyPercentage") BigDecimal thirdPartyPercentage,
                            @JsonProperty("sendingDfspPercentage") BigDecimal sendingDfspPercentage,
-                           @JsonProperty("status") boolean status,
+                           @JsonProperty("status") String status,
                            @JsonProperty("createdAt") Long createdAt,
                            @JsonProperty("createdBy") String createdBy,
                            @JsonProperty("updatedAt") Long updatedAt,
@@ -81,23 +86,19 @@ public class GetRevenueConfigByIdController {
 
         public static Response from(GetRevenueConfigById.RevenueConfig revenueConfig) {
 
-            return new Response(revenueConfig.id(),
-                                revenueConfig.taxCodeId(),
-                                revenueConfig.taxCodeDescription(),
-                                revenueConfig.category(),
-                                revenueConfig.responsibleMinistryId(),
-                                revenueConfig.responsibleMinistryName(),
-                                revenueConfig.thirdPartyProviderId(),
-                                revenueConfig.thirdPartyProviderName(),
-                                revenueConfig.golPercentage(),
-                                revenueConfig.ministryPercentage(),
-                                revenueConfig.thirdPartyPercentage(),
-                                revenueConfig.sendingDfspPercentage(),
-                                revenueConfig.status(),
-                                revenueConfig.createdAt(),
-                                revenueConfig.createdBy(),
-                                revenueConfig.updatedAt(),
-                                revenueConfig.updatedBy());
+            return new Response(
+                revenueConfig.id().toString(), revenueConfig.taxCodeId(), revenueConfig.taxCodeDescription(),
+                revenueConfig.category(),
+                revenueConfig.responsibleMinistryCode(),
+                revenueConfig.responsibleMinistryName(),
+                revenueConfig.thirdPartyProviderCode(),
+                revenueConfig.thirdPartyProviderName(), revenueConfig.golPercentage(),
+                revenueConfig.ministryPercentage(), revenueConfig.thirdPartyPercentage(),
+                revenueConfig.sendingDfspPercentage(), revenueConfig.status().name(),
+                revenueConfig.createdAt(), revenueConfig.createdBy(), revenueConfig.updatedAt(),
+                revenueConfig.updatedBy());
         }
+
     }
+
 }

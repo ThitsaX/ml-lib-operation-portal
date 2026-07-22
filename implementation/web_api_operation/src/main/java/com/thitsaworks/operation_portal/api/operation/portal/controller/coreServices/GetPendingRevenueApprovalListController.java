@@ -65,7 +65,7 @@ public class GetPendingRevenueApprovalListController {
                     request.requestedBy(), request.requestedDateTime().getEpochSecond(),
                     request.respondedBy(), request.respondedDateTime() == null ? null :
                                                request.respondedDateTime().getEpochSecond(),
-                    request.action().name(), request.requestCategory(),
+                    request.action().name(), request.reason(), request.requestCategory(),
                     request.details().stream().map(detail -> new Response.PendingApprovalDetail(
                         detail.tabCode(), detail.fieldKey(), detail.fieldLabel(),
                         detail.fieldValue(), detail.beforeValue(), detail.afterValue(),
@@ -94,6 +94,7 @@ public class GetPendingRevenueApprovalListController {
                                       @JsonProperty("respondedBy") String respondedBy,
                                       @JsonProperty("respondedDateTime") Long respondedDateTime,
                                       @JsonProperty("action") String action,
+                                      @JsonProperty("reason") String reason,
                                       @JsonProperty("requestCategory") String requestCategory,
                                       @JsonProperty("details") List<PendingApprovalDetail> details)
             implements Serializable { }

@@ -16,10 +16,12 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.util.BigDecimalUtil;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public interface GetRevenueConfigById
     extends UseCase<GetRevenueConfigById.Input, GetRevenueConfigById.Output> {
@@ -32,15 +34,16 @@ public interface GetRevenueConfigById
                          String taxCodeId,
                          String taxCodeDescription,
                          String category,
-                         Long responsibleMinistryId,
+                         String responsibleMinistryCode,
                          String responsibleMinistryName,
-                         Long thirdPartyProviderId,
+                         String thirdPartyProviderCode,
                          String thirdPartyProviderName,
                          BigDecimal golPercentage,
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
                          BigDecimal sendingDfspPercentage,
-                         boolean status,
+                         RevenueConfigStatus status,
+                         Instant startDate,
                          Long createdAt,
                          String createdBy,
                          Long updatedAt,

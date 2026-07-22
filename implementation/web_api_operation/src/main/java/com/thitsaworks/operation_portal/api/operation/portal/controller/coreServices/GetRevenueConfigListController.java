@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,44 +46,44 @@ public class GetRevenueConfigListController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("/secured/getRevenueConfigList")
-    public ResponseEntity<List<Response>> execute(
-        @RequestParam(
-            value = "sortBy",
-            required = false) String sortBy,
-        @RequestParam(
-            value = "sortDirection",
-            required = false) Sort.Direction sortDirection) throws DomainException, JsonProcessingException {
+    public ResponseEntity<List<Response>> execute(@RequestParam(
+        value = "sortBy",
+        required = false) String sortBy, @RequestParam(
+        value = "sortDirection",
+        required = false) Sort.Direction sortDirection)
+        throws DomainException, JsonProcessingException {
 
-        LOG.info("Get Revenue Config List Request : sortBy= [{}], sortDirection= [{}]",
-                 sortBy, sortDirection);
+        LOG.info(
+            "Get Revenue Config List Request : sortBy= [{}], sortDirection= [{}]", sortBy,
+            sortDirection);
 
         GetRevenueConfigList.Output output = this.getRevenueConfigList.execute(
             new GetRevenueConfigList.Input(sortBy, sortDirection));
 
-        List<Response> response = output.revenueConfigs()
-                                        .stream()
-                                        .map(Response::from)
-                                        .toList();
+        List<Response> response = output.revenueConfigs().stream().map(Response::from).toList();
 
-        LOG.info("Get Revenue Config List Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info(
+            "Get Revenue Config List Response : [{}]",
+            this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("id") Long id,
+    public record Response(@JsonProperty("revenueConfigId") String id,
                            @JsonProperty("taxCodeId") String taxCodeId,
                            @JsonProperty("taxCodeDescription") String taxCodeDescription,
                            @JsonProperty("category") String category,
-                           @JsonProperty("responsibleMinistryId") Long responsibleMinistryId,
+                           @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
                            @JsonProperty("responsibleMinistryName") String responsibleMinistryName,
-                           @JsonProperty("thirdPartyProviderId") Long thirdPartyProviderId,
+                           @JsonProperty("thirdPartyProviderCode") String thirdPartyProviderCode,
                            @JsonProperty("thirdPartyProviderName") String thirdPartyProviderName,
                            @JsonProperty("golPercentage") BigDecimal golPercentage,
                            @JsonProperty("ministryPercentage") BigDecimal ministryPercentage,
                            @JsonProperty("thirdPartyPercentage") BigDecimal thirdPartyPercentage,
                            @JsonProperty("sendingDfspPercentage") BigDecimal sendingDfspPercentage,
-                           @JsonProperty("status") boolean status,
+                           @JsonProperty("status") String status,
+                           @JsonProperty("startDate") Long startDate,
                            @JsonProperty("createdAt") Long createdAt,
                            @JsonProperty("createdBy") String createdBy,
                            @JsonProperty("updatedAt") Long updatedAt,
@@ -90,23 +91,19 @@ public class GetRevenueConfigListController {
 
         public static Response from(GetRevenueConfigList.RevenueConfig revenueConfig) {
 
-            return new Response(revenueConfig.id(),
-                                revenueConfig.taxCodeId(),
-                                revenueConfig.taxCodeDescription(),
-                                revenueConfig.category(),
-                                revenueConfig.responsibleMinistryId(),
-                                revenueConfig.responsibleMinistryName(),
-                                revenueConfig.thirdPartyProviderId(),
-                                revenueConfig.thirdPartyProviderName(),
-                                revenueConfig.golPercentage(),
-                                revenueConfig.ministryPercentage(),
-                                revenueConfig.thirdPartyPercentage(),
-                                revenueConfig.sendingDfspPercentage(),
-                                revenueConfig.status(),
-                                revenueConfig.createdAt(),
-                                revenueConfig.createdBy(),
-                                revenueConfig.updatedAt(),
-                                revenueConfig.updatedBy());
+            return new Response(
+                revenueConfig.id().getId().toString(), revenueConfig.taxCodeId(),
+                revenueConfig.taxCodeDescription(), revenueConfig.category(),
+                revenueConfig.responsibleMinistryCode(),
+                revenueConfig.responsibleMinistryName(),
+                revenueConfig.thirdPartyProviderCode(),
+                revenueConfig.thirdPartyProviderName(), revenueConfig.golPercentage(),
+                revenueConfig.ministryPercentage(), revenueConfig.thirdPartyPercentage(),
+                revenueConfig.sendingDfspPercentage(), revenueConfig.status().name(),
+                revenueConfig.startDate().getEpochSecond(), revenueConfig.createdAt(),
+                revenueConfig.createdBy(), revenueConfig.updatedAt(), revenueConfig.updatedBy());
         }
+
     }
+
 }

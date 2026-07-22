@@ -100,14 +100,14 @@ public class GetPendingRevenueApprovalListHandler
         LOG.debug("Pending revenue approval request count : [{}]", requests.size());
 
         return new Output(requests.stream().map(request -> new Output.PendingApproval(
-            request.getApprovalRequestId(), request.getFundInOutAction(),
+            request.getApprovalRequestId(), request.getRequestedAction(),
             request.getParticipantName(), request.getCurrency(),
             this.normalize(request.getAmount()),
             this.utility.getEmail(new UserId(request.getRequestedBy().getId())),
             request.getRequestedDtm(), request.getRespondedBy() == null ? null :
                                            this.utility.getEmail(
                                                new UserId(request.getRespondedBy().getId())),
-            request.getRespondedDtm(), request.getAction(), request.getRequestCategory(),
+            request.getRespondedDtm(), request.getAction(), request.getReason(), request.getRequestCategory(),
             request.getFieldDetails().stream().map(fieldDetail -> new Output.PendingApprovalDetail(
                 fieldDetail.getTabCode(), fieldDetail.getFieldKey(), fieldDetail.getFieldLabel(),
                 fieldDetail.getFieldValue(), this.normalizeText(fieldDetail.getBeforeValue()),

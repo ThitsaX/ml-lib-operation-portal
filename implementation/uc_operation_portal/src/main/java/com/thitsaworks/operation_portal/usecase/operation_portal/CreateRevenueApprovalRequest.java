@@ -16,6 +16,7 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequestId;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
@@ -27,11 +28,12 @@ public interface CreateRevenueApprovalRequest
     extends UseCase<CreateRevenueApprovalRequest.Input, CreateRevenueApprovalRequest.Output> {
 
     record Input(String requestedAction,
+                 RevenueConfigId revenueConfigId,
                  String taxCodeId,
                  String taxCodeDescription,
                  RevenueConfigCategory category,
-                 String responsibleMinistryId,
-                 String thirdPartyProviderId,
+                 String responsibleMinistryCode,
+                 String thirdPartyProviderCode,
                  String startDate,
                  Map<String, BigDecimal> percentages,
                  UserId requestedBy) { }

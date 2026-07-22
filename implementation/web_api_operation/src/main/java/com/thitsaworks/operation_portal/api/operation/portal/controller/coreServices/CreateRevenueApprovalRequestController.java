@@ -21,12 +21,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueApprovalRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -68,10 +68,12 @@ public class CreateRevenueApprovalRequestController {
 
         var output = this.createRevenueApprovalRequest.execute(
             new CreateRevenueApprovalRequest.Input(
-                request.requestedAction(), request.taxCodeId(), request.taxCodeDescription(),
-                RevenueConfigCategory.valueOf(request.category()), request.responsibleMinistryId(),
-                request.thirdPartyProviderId(), request.startDate(), request.percentages(),
-                userContext.userId()));
+                request.requestedAction(), this.toNullableRevenueConfigId(request.revenueConfigId()),
+                request.taxCodeId(), request.taxCodeDescription(),
+                RevenueConfigCategory.valueOf(request.category()),
+                request.responsibleMinistryCode(),
+                request.thirdPartyProviderCode(), request.startDate(),
+                request.percentages(), userContext.userId()));
 
         var response = new Response(output.approvalRequestId().getEntityId().toString());
 
@@ -83,18 +85,26 @@ public class CreateRevenueApprovalRequestController {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Request(@JsonProperty("requestedAction") String requestedAction,
+    public record Request(@NotBlank @JsonProperty("requestedAction") String requestedAction,
+                          @JsonProperty("revenueConfigId") String revenueConfigId,
                           @NotBlank @JsonProperty("taxCodeId") String taxCodeId,
-                          @NotBlank @JsonProperty("taxCodeDescription") String taxCodeDescription,
-                          @NotBlank @JsonProperty("category") String category,
-                          @NotBlank @JsonProperty("responsibleMinistryId") String responsibleMinistryId,
-                          @JsonProperty("thirdPartyProviderId") String thirdPartyProviderId,
+                          @JsonProperty("taxCodeDescription") String taxCodeDescription,
+                          @JsonProperty("category") String category,
+                          @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
+                          @JsonProperty("thirdPartyProviderCode") String thirdPartyProviderCode,
                           @JsonProperty("startDate") String startDate,
-                          @NotEmpty @JsonProperty("percentages") Map<@NotBlank String, @NotNull BigDecimal> percentages)
+                          @JsonProperty("percentages") Map<@NotBlank String, @NotNull BigDecimal> percentages)
         implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(@JsonProperty("approvalRequestId") String approvalRequestId)
         implements Serializable { }
+
+    private RevenueConfigId toNullableRevenueConfigId(String revenueConfigId) {
+
+        return revenueConfigId == null ? null : new RevenueConfigId(Long.parseLong(revenueConfigId));
+    }
+
+
 
 }

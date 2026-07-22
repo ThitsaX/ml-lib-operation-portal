@@ -62,7 +62,7 @@ public class ModifyRevenueApprovalActionController {
 
         var output = this.modifyRevenueApprovalAction.execute(new ModifyRevenueApprovalAction.Input(
             new ApprovalRequestId(Long.parseLong(request.approvalRequestId())),
-            ApprovalActionType.valueOf(request.action()), userContext.userId()));
+            ApprovalActionType.valueOf(request.action()), userContext.userId(), request.reason()));
 
         var response = new Response(output.approvalRequestId()
                                           .getEntityId()
@@ -75,7 +75,8 @@ public class ModifyRevenueApprovalActionController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @NotBlank @JsonProperty("approvalRequestId") String approvalRequestId,
-                          @NotNull @NotBlank @JsonProperty("action") String action)
+                          @NotNull @NotBlank @JsonProperty("action") String action,
+                          @JsonProperty("reason") String reason)
         implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

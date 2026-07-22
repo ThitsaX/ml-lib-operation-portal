@@ -76,12 +76,15 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
     private RevenueConfigCategory category;
 
     @Column(
-        name = "responsible_ministry_id",
-        nullable = false)
-    private Long responsibleMinistryId;
+        name = "responsible_ministry_code",
+        nullable = false,
+        length = 50)
+    private String responsibleMinistryCode;
 
-    @Column(name = "third_party_provider_id")
-    private Long thirdPartyProviderId;
+    @Column(
+        name = "third_party_provider_code",
+        length = 50)
+    private String thirdPartyProviderCode;
 
     @Column(
         name = "gol_percentage",
@@ -141,8 +144,8 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         this.taxCodeId = revenueConfig.getTaxCodeId();
         this.taxCodeDescription = revenueConfig.getTaxCodeDescription();
         this.category = revenueConfig.getCategory();
-        this.responsibleMinistryId = revenueConfig.getResponsibleMinistryId();
-        this.thirdPartyProviderId = revenueConfig.getThirdPartyProviderId();
+        this.responsibleMinistryCode = revenueConfig.getResponsibleMinistryCode();
+        this.thirdPartyProviderCode = revenueConfig.getThirdPartyProviderCode();
         this.golPercentage = revenueConfig.getGolPercentage();
         this.ministryPercentage = revenueConfig.getMinistryPercentage();
         this.thirdPartyPercentage = revenueConfig.getThirdPartyPercentage();

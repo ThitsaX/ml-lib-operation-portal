@@ -17,7 +17,7 @@ package com.thitsaworks.operation_portal.core.revenue_config.validator;
 
 public interface PartyRegistryValidator {
 
-    boolean isActiveResponsibleMinistry(Long partyId);
+    boolean isActiveResponsibleMinistry(String partyCode);
 
-    boolean isActiveThirdPartyProvider(Long partyId);
+    boolean isActiveThirdPartyProvider(String partyCode);
 }

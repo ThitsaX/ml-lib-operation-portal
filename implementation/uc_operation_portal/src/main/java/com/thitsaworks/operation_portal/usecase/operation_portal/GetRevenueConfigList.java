@@ -13,61 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-import com.thitsaworks.operation_portal.component.misc.util.BigDecimalUtil;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
+import com.thitsaworks.operation_portal.component.misc.util.BigDecimalUtil;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 public interface GetRevenueConfigList
     extends UseCase<GetRevenueConfigList.Input, GetRevenueConfigList.Output> {
 
-    String DEFAULT_SORT_FIELD = "taxCodeId";
+    String DEFAULT_SORT_FIELD = "createdAt";
 
     record Input(String sortBy, Sort.Direction sortDirection) {
 
         public Input {
+
             sortBy = sortBy != null ? sortBy : DEFAULT_SORT_FIELD;
-            sortDirection = sortDirection != null ? sortDirection : Sort.Direction.ASC;
+            sortDirection = sortDirection != null ? sortDirection : Sort.Direction.DESC;
         }
+
     }
 
     record Output(@NotNull List<@NotNull RevenueConfig> revenueConfigs) {
 
         public Output {
+
             if (revenueConfigs == null) {
                 throw new IllegalArgumentException("Revenue configuration list cannot be null");
             }
         }
+
     }
 
-    record RevenueConfig(Long id,
+    record RevenueConfig(RevenueConfigId id,
                          String taxCodeId,
                          String taxCodeDescription,
                          String category,
-                         Long responsibleMinistryId,
+                         String responsibleMinistryCode,
                          String responsibleMinistryName,
-                         Long thirdPartyProviderId,
+                         String thirdPartyProviderCode,
                          String thirdPartyProviderName,
                          BigDecimal golPercentage,
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
                          BigDecimal sendingDfspPercentage,
-                         boolean status,
+                         RevenueConfigStatus status,
+                         Instant startDate,
                          Long createdAt,
                          String createdBy,
                          Long updatedAt,
                          String updatedBy) {
 
         public RevenueConfig {
+
             golPercentage = BigDecimalUtil.trimTrailingZeros(golPercentage);
             ministryPercentage = BigDecimalUtil.trimTrailingZeros(ministryPercentage);
             thirdPartyPercentage = BigDecimalUtil.trimTrailingZeros(thirdPartyPercentage);
             sendingDfspPercentage = BigDecimalUtil.trimTrailingZeros(sendingDfspPercentage);
         }
+
     }
+
 }

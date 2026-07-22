@@ -243,8 +243,8 @@ public class HandleUpdateNdc {
         }
         var ndcPercent = req.getAmount();
 
-        if (req.getFundInOutAction()
-               .equalsIgnoreCase("WITHDRAW") || req.getFundInOutAction()
+        if (req.getRequestedAction()
+               .equalsIgnoreCase("WITHDRAW") || req.getRequestedAction()
                                                    .equalsIgnoreCase("DEPOSIT")) {
 
             LOG.info("Get ParticipantNDC Query Request : participantName : {}, currency : {}",

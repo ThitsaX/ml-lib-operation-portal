@@ -31,6 +31,7 @@ import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.approval.command.ModifyApprovalActionCommand;
 import com.thitsaworks.operation_portal.core.approval.data.ApprovalRequestData;
 import com.thitsaworks.operation_portal.core.approval.data.ApprovalRequestFieldDetailData;
+import com.thitsaworks.operation_portal.core.approval.exception.ApprovalErrors;
 import com.thitsaworks.operation_portal.core.approval.exception.ApprovalException;
 import com.thitsaworks.operation_portal.core.approval.query.ApprovalRequestQuery;
 import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
@@ -71,9 +72,9 @@ public class ModifyRevenueApprovalActionHandler
 
     private static final String CATEGORY_FIELD_KEY = "category";
 
-    private static final String RESPONSIBLE_MINISTRY_ID_FIELD_KEY = "responsible_ministry_id";
+    private static final String RESPONSIBLE_MINISTRY_NAME_FIELD_KEY = "responsible_ministry_name";
 
-    private static final String THIRD_PARTY_PROVIDER_ID_FIELD_KEY = "third_party_provider_id";
+    private static final String THIRD_PARTY_PROVIDER_NAME_FIELD_KEY = "third_party_provider_name";
 
     private static final String PERCENTAGES_FIELD_KEY = "percentages";
 
@@ -127,33 +128,57 @@ public class ModifyRevenueApprovalActionHandler
         }
 
         RevenueActionType requestedAction = this.toRequestedAction(
-            approvalRequestData.getFundInOutAction());
-        String taxCodeId = this.requiredAfterValue(approvalRequestData, TAX_CODE_ID_FIELD_KEY);
-        RevenueConfigData revenueConfig = this.revenueConfigQuery
-                                              .findByTaxCodeId(taxCodeId)
-                                              .orElseThrow(() -> new RevenueConfigException(
-                                                  RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
-                                                      taxCodeId)));
+            approvalRequestData.getRequestedAction());
+        RevenueConfigData revenueConfig = this.revenueConfig(approvalRequestData, requestedAction);
 
         if (input.action() == ApprovalActionType.REJECTED) {
+
+            this.validateRejectedReason(input.reason());
             this.modifyRevenueConfigStatusCommand.execute(
                 new ModifyRevenueConfigStatusCommand.Input(
-                    revenueConfig.revenueConfigId(), RevenueConfigStatus.REJECTED,
-                    input.responseUserId()));
+                    revenueConfig.revenueConfigId(),
+                    this.rejectedRevenueConfigStatus(requestedAction), input.responseUserId()));
+
         } else if (input.action() == ApprovalActionType.APPROVED) {
+
             if (requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG) {
                 this.modifyRevenueConfigStatusCommand.execute(
                     new ModifyRevenueConfigStatusCommand.Input(
                         revenueConfig.revenueConfigId(), RevenueConfigStatus.ACTIVE,
                         input.responseUserId()));
+
             } else if (requestedAction == RevenueActionType.UPDATE_REVENUE_CONFIG) {
+
                 this.modifyRevenueConfig(
                     approvalRequestData, revenueConfig, input.responseUserId());
+
+            } else if (requestedAction == RevenueActionType.DELETE_REVENUE_CONFIG) {
+
+                this.modifyRevenueConfigStatusCommand.execute(
+                    new ModifyRevenueConfigStatusCommand.Input(
+                        revenueConfig.revenueConfigId(), RevenueConfigStatus.INACTIVE,
+                        input.responseUserId()));
             }
         }
 
         ModifyApprovalActionCommand.Output output = this.executeApprovalAction(input);
         return new Output(output.approvalRequestId());
+    }
+
+    private void validateRejectedReason(String reason) throws ApprovalException {
+
+        if (reason == null || reason.isBlank()) {
+            throw new ApprovalException(ApprovalErrors.INVALID_REASON);
+        }
+    }
+
+    private RevenueConfigStatus rejectedRevenueConfigStatus(RevenueActionType requestedAction) {
+
+        if (requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG) {
+            return RevenueConfigStatus.REJECTED;
+        }
+
+        return RevenueConfigStatus.ACTIVE;
     }
 
     private void modifyRevenueConfig(ApprovalRequestData approvalRequestData,
@@ -164,17 +189,22 @@ public class ModifyRevenueApprovalActionHandler
         List<BigDecimal> percentages = this.approvedPercentages(approvalRequestData, revenueConfig);
 
         this.modifyRevenueConfigCommand.execute(new ModifyRevenueConfigCommand.Input(
-            revenueConfig.revenueConfigId(), revenueConfig.taxCodeId(), this.afterValueOrDefault(
-            approvalRequestData, TAX_CODE_DESCRIPTION_FIELD_KEY,
-            revenueConfig.taxCodeDescription()), RevenueConfigCategory.valueOf(
-            this.afterValueOrDefault(
-                approvalRequestData, CATEGORY_FIELD_KEY,
-                revenueConfig.category().name())), Long.valueOf(this.afterValueOrDefault(
-            approvalRequestData, RESPONSIBLE_MINISTRY_ID_FIELD_KEY,
-            String.valueOf(revenueConfig.responsibleMinistryId()))), this.toNullableLong(
-            this.afterValueOrDefault(
-                approvalRequestData, THIRD_PARTY_PROVIDER_ID_FIELD_KEY,
-                this.toNullableString(revenueConfig.thirdPartyProviderId()))), percentages.get(0),
+            revenueConfig.revenueConfigId(),
+            this.afterOrFieldValueOrDefault(
+                approvalRequestData, TAX_CODE_ID_FIELD_KEY, revenueConfig.taxCodeId()),
+            this.afterOrFieldValueOrDefault(
+                approvalRequestData, TAX_CODE_DESCRIPTION_FIELD_KEY,
+                revenueConfig.taxCodeDescription()),
+            RevenueConfigCategory.valueOf(
+                this.afterValueOrDefault(
+                    approvalRequestData, CATEGORY_FIELD_KEY,
+                    revenueConfig.category().name())),
+            this.fieldValueOrDefault(
+                approvalRequestData, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY,
+                revenueConfig.responsibleMinistryCode()),
+            this.fieldValueOrDefault(
+                approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
+                revenueConfig.thirdPartyProviderCode()), percentages.get(0),
             percentages.get(1), percentages.get(2), percentages.get(3), responseUserId,
             this.toNullableInstant(this.afterValueOrDefault(
                 approvalRequestData, START_DATE_FIELD_KEY,
@@ -204,6 +234,26 @@ public class ModifyRevenueApprovalActionHandler
         return this.percentageValues(afterPercentages);
     }
 
+    private RevenueConfigData revenueConfig(ApprovalRequestData approvalRequestData,
+                                            RevenueActionType requestedAction)
+        throws RevenueConfigException {
+
+        if (requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG) {
+            String taxCodeId = this.requiredFieldOrAfterValue(
+                approvalRequestData, TAX_CODE_ID_FIELD_KEY);
+            return this.revenueConfigQuery
+                       .findByTaxCodeId(taxCodeId)
+                       .orElseThrow(() -> new RevenueConfigException(
+                           RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(taxCodeId)));
+        }
+
+        String taxCodeId = this.requiredLookupTaxCodeId(approvalRequestData);
+        return this.revenueConfigQuery
+                   .findByTaxCodeId(taxCodeId)
+                   .orElseThrow(() -> new RevenueConfigException(
+                       RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(taxCodeId)));
+    }
+
     private List<BigDecimal> percentageValues(Map<String, BigDecimal> percentages) {
 
         var percentageValues = new ArrayList<>(percentages.values());
@@ -213,14 +263,50 @@ public class ModifyRevenueApprovalActionHandler
         return percentageValues;
     }
 
-    private String requiredAfterValue(ApprovalRequestData approvalRequestData, String fieldKey)
+    private String requiredLookupTaxCodeId(ApprovalRequestData approvalRequestData)
         throws RevenueConfigException {
 
-        return this
-                   .fieldDetail(approvalRequestData, fieldKey)
-                   .map(ApprovalRequestFieldDetailData::getAfterValue)
-                   .orElseThrow(() -> new RevenueConfigException(
-                       RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(fieldKey)));
+        ApprovalRequestFieldDetailData taxCodeDetail =
+            this.fieldDetail(approvalRequestData, TAX_CODE_ID_FIELD_KEY)
+                .orElseThrow(() -> new RevenueConfigException(
+                    RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
+                        TAX_CODE_ID_FIELD_KEY)));
+
+        if (taxCodeDetail.getBeforeValue() != null && !taxCodeDetail.getBeforeValue().isBlank()) {
+            return taxCodeDetail.getBeforeValue();
+        }
+
+        if (taxCodeDetail.getFieldValue() != null && !taxCodeDetail.getFieldValue().isBlank()) {
+            return taxCodeDetail.getFieldValue();
+        }
+
+        if (taxCodeDetail.getAfterValue() != null && !taxCodeDetail.getAfterValue().isBlank()) {
+            return taxCodeDetail.getAfterValue();
+        }
+
+        throw new RevenueConfigException(
+            RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(TAX_CODE_ID_FIELD_KEY));
+    }
+
+    private String requiredFieldOrAfterValue(ApprovalRequestData approvalRequestData,
+                                             String fieldKey)
+        throws RevenueConfigException {
+
+        ApprovalRequestFieldDetailData fieldDetail =
+            this.fieldDetail(approvalRequestData, fieldKey)
+                .orElseThrow(() -> new RevenueConfigException(
+                    RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(fieldKey)));
+
+        if (fieldDetail.getFieldValue() != null && !fieldDetail.getFieldValue().isBlank()) {
+            return fieldDetail.getFieldValue();
+        }
+
+        if (fieldDetail.getAfterValue() != null && !fieldDetail.getAfterValue().isBlank()) {
+            return fieldDetail.getAfterValue();
+        }
+
+        throw new RevenueConfigException(
+            RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(fieldKey));
     }
 
     private String afterValueOrDefault(ApprovalRequestData approvalRequestData,
@@ -230,6 +316,34 @@ public class ModifyRevenueApprovalActionHandler
         Optional<ApprovalRequestFieldDetailData> fieldDetail = this.fieldDetail(
             approvalRequestData, fieldKey);
         return fieldDetail.isPresent() ? fieldDetail.get().getAfterValue() : defaultValue;
+    }
+
+    private String afterOrFieldValueOrDefault(ApprovalRequestData approvalRequestData,
+                                              String fieldKey,
+                                              String defaultValue) {
+
+        Optional<ApprovalRequestFieldDetailData> fieldDetail = this.fieldDetail(
+            approvalRequestData, fieldKey);
+        if (fieldDetail.isEmpty()) {
+            return defaultValue;
+        }
+
+        String afterValue = fieldDetail.get().getAfterValue();
+        if (afterValue != null && !afterValue.isBlank()) {
+            return afterValue;
+        }
+
+        String fieldValue = fieldDetail.get().getFieldValue();
+        return fieldValue != null && !fieldValue.isBlank() ? fieldValue : defaultValue;
+    }
+
+    private String fieldValueOrDefault(ApprovalRequestData approvalRequestData,
+                                       String fieldKey,
+                                       String defaultValue) {
+
+        Optional<ApprovalRequestFieldDetailData> fieldDetail = this.fieldDetail(
+            approvalRequestData, fieldKey);
+        return fieldDetail.isPresent() ? fieldDetail.get().getFieldValue() : defaultValue;
     }
 
     private Optional<ApprovalRequestFieldDetailData> fieldDetail(ApprovalRequestData approvalRequestData,
@@ -257,13 +371,8 @@ public class ModifyRevenueApprovalActionHandler
 
         return this.modifyApprovalActionCommand.execute(
             new ModifyApprovalActionCommand.Input(
-                input.approvalRequestId(), input.action(),
-                input.responseUserId()));
-    }
-
-    private Long toNullableLong(String value) {
-
-        return value == null || value.isBlank() ? null : Long.valueOf(value);
+                input.approvalRequestId(), input.action(), input.responseUserId(),
+                input.action() == ApprovalActionType.REJECTED ? input.reason() : null));
     }
 
     private Instant toNullableInstant(String value) {

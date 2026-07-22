@@ -30,13 +30,13 @@ public interface CreateRevenueConfigCommand {
     record Input(String taxCodeId,
                  String taxCodeDescription,
                  RevenueConfigCategory category,
-                 Long responsibleMinistryId,
-                 Long thirdPartyProviderId,
+                 String responsibleMinistryCode,
+                 String thirdPartyProviderCode,
                  BigDecimal golPercentage,
                  BigDecimal ministryPercentage,
                  BigDecimal thirdPartyPercentage,
                  BigDecimal sendingDfspPercentage,
-                 UserId updatedBy,
+                 UserId createdBy,
                  Instant startDate,
                  RevenueConfigStatus status) { }
 

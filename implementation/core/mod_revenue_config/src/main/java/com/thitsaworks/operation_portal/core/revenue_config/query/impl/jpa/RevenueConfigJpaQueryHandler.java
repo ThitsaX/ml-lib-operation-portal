@@ -77,7 +77,8 @@ public class RevenueConfigJpaQueryHandler implements RevenueConfigQuery {
     @Override
     public Optional<RevenueConfigData> findById(RevenueConfigId revenueConfigId) {
 
-        return this.revenueConfigRepository.findById(revenueConfigId)
+        return this.revenueConfigRepository.findByRevenueConfigIdAndStatusIn(
+                                               revenueConfigId, ACTIVE_AND_PENDING_STATUSES)
                                            .map(RevenueConfigData::new);
     }
 

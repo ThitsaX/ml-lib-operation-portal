@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
+import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.revenue_config.data.RevenueConfigData;
 import com.thitsaworks.operation_portal.core.revenue_config.query.RevenueConfigQuery;
+import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
+import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenueConfigList;
 import com.thitsaworks.operation_portal.usecase.util.Utility;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
-import com.thitsaworks.operation_portal.component.common.identifier.UserId;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -40,49 +42,65 @@ public class GetRevenueConfigListHandler
 
     private final RevenueConfigQuery revenueConfigQuery;
 
+    private final RevenuePartyQuery revenuePartyQuery;
+
     private final Utility utility;
 
     public GetRevenueConfigListHandler(PrincipalCache principalCache,
                                        ActionAuthorizationManager actionAuthorizationManager,
                                        RevenueConfigQuery revenueConfigQuery,
+                                       RevenuePartyQuery revenuePartyQuery,
                                        Utility utility) {
 
         super(principalCache, actionAuthorizationManager);
         this.revenueConfigQuery = revenueConfigQuery;
+        this.revenuePartyQuery = revenuePartyQuery;
         this.utility = utility;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        Sort sort = Sort.by(input.sortDirection(), input.sortBy());
+        Sort sort = Sort.by(input.sortDirection(), this.sortField(input.sortBy()));
         List<GetRevenueConfigList.RevenueConfig> revenueConfigs = this.revenueConfigQuery
-            .getActiveAndPendingRevenueConfigs(sort)
-            .stream()
-            .map(this::map)
-            .toList();
+                                                                      .getActiveAndPendingRevenueConfigs(
+                                                                          sort)
+                                                                      .stream()
+                                                                      .map(this::map)
+                                                                      .toList();
 
         return new Output(revenueConfigs);
     }
 
+    private String sortField(String sortBy) {
+
+        return "createdDate".equals(sortBy) ? "createdAt" : sortBy;
+    }
+
     private GetRevenueConfigList.RevenueConfig map(RevenueConfigData data) {
 
-        return new GetRevenueConfigList.RevenueConfig(data.revenueConfigId().getId(),
-                                                      data.taxCodeId(),
-                                                      data.taxCodeDescription(),
-                                                      data.category().name(),
-                                                      data.responsibleMinistryId(),
-                                                      null,
-                                                      data.thirdPartyProviderId(),
-                                                      null,
-                                                      data.golPercentage(),
-                                                      data.ministryPercentage(),
-                                                      data.thirdPartyPercentage(),
-                                                      data.sendingDfspPercentage(),
-                                                      data.status() == RevenueConfigStatus.ACTIVE,
-                                                      data.createdAt() == null ? null : data.createdAt().getEpochSecond(),
-                                                      data.createdBy() == null ? null : this.utility.getEmail(new UserId(data.createdBy().getId())),
-                                                      data.updatedAt() == null ? null : data.updatedAt().getEpochSecond(),
-                                                      data.updatedBy() == null ? null : this.utility.getEmail(new UserId(data.updatedBy().getId())));
+        return new GetRevenueConfigList.RevenueConfig(
+            data.revenueConfigId(), data.taxCodeId(), data.taxCodeDescription(),
+            data.category().name(), data.responsibleMinistryCode(),
+            this.revenuePartyName(data.responsibleMinistryCode()), data.thirdPartyProviderCode(),
+            this.revenuePartyName(data.thirdPartyProviderCode()), data.golPercentage(),
+            data.ministryPercentage(), data.thirdPartyPercentage(), data.sendingDfspPercentage(),
+            data.status(), data.startDate(),
+            data.createdAt() == null ? null : data.createdAt().getEpochSecond(),
+            data.createdBy() == null ? null :
+                this.utility.getEmail(new UserId(data.createdBy().getId())),
+            data.updatedBy() == null ? null : data.updatedAt().getEpochSecond(),
+            data.updatedBy() == null ? null :
+                this.utility.getEmail(new UserId(data.updatedBy().getId())));
     }
+
+    private String revenuePartyName(String partyCode) {
+
+        if (partyCode == null || partyCode.isBlank()) {
+            return null;
+        }
+
+        return this.revenuePartyQuery.get(partyCode).map(RevenuePartyData::partyName).orElse(null);
+    }
+
 }
