@@ -66,7 +66,7 @@ public class CreateRevenuePartyHandler
         var currentUser = this.userPermissionManager.getCurrentUser();
         var output = this.createRevenuePartyCommand.execute(new CreateRevenuePartyCommand.Input(
             input.partyCode(), input.partyName(), input.partyType(), input.description(),
-            new UserId(currentUser.principalId().getId())));
+            input.status(), new UserId(currentUser.principalId().getId())));
 
         return new Output(output.created(), output.revenuePartyId(), null,
                           this.revenuePartyQuery.get(output.revenuePartyId()));
