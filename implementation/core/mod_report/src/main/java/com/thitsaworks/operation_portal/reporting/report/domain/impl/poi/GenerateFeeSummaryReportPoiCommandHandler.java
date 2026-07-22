@@ -1159,10 +1159,6 @@ public class GenerateFeeSummaryReportPoiCommandHandler implements GenerateFeeSum
     private String buildPrintedByText(Input input) {
 
         String user = this.safe(input.userName());
-        if (user.isBlank()) {
-            user = this.safe(input.loginDfspId());
-        }
-
         String formatted = Instant.now()
                                   .atOffset(this.parseOffset(input.timezone()))
                                   .format(PRINTED_DATE_FORMAT);
