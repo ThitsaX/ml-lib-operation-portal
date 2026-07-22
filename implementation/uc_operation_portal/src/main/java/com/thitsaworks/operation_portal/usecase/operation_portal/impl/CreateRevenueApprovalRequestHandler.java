@@ -51,9 +51,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
-@ActionMetadata(category = ActionCategory.REVENUE_CONFIG)
+@ActionMetadata(category = ActionCategory.APPROVAL_WORKFLOW)
 public class CreateRevenueApprovalRequestHandler
     extends OperationPortalAuditableUseCase<CreateRevenueApprovalRequest.Input, CreateRevenueApprovalRequest.Output>
     implements CreateRevenueApprovalRequest {
@@ -153,6 +154,10 @@ public class CreateRevenueApprovalRequestHandler
 
     private void createPendingRevenueConfig(Input input) throws DomainException {
 
+        if (input.category() == null) {
+            throw new RevenueConfigException(RevenueConfigErrors.REVENUE_CONFIG_CATEGORY_REQUIRED);
+        }
+
         List<BigDecimal> percentages = this.percentageValues(input.percentages());
 
         this.createRevenueConfigCommand.execute(new CreateRevenueConfigCommand.Input(
@@ -165,7 +170,15 @@ public class CreateRevenueApprovalRequestHandler
     private RevenueConfigData updatePendingRevenueConfigStatus(Input input) throws DomainException {
 
         if (input.revenueConfigId() == null) {
-            throw new RevenueConfigException(RevenueConfigErrors.INVALID_REVENUE_CONFIG_ID);
+            throw new RevenueConfigException(RevenueConfigErrors.REVENUE_CONFIG_ID_REQUIRED);
+        }
+
+        if (input
+                .requestedAction()
+                .equalsIgnoreCase(RevenueActionType.UPDATE_REVENUE_CONFIG.name()) &&
+                input.category() == null) {
+            throw new RevenueConfigException(RevenueConfigErrors.REVENUE_CONFIG_CATEGORY_REQUIRED);
+
         }
 
         RevenueConfigData revenueConfig = this.revenueConfigQuery
@@ -174,12 +187,37 @@ public class CreateRevenueApprovalRequestHandler
                                                   RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
                                                       input.revenueConfigId())));
 
+        this.validateTaxCodeIsUniqueForUpdate(input, revenueConfig);
+
         this.modifyRevenueConfigStatusCommand.execute(
             new ModifyRevenueConfigStatusCommand.Input(
                 revenueConfig.revenueConfigId(),
                 RevenueConfigStatus.PENDING, input.requestedBy()));
 
         return revenueConfig;
+    }
+
+    private void validateTaxCodeIsUniqueForUpdate(Input input, RevenueConfigData revenueConfig)
+        throws RevenueConfigException {
+
+        if (!input
+                 .requestedAction()
+                 .equalsIgnoreCase(RevenueActionType.UPDATE_REVENUE_CONFIG.name()) ||
+                input.taxCodeId() == null || input.taxCodeId().isBlank()) {
+            return;
+        }
+
+        Optional<RevenueConfigData> existingRevenueConfig = this.revenueConfigQuery.findByTaxCodeId(
+            input.taxCodeId());
+        if (existingRevenueConfig.isEmpty() ||
+                Objects.equals(
+                    existingRevenueConfig.get().revenueConfigId().getEntityId(),
+                    revenueConfig.revenueConfigId().getEntityId())) {
+            return;
+        }
+
+        throw new RevenueConfigException(
+            RevenueConfigErrors.TAX_CODE_ALREADY_REGISTERED.format(input.taxCodeId()));
     }
 
     private void createRequestDetails(CreateApprovalRequestByCategoryCommand.Output output,
@@ -221,23 +259,20 @@ public class CreateRevenueApprovalRequestHandler
             revenueConfig.taxCodeId(), input.taxCodeId(), 1);
 
         this.createChangedOrFieldValueTextFieldDetail(
-            output, TAX_CODE_DESCRIPTION_FIELD_KEY,
-            "Tax Code ID (Description)", revenueConfig.taxCodeDescription(),
-            input.taxCodeDescription(), 2);
+            output, TAX_CODE_DESCRIPTION_FIELD_KEY, "Tax Code ID (Description)",
+            revenueConfig.taxCodeDescription(), input.taxCodeDescription(), 2);
 
         this.createChangedTextFieldDetail(
             output, CATEGORY_FIELD_KEY, "Category",
             revenueConfig.category().name(), input.category().name(), 3);
 
         this.createChangedRevenuePartyFieldDetail(
-            output, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY,
-            "Responsible Ministry Name", revenueConfig.responsibleMinistryCode(),
-            input.responsibleMinistryCode(), 4);
+            output, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY, "Responsible Ministry Name",
+            revenueConfig.responsibleMinistryCode(), input.responsibleMinistryCode(), 4);
 
         this.createChangedRevenuePartyFieldDetail(
-            output, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
-            "Third Party Provider Name", revenueConfig.thirdPartyProviderCode(),
-            input.thirdPartyProviderCode(), 5);
+            output, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY, "Third Party Provider Name",
+            revenueConfig.thirdPartyProviderCode(), input.thirdPartyProviderCode(), 5);
 
         if (input.startDate() != null && !input.startDate().isBlank()) {
             this.createChangedTextFieldDetail(
@@ -402,9 +437,8 @@ public class CreateRevenueApprovalRequestHandler
 
         var percentageJson = new LinkedHashMap<String, Object>();
         List<BigDecimal> existingPercentages = List.of(
-            revenueConfig.golPercentage(),
-            revenueConfig.ministryPercentage(), revenueConfig.thirdPartyPercentage(),
-            revenueConfig.sendingDfspPercentage());
+            revenueConfig.golPercentage(), revenueConfig.ministryPercentage(),
+            revenueConfig.thirdPartyPercentage(), revenueConfig.sendingDfspPercentage());
         int index = 0;
         for (String key : requestedPercentages.keySet()) {
             BigDecimal existingPercentage =

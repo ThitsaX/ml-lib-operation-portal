@@ -22,7 +22,8 @@ public class RevenueConfigErrors {
 
     //@@formatter:off
     public static final ErrorMessage REVENUE_CONFIG_NOT_FOUND = new ErrorMessage("REVENUE_CONFIG_NOT_FOUND", "System cannot find the revenue configuration with provided ID : [{0}].");
-    public static final ErrorMessage INVALID_REVENUE_CONFIG_ID = new ErrorMessage("INVALID_REVENUE_CONFIG_ID", "Revenue Config ID is required and must NOT be blank or null.");
+    public static final ErrorMessage REVENUE_CONFIG_ID_REQUIRED = new ErrorMessage("REVENUE_CONFIG_ID_REQUIRED", "Revenue Config ID is required and must NOT be blank or null.");
+    public static final ErrorMessage REVENUE_CONFIG_CATEGORY_REQUIRED = new ErrorMessage("REVENUE_CONFIG_CATEGORY_REQUIRED", "Revenue Config Catagory is required and must NOT be blank or null.");
     public static final ErrorMessage TAX_CODE_ALREADY_REGISTERED = new ErrorMessage("TAX_CODE_ALREADY_REGISTERED", "Revenue configuration has already registered in the system with provided Tax Code ID : [{0}].");
     public static final ErrorMessage INVALID_REVENUE_CONFIG_CATEGORY = new ErrorMessage("INVALID_REVENUE_CONFIG_CATEGORY", "Revenue configuration category must be DOMESTIC or CUSTOMS.");
     public static final ErrorMessage INVALID_REVENUE_PERCENTAGE_TOTAL = new ErrorMessage("INVALID_REVENUE_PERCENTAGE_TOTAL", "Revenue configuration percentage total must equal 100. Current total is [{0}].");

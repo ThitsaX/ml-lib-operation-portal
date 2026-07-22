@@ -68,12 +68,12 @@ public class CreateRevenueApprovalRequestController {
 
         var output = this.createRevenueApprovalRequest.execute(
             new CreateRevenueApprovalRequest.Input(
-                request.requestedAction(), this.toNullableRevenueConfigId(request.revenueConfigId()),
-                request.taxCodeId(), request.taxCodeDescription(),
-                RevenueConfigCategory.valueOf(request.category()),
-                request.responsibleMinistryCode(),
-                request.thirdPartyProviderCode(), request.startDate(),
-                request.percentages(), userContext.userId()));
+                request.requestedAction(),
+                this.toNullableRevenueConfigId(request.revenueConfigId()), request.taxCodeId(),
+                request.taxCodeDescription(), request.category() == null ? null :
+                                                  RevenueConfigCategory.valueOf(request.category()),
+                request.responsibleMinistryCode(), request.thirdPartyProviderCode(),
+                request.startDate(), request.percentages(), userContext.userId()));
 
         var response = new Response(output.approvalRequestId().getEntityId().toString());
 
@@ -88,7 +88,7 @@ public class CreateRevenueApprovalRequestController {
     public record Request(@NotBlank @JsonProperty("requestedAction") String requestedAction,
                           @JsonProperty("revenueConfigId") String revenueConfigId,
                           @NotBlank @JsonProperty("taxCodeId") String taxCodeId,
-                          @JsonProperty("taxCodeDescription") String taxCodeDescription,
+                          @NotBlank @JsonProperty("taxCodeDescription") String taxCodeDescription,
                           @JsonProperty("category") String category,
                           @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
                           @JsonProperty("thirdPartyProviderCode") String thirdPartyProviderCode,
@@ -102,9 +102,8 @@ public class CreateRevenueApprovalRequestController {
 
     private RevenueConfigId toNullableRevenueConfigId(String revenueConfigId) {
 
-        return revenueConfigId == null ? null : new RevenueConfigId(Long.parseLong(revenueConfigId));
+        return revenueConfigId == null ? null :
+                   new RevenueConfigId(Long.parseLong(revenueConfigId));
     }
-
-
 
 }

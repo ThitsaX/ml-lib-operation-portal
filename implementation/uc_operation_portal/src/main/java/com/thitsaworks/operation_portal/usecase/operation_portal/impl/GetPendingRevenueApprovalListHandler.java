@@ -44,8 +44,7 @@ import java.util.List;
 @Service
 @ActionMetadata(category = ActionCategory.APPROVAL_WORKFLOW)
 public class GetPendingRevenueApprovalListHandler
-    extends OperationPortalUseCase<GetPendingRevenueApprovalList.Input,
-    GetPendingRevenueApprovalList.Output>
+    extends OperationPortalUseCase<GetPendingRevenueApprovalList.Input, GetPendingRevenueApprovalList.Output>
     implements GetPendingRevenueApprovalList {
 
     private static final Logger LOG = LoggerFactory.getLogger(
@@ -107,7 +106,8 @@ public class GetPendingRevenueApprovalListHandler
             request.getRequestedDtm(), request.getRespondedBy() == null ? null :
                                            this.utility.getEmail(
                                                new UserId(request.getRespondedBy().getId())),
-            request.getRespondedDtm(), request.getAction(), request.getReason(), request.getRequestCategory(),
+            request.getRespondedDtm(), request.getAction(), request.getReason(),
+            request.getRequestCategory(),
             request.getFieldDetails().stream().map(fieldDetail -> new Output.PendingApprovalDetail(
                 fieldDetail.getTabCode(), fieldDetail.getFieldKey(), fieldDetail.getFieldLabel(),
                 fieldDetail.getFieldValue(), this.normalizeText(fieldDetail.getBeforeValue()),
