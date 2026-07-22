@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
+package com.thitsaworks.operation_portal.usecase.operation_portal.validation;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdDetailId;
