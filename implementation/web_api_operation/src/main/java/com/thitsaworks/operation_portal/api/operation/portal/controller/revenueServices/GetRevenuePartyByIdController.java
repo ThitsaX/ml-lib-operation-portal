@@ -15,8 +15,6 @@
  */
 package com.thitsaworks.operation_portal.api.operation.portal.controller.revenueServices;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
@@ -42,21 +40,18 @@ public class GetRevenuePartyByIdController {
     private final ObjectMapper objectMapper;
 
     @GetMapping(value = "/secured/getRevenuePartyById")
-    public ResponseEntity<Response> execute(@RequestParam Long revenuePartyId)
+    public ResponseEntity<RevenuePartyData> execute(@RequestParam Long revenuePartyId)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Get Revenue Party By Id Request : revenuePartyId= [{}]", revenuePartyId);
 
         var output = this.getRevenuePartyById.execute(new GetRevenuePartyById.Input(
             new RevenuePartyId(revenuePartyId)));
-        var response = new Response(output.revenueParty());
+        var response = output.revenueParty();
 
         LOG.info("Get Revenue Party By Id Response : [{}]", this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("revenueParty") RevenuePartyData revenueParty) { }
 
 }

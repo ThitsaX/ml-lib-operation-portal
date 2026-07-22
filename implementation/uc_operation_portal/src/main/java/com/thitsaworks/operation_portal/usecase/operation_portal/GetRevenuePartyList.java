@@ -17,25 +17,13 @@ package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
-import org.springframework.data.domain.Sort;
-
 import java.util.List;
 
 public interface GetRevenuePartyList extends UseCase<GetRevenuePartyList.Input, GetRevenuePartyList.Output> {
 
-    record Input(String partyType,
-                 Boolean isActive,
-                 String searchText,
-                 Integer page,
-                 Integer size,
-                 String sortBy,
-                 Sort.Direction sortDirection) { }
+    record Input() { }
 
-    record Output(List<RevenuePartyData> revenueParties,
-                  long totalElements,
-                  int totalPages,
-                  int page,
-                  int size) { }
+    record Output(List<RevenuePartyData> revenueParties) { }
 
 }
 
