@@ -24,6 +24,8 @@ import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigur
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdConfigurationRepository;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdConfigurationQuery;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -36,6 +38,9 @@ import java.util.Optional;
 public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigurationQuery {
 
     private final ThresholdConfigurationRepository thresholdConfigurationRepository;
+
+    private static final Logger LOG = LoggerFactory.getLogger(
+        ThresholdConfigurationJpaQueryHandler.class);
 
     @Override
     public List<ThresholdConfigurationData> getAll() {
@@ -76,6 +81,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
     public ThresholdGateDecision checkGate(String dfspId) {
 
         if (dfspId == null || dfspId.isBlank()) {
+            LOG.info("DFSP_ID_MISSING");
             return new ThresholdGateDecision(
                 false,
                 false,
@@ -87,6 +93,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
         var schemeConfiguration = getSchemeConfiguration();
 
         if (schemeConfiguration.isEmpty()) {
+            LOG.info("SCHEME_CONFIGURATION_MISSING_OR_INACTIVE");
             return new ThresholdGateDecision(
                 false,
                 false,
@@ -96,6 +103,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
         }
 
         if (!schemeConfiguration.get().thresholdEnabled()) {
+            LOG.info("SCHEME_GATE_OFF");
             return new ThresholdGateDecision(
                 false,
                 false,
@@ -107,6 +115,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
         var dfspConfiguration = getDfspConfiguration(dfspId);
 
         if (dfspConfiguration.isEmpty()) {
+            LOG.info("DFSP_CONFIGURATION_MISSING_OR_INACTIVE");
             return new ThresholdGateDecision(
                 false,
                 true,
@@ -116,6 +125,7 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
         }
 
         if (!dfspConfiguration.get().thresholdEnabled()) {
+            LOG.info("DFSP_GATE_OFF");
             return new ThresholdGateDecision(
                 false,
                 true,

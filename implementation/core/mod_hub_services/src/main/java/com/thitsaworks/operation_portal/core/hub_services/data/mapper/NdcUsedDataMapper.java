@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.core.hub_services.data.mapper;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
@@ -28,9 +29,12 @@ public class NdcUsedDataMapper implements RowMapper<NdcUsedData> {
     @Override
     public NdcUsedData mapRow(ResultSet rs, int rowNum) throws SQLException {
 
-        return new NdcUsedData(rs.getString("currency"),
-                                 rs.getBigDecimal("ndcUsed"),
-                                 rs.getBoolean("isActive"));
+        return new NdcUsedData(
+            rs.getBigDecimal("currentPosition"),
+            rs.getBigDecimal("ndc"),
+            rs.getString("currency"),
+            rs.getBigDecimal("ndcUsed"),
+            rs.getBoolean("isActive"));
 
     }
 

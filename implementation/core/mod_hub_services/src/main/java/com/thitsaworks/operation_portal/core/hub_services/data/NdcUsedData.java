@@ -18,6 +18,8 @@ package com.thitsaworks.operation_portal.core.hub_services.data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-public record NdcUsedData(String currency,
+public record NdcUsedData(BigDecimal currentPosition,
+                          BigDecimal ndc,
+                          String currency,
                           BigDecimal ndcUsed,
                           boolean isActive) implements Serializable {}

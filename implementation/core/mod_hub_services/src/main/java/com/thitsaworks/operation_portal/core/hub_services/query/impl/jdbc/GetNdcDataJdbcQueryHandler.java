@@ -51,6 +51,8 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
 
             String sql = """
                 SELECT
+                    IFNULL(TRUNCATE(SUM(IFNULL(pp.value,0)),2),0) AS currentPosition,
+                    IFNULL(SUM(IFNULL(pl.value, 0)), 0) AS ndc,
                     IFNULL(pc.currencyId, '') AS currency,
                     ROUND(
                         CEIL(
