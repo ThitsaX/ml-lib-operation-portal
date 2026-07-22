@@ -35,6 +35,13 @@ public interface ThresholdDetailRepository
     List<ThresholdDetail> findAllByThresholdConfigurationIdOrderByCurrencyAsc(
         ThresholdConfigurationId thresholdConfigurationId);
 
+    List<ThresholdDetail> findAllByThresholdConfigurationIdAndStatusOrderByCurrencyAsc(
+        ThresholdConfigurationId thresholdConfigurationId, boolean status);
+
+    List<ThresholdDetail> findAllByStatusOrderByThresholdConfigurationIdAscCurrencyAsc(boolean status);
+
+    List<ThresholdDetail> findAllByOrderByThresholdConfigurationIdAscCurrencyAsc();
+
     Optional<ThresholdDetail> findFirstByThresholdConfigurationIdAndCurrencyAndStatusTrue(
         ThresholdConfigurationId thresholdConfigurationId, String currency);
 
@@ -42,4 +49,13 @@ public interface ThresholdDetailRepository
         ThresholdConfigurationId thresholdConfigurationId, String currency);
 
     boolean existsByParticipantCurrencyId(Long participantCurrencyId);
+
+    boolean existsByThresholdConfigurationIdAndCurrencyAndThresholdDetailIdNot(
+        ThresholdConfigurationId thresholdConfigurationId,
+        String currency,
+        ThresholdDetailId thresholdDetailId);
+
+    boolean existsByParticipantCurrencyIdAndThresholdDetailIdNot(
+        Long participantCurrencyId,
+        ThresholdDetailId thresholdDetailId);
 }

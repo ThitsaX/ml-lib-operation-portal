@@ -23,7 +23,6 @@ import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.command.ModifyThresholdDetailCommand;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyThresholdDetail;
-import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,33 +34,34 @@ public class ModifyThresholdDetailHandler
 
     private final ModifyThresholdDetailCommand modifyThresholdDetailCommand;
 
-    private final SchedulerEngine schedulerEngine;
+    private final ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator;
 
     public ModifyThresholdDetailHandler(PrincipalCache principalCache,
                                         ActionAuthorizationManager actionAuthorizationManager,
                                         ModifyThresholdDetailCommand modifyThresholdDetailCommand,
-                                        SchedulerEngine schedulerEngine) {
+                                        ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator) {
 
         super(principalCache, actionAuthorizationManager);
         this.modifyThresholdDetailCommand = modifyThresholdDetailCommand;
-        this.schedulerEngine = schedulerEngine;
+        this.participantCurrencyValidator = participantCurrencyValidator;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        ThresholdDetailId thresholdDetailId = new ThresholdDetailId(input.id());
+        String currency = this.participantCurrencyValidator.validateForDetail(
+            thresholdDetailId, input.participantCurrencyId(), input.currency());
+
         ModifyThresholdDetailCommand.Output output = this.modifyThresholdDetailCommand.execute(
             new ModifyThresholdDetailCommand.Input(
-                new ThresholdDetailId(input.id()),
+                thresholdDetailId,
                 input.participantCurrencyId(),
-                input.dfspId(),
-                input.currency(),
+                currency,
                 input.visualConfig(),
                 input.ndcConfig(),
                 input.status(),
                 input.updatedBy()));
-
-        this.schedulerEngine.refreshAllActive();
 
         return new Output(output.thresholdDetailId(), output.modified());
     }

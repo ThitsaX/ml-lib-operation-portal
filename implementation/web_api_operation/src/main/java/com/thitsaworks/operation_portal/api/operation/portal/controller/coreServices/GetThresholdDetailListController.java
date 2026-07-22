@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.usecase.operation_portal.GetThresholdDetail;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetThresholdDetailList;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ public class GetThresholdDetailListController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping(value = "/secured/ndc/thresholdDetails")
+    @GetMapping(value = "/secured/ndc/thresholdDetails", params = "!id")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "thresholdConfigurationId", required = false) Long thresholdConfigurationId,
         @RequestParam(value = "status", required = false) Boolean status)
@@ -62,7 +61,6 @@ public class GetThresholdDetailListController {
                 thresholdDetail.thresholdDetailId(),
                 thresholdDetail.thresholdConfigurationId(),
                 thresholdDetail.participantCurrencyId(),
-                thresholdDetail.dfspId(),
                 thresholdDetail.currency(),
                 thresholdDetail.visualConfig(),
                 thresholdDetail.ndcConfig(),
@@ -84,7 +82,6 @@ public class GetThresholdDetailListController {
         @JsonProperty("id") Long id,
         @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
         @JsonProperty("participantCurrencyId") Long participantCurrencyId,
-        @JsonProperty("dfspId") String dfspId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,

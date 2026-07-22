@@ -23,7 +23,6 @@ import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.command.RemoveThresholdDetailCommand;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.RemoveThresholdDetail;
-import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,16 +34,12 @@ public class RemoveThresholdDetailHandler
 
     private final RemoveThresholdDetailCommand removeThresholdDetailCommand;
 
-    private final SchedulerEngine schedulerEngine;
-
     public RemoveThresholdDetailHandler(PrincipalCache principalCache,
                                         ActionAuthorizationManager actionAuthorizationManager,
-                                        RemoveThresholdDetailCommand removeThresholdDetailCommand,
-                                        SchedulerEngine schedulerEngine) {
+                                        RemoveThresholdDetailCommand removeThresholdDetailCommand) {
 
         super(principalCache, actionAuthorizationManager);
         this.removeThresholdDetailCommand = removeThresholdDetailCommand;
-        this.schedulerEngine = schedulerEngine;
     }
 
     @Override
@@ -54,8 +49,6 @@ public class RemoveThresholdDetailHandler
             new RemoveThresholdDetailCommand.Input(
                 new ThresholdDetailId(input.id()),
                 input.updatedBy()));
-
-        this.schedulerEngine.refreshAllActive();
 
         return new Output(output.thresholdDetailId(), output.removed());
     }

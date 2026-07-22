@@ -29,7 +29,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,7 +44,7 @@ public class RemoveThresholdDetailController {
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/secured/ndc/thresholdDetails")
+    @DeleteMapping("/secured/ndc/thresholdDetails")
     public ResponseEntity<Response> execute(@RequestParam("id") Long id)
         throws DomainException, JsonProcessingException {
 

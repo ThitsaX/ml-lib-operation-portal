@@ -18,7 +18,9 @@ package com.thitsaworks.operation_portal.core.notification.command.impl;
 import com.thitsaworks.operation_portal.component.misc.exception.ErrorMessage;
 import com.thitsaworks.operation_portal.component.misc.exception.InputException;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
+import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.core.notification.command.CreateThresholdDetailCommand;
+import com.thitsaworks.operation_portal.core.notification.model.ThresholdConfiguration;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdConfigurationRepository;
 import com.thitsaworks.operation_portal.core.notification.model.repository.ThresholdDetailRepository;
@@ -37,15 +39,24 @@ public class CreateThresholdDetailCommandHandler implements CreateThresholdDetai
     @CoreWriteTransactional
     public Output execute(Input input) {
 
-        if (!this.thresholdConfigurationRepository.existsById(input.thresholdConfigurationId())) {
-            throw new InputException(
+        ThresholdConfiguration configuration = this.thresholdConfigurationRepository
+            .findById(input.thresholdConfigurationId())
+            .orElseThrow(() -> new InputException(
                 new ErrorMessage(
                     "THRESHOLD_CONFIGURATION_NOT_FOUND",
-                    "Threshold configuration was not found."));
+                    "Threshold configuration was not found.")));
+
+        if (configuration.getScopeType() != ThresholdScopeType.DFSP) {
+            throw new InputException(
+                new ErrorMessage(
+                    "THRESHOLD_DETAIL_REQUIRES_DFSP_CONFIGURATION",
+                    "Threshold detail must reference a DFSP configuration."));
         }
 
+        String currency = ThresholdDetail.normalizeCurrency(input.currency());
+
         if (this.thresholdDetailRepository.existsByThresholdConfigurationIdAndCurrency(
-            input.thresholdConfigurationId(), input.currency())) {
+            input.thresholdConfigurationId(), currency)) {
 
             throw new InputException(
                 new ErrorMessage(
@@ -63,8 +74,7 @@ public class CreateThresholdDetailCommandHandler implements CreateThresholdDetai
         ThresholdDetail detail = new ThresholdDetail(
             input.thresholdConfigurationId(),
             input.participantCurrencyId(),
-            input.dfspId(),
-            input.currency(),
+            currency,
             input.visualConfig(),
             input.ndcConfig(),
             input.createdBy());

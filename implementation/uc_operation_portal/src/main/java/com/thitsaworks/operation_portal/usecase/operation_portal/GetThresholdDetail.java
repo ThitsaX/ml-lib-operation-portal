@@ -30,7 +30,6 @@ public interface GetThresholdDetail
     record ThresholdDetail(Long thresholdDetailId,
                            Long thresholdConfigurationId,
                            Long participantCurrencyId,
-                           String dfspId,
                            String currency,
                            BigDecimal visualConfig,
                            BigDecimal ndcConfig,

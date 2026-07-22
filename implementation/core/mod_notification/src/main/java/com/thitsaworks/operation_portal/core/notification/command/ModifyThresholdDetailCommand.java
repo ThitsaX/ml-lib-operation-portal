@@ -23,7 +23,6 @@ public interface ModifyThresholdDetailCommand {
 
     record Input(ThresholdDetailId thresholdDetailId,
                  Long participantCurrencyId,
-                 String dfspId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

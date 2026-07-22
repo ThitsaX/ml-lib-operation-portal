@@ -25,7 +25,6 @@ public interface ModifyThresholdDetail
 
     record Input(Long id,
                  Long participantCurrencyId,
-                 String dfspId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

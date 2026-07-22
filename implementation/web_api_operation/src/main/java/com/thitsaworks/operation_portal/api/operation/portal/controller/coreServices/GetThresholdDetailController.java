@@ -42,7 +42,7 @@ public class GetThresholdDetailController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping(value = "/secured/ndc/thresholdDetails")
+    @GetMapping(value = "/secured/ndc/thresholdDetails", params = "id")
     public ResponseEntity<Response> execute(@RequestParam("id") Long id)
         throws DomainException, JsonProcessingException {
 
@@ -55,10 +55,10 @@ public class GetThresholdDetailController {
             output.thresholdDetail().thresholdDetailId(),
             output.thresholdDetail().thresholdConfigurationId(),
             output.thresholdDetail().participantCurrencyId(),
-            output.thresholdDetail().dfspId(),
             output.thresholdDetail().currency(),
             output.thresholdDetail().visualConfig(),
-            output.thresholdDetail().ndcConfig()
+            output.thresholdDetail().ndcConfig(),
+            output.thresholdDetail().status()
         ));
 
         LOG.info("Get NDC Threshold Detail Response : [{}]", this.objectMapper.writeValueAsString(response));
@@ -76,9 +76,9 @@ public class GetThresholdDetailController {
         @JsonProperty("thresholdDetailId") Long thresholdDetailId,
         @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
         @JsonProperty("participantCurrencyId") Long participantCurrencyId,
-        @JsonProperty("dfspId") String dfspId,
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
-        @JsonProperty("ndcConfig") BigDecimal ndcConfig
+        @JsonProperty("ndcConfig") BigDecimal ndcConfig,
+        @JsonProperty("status") Boolean status
     ) { }
 }

@@ -23,7 +23,6 @@ import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.command.CreateThresholdDetailCommand;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateThresholdDetail;
-import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,32 +34,34 @@ public class CreateThresholdDetailHandler
 
     private final CreateThresholdDetailCommand createThresholdDetailCommand;
 
-    private final SchedulerEngine schedulerEngine;
+    private final ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator;
 
     public CreateThresholdDetailHandler(PrincipalCache principalCache,
                                         ActionAuthorizationManager actionAuthorizationManager,
                                         CreateThresholdDetailCommand createThresholdDetailCommand,
-                                        SchedulerEngine schedulerEngine) {
+                                        ThresholdDetailParticipantCurrencyValidator participantCurrencyValidator) {
 
         super(principalCache, actionAuthorizationManager);
         this.createThresholdDetailCommand = createThresholdDetailCommand;
-        this.schedulerEngine = schedulerEngine;
+        this.participantCurrencyValidator = participantCurrencyValidator;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        ThresholdConfigurationId thresholdConfigurationId =
+            new ThresholdConfigurationId(input.thresholdConfigurationId());
+        String currency = this.participantCurrencyValidator.validateForConfiguration(
+            thresholdConfigurationId, input.participantCurrencyId(), input.currency());
+
         CreateThresholdDetailCommand.Output output = this.createThresholdDetailCommand.execute(
             new CreateThresholdDetailCommand.Input(
-                new ThresholdConfigurationId(input.thresholdConfigurationId()),
+                thresholdConfigurationId,
                 input.participantCurrencyId(),
-                input.dfspId(),
-                input.currency(),
+                currency,
                 input.visualConfig(),
                 input.ndcConfig(),
                 input.createdBy()));
-
-        this.schedulerEngine.refreshAllActive();
 
         return new Output(output.thresholdDetailId());
     }

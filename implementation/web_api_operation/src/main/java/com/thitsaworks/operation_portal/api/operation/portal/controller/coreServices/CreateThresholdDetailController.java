@@ -27,6 +27,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,6 @@ public class CreateThresholdDetailController {
             new CreateThresholdDetail.Input(
                 request.thresholdConfigurationId(),
                 request.participantCurrencyId(),
-                request.dfspId(),
                 request.currency(),
                 request.visualConfig(),
                 request.ndcConfig(),
@@ -79,12 +79,13 @@ public class CreateThresholdDetailController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
-        @NotNull @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
-        @NotNull @JsonProperty("participantCurrencyId") Long participantCurrencyId,
-        @NotBlank @JsonProperty("dfspId") String dfspId,
+        @NotNull @Positive @JsonProperty("thresholdConfigurationId") Long thresholdConfigurationId,
+        @NotNull @Positive @JsonProperty("participantCurrencyId") Long participantCurrencyId,
         @NotBlank @JsonProperty("currency") String currency,
-        @NotNull  @JsonProperty("visualConfig") BigDecimal visualConfig,
-        @NotNull @JsonProperty("ndcConfig") BigDecimal ndcConfig
+        @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
+        @JsonProperty("visualConfig") BigDecimal visualConfig,
+        @NotNull @DecimalMin("0.0") @DecimalMax("100.0")
+        @JsonProperty("ndcConfig") BigDecimal ndcConfig
     ) { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -92,4 +93,3 @@ public class CreateThresholdDetailController {
         @JsonProperty("thresholdDetailId") Long thresholdDetailId
     ) { }
 }
-

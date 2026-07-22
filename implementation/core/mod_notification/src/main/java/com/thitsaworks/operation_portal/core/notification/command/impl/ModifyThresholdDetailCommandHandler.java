@@ -41,10 +41,30 @@ public class ModifyThresholdDetailCommandHandler implements ModifyThresholdDetai
                                                   "THRESHOLD_DETAIL_NOT_FOUND",
                                                   "Threshold detail was not found.")));
 
+        String currency = ThresholdDetail.normalizeCurrency(input.currency());
+
+        if (this.thresholdDetailRepository
+                .existsByThresholdConfigurationIdAndCurrencyAndThresholdDetailIdNot(
+                    detail.getThresholdConfigurationId(), currency, detail.getThresholdDetailId())) {
+
+            throw new InputException(
+                new ErrorMessage(
+                    "THRESHOLD_DETAIL_CURRENCY_ALREADY_EXISTS",
+                    "Threshold detail already exists for this configuration and currency."));
+        }
+
+        if (this.thresholdDetailRepository.existsByParticipantCurrencyIdAndThresholdDetailIdNot(
+            input.participantCurrencyId(), detail.getThresholdDetailId())) {
+
+            throw new InputException(
+                new ErrorMessage(
+                    "THRESHOLD_DETAIL_PARTICIPANT_CURRENCY_ALREADY_EXISTS",
+                    "Threshold detail already exists for this participant currency."));
+        }
+
         detail.update(
             input.participantCurrencyId(),
-            input.dfspId(),
-            input.currency(),
+            currency,
             input.visualConfig(),
             input.ndcConfig(),
             input.status(),

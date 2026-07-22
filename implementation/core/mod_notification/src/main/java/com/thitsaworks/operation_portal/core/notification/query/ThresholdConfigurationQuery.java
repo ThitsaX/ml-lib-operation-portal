@@ -17,6 +17,7 @@ package com.thitsaworks.operation_portal.core.notification.query;
 
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
+import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,8 @@ import java.util.Optional;
 public interface ThresholdConfigurationQuery {
 
     List<ThresholdConfigurationData> getAll();
+
+    Optional<ThresholdConfigurationData> get(ThresholdConfigurationId thresholdConfigurationId);
 
     Optional<ThresholdConfigurationData> getSchemeConfiguration();
 

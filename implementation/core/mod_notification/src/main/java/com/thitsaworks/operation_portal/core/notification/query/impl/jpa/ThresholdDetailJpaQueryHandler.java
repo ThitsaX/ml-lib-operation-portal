@@ -57,13 +57,13 @@ public class ThresholdDetailJpaQueryHandler implements ThresholdDetailQuery {
 
         if (status != null) {
             return this.thresholdDetailRepository
-                       .findAllByStatusOrderByDfspIdAscCurrencyAsc(status)
+                       .findAllByStatusOrderByThresholdConfigurationIdAscCurrencyAsc(status)
                        .stream()
                        .map(ThresholdDetailData::new)
                        .toList();
         }
 
-        return this.thresholdDetailRepository.findAllByOrderByDfspIdAscCurrencyAsc()
+        return this.thresholdDetailRepository.findAllByOrderByThresholdConfigurationIdAscCurrencyAsc()
                                              .stream()
                                              .map(ThresholdDetailData::new)
                                              .toList();

@@ -72,7 +72,6 @@ public class GetThresholdDetailHandler
             data.thresholdDetailId().getEntityId(),
             data.thresholdConfigurationId().getEntityId(),
             data.participantCurrencyId(),
-            data.dfspId(),
             data.currency(),
             data.visualConfig(),
             data.ndcConfig(),

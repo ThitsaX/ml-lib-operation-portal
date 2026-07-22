@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Objects;
 
 @Entity
@@ -89,7 +90,7 @@ public class ThresholdDetail {
         this.thresholdConfigurationId = Objects.requireNonNull(
             thresholdConfigurationId, "thresholdConfigurationId is required");
         this.participantCurrencyId = participantCurrencyId;
-        this.currency = currency;
+        this.currency = normalizeCurrency(currency);
         this.visualConfig = visualConfig;
         this.ndcConfig = ndcConfig;
         this.status = true;
@@ -106,7 +107,7 @@ public class ThresholdDetail {
         validate(participantCurrencyId, currency, visualConfig, ndcConfig);
 
         this.participantCurrencyId = participantCurrencyId;
-        this.currency = currency;
+        this.currency = normalizeCurrency(currency);
         this.visualConfig = visualConfig;
         this.ndcConfig = ndcConfig;
         this.status = status;
@@ -128,7 +129,7 @@ public class ThresholdDetail {
             throw new IllegalArgumentException("participantCurrencyId must be greater than zero");
         }
 
-        requireText(currency, "currency");
+        normalizeCurrency(currency);
         validatePercentage(visualConfig, "visualConfig");
         validatePercentage(ndcConfig, "ndcConfig");
 
@@ -153,6 +154,11 @@ public class ThresholdDetail {
         }
 
         return value;
+    }
+
+    public static String normalizeCurrency(String currency) {
+
+        return requireText(currency, "currency").trim().toUpperCase(Locale.ROOT);
     }
 
     @PrePersist

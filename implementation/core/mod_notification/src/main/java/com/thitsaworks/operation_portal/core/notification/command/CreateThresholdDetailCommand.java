@@ -24,7 +24,6 @@ public interface CreateThresholdDetailCommand {
 
     record Input(ThresholdConfigurationId thresholdConfigurationId,
                  Long participantCurrencyId,
-                 String dfspId,
                  String currency,
                  BigDecimal visualConfig,
                  BigDecimal ndcConfig,

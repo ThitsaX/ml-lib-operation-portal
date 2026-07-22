@@ -16,6 +16,7 @@
 package com.thitsaworks.operation_portal.core.notification.query.impl.jpa;
 
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdGateDecision;
+import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreReadTransactional;
@@ -44,6 +45,13 @@ public class ThresholdConfigurationJpaQueryHandler implements ThresholdConfigura
                                                     .sorted(Comparator.comparing(config -> config.getId().getId()))
                                                     .map(ThresholdConfigurationData::new)
                                                     .toList();
+    }
+
+    @Override
+    public Optional<ThresholdConfigurationData> get(ThresholdConfigurationId thresholdConfigurationId) {
+
+        return this.thresholdConfigurationRepository.findById(thresholdConfigurationId)
+                                                    .map(ThresholdConfigurationData::new);
     }
 
     @Override
