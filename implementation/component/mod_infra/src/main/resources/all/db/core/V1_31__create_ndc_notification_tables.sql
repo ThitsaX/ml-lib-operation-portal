@@ -50,8 +50,7 @@ CREATE INDEX idx_threshold_config_gate
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_threshold_state (
     id BIGINT NOT NULL,
-    participant_name VARCHAR(100) NOT NULL,
-    currency VARCHAR(100) NOT NULL,
+    participant_ndc_id BIGINT NOT NULL,
     current_state VARCHAR(20) NOT NULL DEFAULT 'SAFE',
     breach_cycle_no BIGINT NOT NULL DEFAULT 0,
     last_evaluated_balance DECIMAL(18,4) NULL,
@@ -63,8 +62,11 @@ CREATE TABLE IF NOT EXISTS tbl_ndc_threshold_state (
     updated_at TIMESTAMP NULL,
     updated_by VARCHAR(100) NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uk_ndc_threshold_state_participant_currency
-        UNIQUE (participant_name, currency),
+    CONSTRAINT uk_ndc_threshold_state_participant
+        UNIQUE (participant_ndc_id),
+    CONSTRAINT fk_ndc_state_participant_ndc
+        FOREIGN KEY (participant_ndc_id)
+        REFERENCES tbl_participant_ndc (participant_ndc_id),
     CONSTRAINT chk_ndc_threshold_state
         CHECK (current_state IN ('SAFE', 'BREACHED')),
     CONSTRAINT chk_ndc_breach_cycle
@@ -76,14 +78,14 @@ CREATE INDEX idx_ndc_state_current_state
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_alert_event (
     id BIGINT NOT NULL,
+    participant_ndc_id BIGINT NOT NULL,
     participant_name VARCHAR(100) NOT NULL,
     currency VARCHAR(100) NOT NULL,
     breach_cycle_no BIGINT NOT NULL,
     previous_state VARCHAR(20) NOT NULL,
     current_state VARCHAR(20) NOT NULL,
     threshold_percent DECIMAL(7,4) NOT NULL,
-    current_position DECIMAL(18,4) NOT NULL,
-    ndc_limit DECIMAL(18,4) NOT NULL,
+    current_balance DECIMAL(18,4) NOT NULL,
     current_ndc_used DECIMAL(7,4) NOT NULL,
     event_message TEXT NULL,
     event_time TIMESTAMP NOT NULL,
@@ -93,7 +95,10 @@ CREATE TABLE IF NOT EXISTS tbl_ndc_alert_event (
     updated_by VARCHAR(100) NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_ndc_alert_breach_cycle
-        UNIQUE (participant_name, currency, breach_cycle_no),
+        UNIQUE (participant_ndc_id, breach_cycle_no),
+    CONSTRAINT fk_ndc_alert_participant_ndc
+        FOREIGN KEY (participant_ndc_id)
+        REFERENCES tbl_participant_ndc (participant_ndc_id),
     CONSTRAINT chk_ndc_alert_previous_state
         CHECK (previous_state IN ('SAFE', 'BREACHED')),
     CONSTRAINT chk_ndc_alert_current_state
@@ -108,12 +113,13 @@ CREATE TABLE IF NOT EXISTS tbl_ndc_alert_event (
         CHECK (current_ndc_used >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_ndc_alert_participant_currency_time
-    ON tbl_ndc_alert_event (participant_name, currency, event_time);
+CREATE INDEX idx_ndc_alert_participant_ndc_time
+    ON tbl_ndc_alert_event (participant_ndc_id, event_time);
 
 CREATE TABLE IF NOT EXISTS tbl_ndc_notification_dispatch_log (
     id BIGINT NOT NULL,
     alert_event_id BIGINT NOT NULL,
+    participant_ndc_id BIGINT NOT NULL,
     recipient_type VARCHAR(20) NOT NULL,
     recipient_user_id VARCHAR(100) NULL,
     recipient_name VARCHAR(100) NULL,
@@ -133,6 +139,9 @@ CREATE TABLE IF NOT EXISTS tbl_ndc_notification_dispatch_log (
     CONSTRAINT fk_ndc_dispatch_alert
         FOREIGN KEY (alert_event_id)
         REFERENCES tbl_ndc_alert_event (id),
+    CONSTRAINT fk_ndc_dispatch_participant_ndc
+        FOREIGN KEY (participant_ndc_id)
+        REFERENCES tbl_participant_ndc (participant_ndc_id),
     CONSTRAINT chk_ndc_dispatch_recipient_type
         CHECK (recipient_type IN ('HUB', 'DFSP')),
     CONSTRAINT chk_ndc_dispatch_status
@@ -146,3 +155,6 @@ CREATE INDEX idx_ndc_dispatch_retry
 
 CREATE INDEX idx_ndc_dispatch_alert_status
     ON tbl_ndc_notification_dispatch_log (alert_event_id, delivery_status);
+
+CREATE INDEX idx_ndc_dispatch_participant_status
+    ON tbl_ndc_notification_dispatch_log (participant_ndc_id, delivery_status);
