@@ -10,7 +10,7 @@ ALTER TABLE tbl_ndc_threshold_state
 UPDATE tbl_ndc_threshold_state state
 JOIN tbl_participant_ndc participant_ndc
     ON participant_ndc.participant_ndc_id = state.participant_ndc_id
-SET state.participant_name = participant_ndc.dfsp_code,
+SET state.participant_name = participant_ndc.participant_name,
     state.currency = participant_ndc.currency;
 
 ALTER TABLE tbl_ndc_threshold_state
