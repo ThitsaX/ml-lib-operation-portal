@@ -17,6 +17,7 @@ package com.thitsaworks.operation_portal.core.revenue_party.command;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyStatus;
 import com.thitsaworks.operation_portal.core.revenue_party.exception.RevenuePartyException;
 
 public interface CreateRevenuePartyCommand {
@@ -25,6 +26,7 @@ public interface CreateRevenuePartyCommand {
                  String partyName,
                  String partyType,
                  String description,
+                 RevenuePartyStatus status,
                  UserId createdBy) {}
 
     record Output(boolean created, RevenuePartyId revenuePartyId) {}

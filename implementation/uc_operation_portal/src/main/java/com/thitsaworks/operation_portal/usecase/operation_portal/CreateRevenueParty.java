@@ -16,6 +16,7 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
 
@@ -24,7 +25,8 @@ public interface CreateRevenueParty extends UseCase<CreateRevenueParty.Input, Cr
     record Input(String partyCode,
                  String partyName,
                  String partyType,
-                 String description) { }
+                 String description,
+                 RevenuePartyStatus status) { }
 
     record Output(boolean created,
                   RevenuePartyId revenuePartyId,

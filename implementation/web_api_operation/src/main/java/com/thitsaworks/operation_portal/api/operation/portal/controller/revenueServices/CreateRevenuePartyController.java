@@ -19,6 +19,7 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.revenue
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyStatus;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueParty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -51,7 +52,8 @@ public class CreateRevenuePartyController {
 
         CreateRevenueParty.Output output = this.createRevenueParty.execute(
             new CreateRevenueParty.Input(request.partyCode(), request.partyName(),
-                request.partyType(), request.description()));
+                request.partyType(), request.description(),
+                RevenuePartyStatus.valueOf(request.status().toUpperCase())));
 
         Response response = new Response(
             output.created(), output.revenuePartyId().getId().toString());
@@ -67,7 +69,8 @@ public class CreateRevenuePartyController {
     public record Request(@NotBlank @JsonProperty("partyCode") String partyCode,
                           @NotBlank @JsonProperty("partyName") String partyName,
                           @NotBlank @JsonProperty("partyType") String partyType,
-                          @JsonProperty("description") String description) implements Serializable {
+                          @JsonProperty("description") String description,
+                          @NotBlank @JsonProperty("status") String status) implements Serializable {
 
     }
 

@@ -15,15 +15,11 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
-import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
-import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
+import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
@@ -32,21 +28,16 @@ import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenueParty
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_PARTY)
 public class GetRevenuePartyByIdHandler
-    extends OperationPortalAuditableUseCase<GetRevenuePartyById.Input, GetRevenuePartyById.Output>
+    extends OperationPortalUseCase<GetRevenuePartyById.Input, GetRevenuePartyById.Output>
     implements GetRevenuePartyById {
 
     private final RevenuePartyQuery revenuePartyQuery;
 
-    public GetRevenuePartyByIdHandler(CreateInputAuditCommand createInputAuditCommand,
-                                      CreateOutputAuditCommand createOutputAuditCommand,
-                                      CreateExceptionAuditCommand createExceptionAuditCommand,
-                                      ObjectMapper objectMapper,
-                                      PrincipalCache principalCache,
+    public GetRevenuePartyByIdHandler(PrincipalCache principalCache,
                                       ActionAuthorizationManager actionAuthorizationManager,
                                       RevenuePartyQuery revenuePartyQuery) {
 
-        super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
-              objectMapper, principalCache, actionAuthorizationManager);
+        super(principalCache, actionAuthorizationManager);
 
         this.revenuePartyQuery = revenuePartyQuery;
     }
