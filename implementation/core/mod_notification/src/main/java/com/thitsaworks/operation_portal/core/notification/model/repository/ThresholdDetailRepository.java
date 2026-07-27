@@ -17,8 +17,12 @@ package com.thitsaworks.operation_portal.core.notification.model.repository;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdDetailId;
+import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
+import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.stereotype.Repository;
 
@@ -52,5 +56,31 @@ public interface ThresholdDetailRepository
         ThresholdConfigurationId thresholdConfigurationId,
         String currency,
         ThresholdDetailId thresholdDetailId);
+
+    @Query("SELECT td FROM ThresholdDetail td " +
+           "JOIN ThresholdConfiguration tc ON td.thresholdConfigurationId = tc.thresholdConfigurationId " +
+           "WHERE tc.scopeType = :scopeType " +
+           "AND tc.dfspId = :dfspId " +
+           "AND tc.thresholdEnabled = :thresholdEnabled " +
+           "AND tc.status = :configStatus " +
+           "AND td.status = :detailStatus")
+    List<ThresholdDetail> findDfspThresholdDetails(
+        @Param("scopeType") ThresholdScopeType scopeType,
+        @Param("dfspId") String dfspId,
+        @Param("thresholdEnabled") boolean thresholdEnabled,
+        @Param("configStatus") NdcConfigurationStatus configStatus,
+        @Param("detailStatus") boolean detailStatus);
+
+    @Query("SELECT td, tc.dfspId FROM ThresholdDetail td " +
+           "JOIN ThresholdConfiguration tc ON td.thresholdConfigurationId = tc.thresholdConfigurationId " +
+           "WHERE tc.scopeType = :scopeType " +
+           "AND tc.thresholdEnabled = :thresholdEnabled " +
+           "AND tc.status = :configStatus " +
+           "AND td.status = :detailStatus")
+    List<Object[]> findAllDfspThresholdDetails(
+        @Param("scopeType") ThresholdScopeType scopeType,
+        @Param("thresholdEnabled") boolean thresholdEnabled,
+        @Param("configStatus") NdcConfigurationStatus configStatus,
+        @Param("detailStatus") boolean detailStatus);
 
 }

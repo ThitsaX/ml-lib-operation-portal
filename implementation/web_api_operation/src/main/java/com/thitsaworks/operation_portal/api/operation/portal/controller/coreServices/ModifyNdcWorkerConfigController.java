@@ -27,9 +27,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZoneId;
@@ -40,8 +40,8 @@ public class ModifyNdcWorkerConfigController {
 
     private final ModifySchedulerConfig modifySchedulerConfig;
 
-    @PutMapping("/secured/ndc/worker-config/{id}")
-    public ResponseEntity<Response> execute(@PathVariable("id") String id,
+    @PutMapping("/secured/ndc/worker-config")
+    public ResponseEntity<Response> execute(@RequestParam("schedulerConfigId") String id,
                                             @Valid @RequestBody Request request) throws DomainException {
 
         NdcWorkerConfigRequestValidator.Values values = NdcWorkerConfigRequestValidator.validate(request.runEvery());

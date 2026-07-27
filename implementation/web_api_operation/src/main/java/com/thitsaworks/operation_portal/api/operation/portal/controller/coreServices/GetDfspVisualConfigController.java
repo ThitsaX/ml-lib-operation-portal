@@ -19,55 +19,64 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.usecase.operation_portal.RemoveThresholdDetail;
+import com.thitsaworks.operation_portal.usecase.operation_portal.GetDfspVisualConfig;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-public class RemoveThresholdDetailController {
+public class GetDfspVisualConfigController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RemoveThresholdDetailController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GetDfspVisualConfigController.class);
 
-    private final RemoveThresholdDetail removeThresholdDetail;
+    private final GetDfspVisualConfig getDfspVisualConfig;
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/secured/removeThresholdDetails")
-    public ResponseEntity<Response> execute(@RequestParam("id") String id)
+    @GetMapping("/secured/threshold/dfsp")
+    public ResponseEntity<Response> execute(@RequestParam("dfspId") String dfspId)
         throws DomainException, JsonProcessingException {
 
-        LOG.info("Remove NDC Threshold Detail Request : id=[{}]", id);
+        LOG.info("Get DFSP Threshold Details Request : dfspId=[{}]", dfspId);
 
-        UserContext userContext =
-            (UserContext) SecurityContextHolder.getContext()
-                                               .getAuthentication()
-                                               .getDetails();
+        GetDfspVisualConfig.Output output =
+            this.getDfspVisualConfig.execute(new GetDfspVisualConfig.Input(dfspId));
 
-        RemoveThresholdDetail.Output output = this.removeThresholdDetail.execute(
-            new RemoveThresholdDetail.Input(Long.parseLong(id), userContext.userId().toString()));
+        var response = new Response(
+            output.thresholdDetails().items().stream()
+                .map(item -> new ThresholdDetailItem(
+                    item.dfspId(),
+                    item.currency(),
+                    item.visualConfig()
+                ))
+                .toList()
+        );
 
-        var response = new Response(String.valueOf(output.thresholdDetailId().getEntityId()), output.removed());
-
-        LOG.info("Remove NDC Threshold Detail Response : [{}]", this.objectMapper.writeValueAsString(response));
+        LOG.info("Get DFSP Threshold Details Response : [{}]",
+                 this.objectMapper.writeValueAsString(response));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-        @JsonProperty("thresholdDetailId") String thresholdDetailId,
-        @JsonProperty("removed") boolean removed
+        @JsonProperty("thresholdDetails") List<ThresholdDetailItem> thresholdDetails
+    ) implements Serializable { }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ThresholdDetailItem(
+        @JsonProperty("dfspId") String dfspId,
+        @JsonProperty("currency") String currency,
+        @JsonProperty("visualConfig") String visualConfig
     ) implements Serializable { }
 }
