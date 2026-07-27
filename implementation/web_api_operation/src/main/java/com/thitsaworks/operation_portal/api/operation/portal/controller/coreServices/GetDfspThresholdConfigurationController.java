@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+
 @RestController
 @RequiredArgsConstructor
 public class GetDfspThresholdConfigurationController {
@@ -56,7 +58,9 @@ public class GetDfspThresholdConfigurationController {
                 output.dfspId(),
                 output.thresholdEnabled(),
                 output.status().toString(),
+                output.createdAt(),
                 output.createdBy(),
+                output.updatedAt(),
                 output.updatedBy()
         );
 
@@ -74,7 +78,9 @@ public class GetDfspThresholdConfigurationController {
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
-            @JsonProperty("createBy") String createdBy,
+            @JsonProperty("createdAt") Instant createdAt,
+            @JsonProperty("createdBy") String createdBy,
+            @JsonProperty("updatedAt") Instant updatedAt,
             @JsonProperty("updatedBy") String updatedBy
     ) { }
 

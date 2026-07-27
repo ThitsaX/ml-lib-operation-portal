@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -45,9 +45,9 @@ public class GetNdcDeliveryLogListController {
         @RequestParam(value = "currency", required = false) String currency,
         @RequestParam(value = "deliveryStatus", required = false) NdcDeliveryStatus deliveryStatus,
         @RequestParam(value = "from", required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
         @RequestParam(value = "to", required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) throws DomainException {
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) throws DomainException {
 
         List<NdcNotificationDispatchLogData> result = this.getNdcDeliveryLogList.execute(
             new GetNdcDeliveryLogList.Input(participantName,

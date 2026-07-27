@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -64,7 +65,11 @@ public class GetThresholdDetailListController {
                 thresholdDetail.currency(),
                 thresholdDetail.visualConfig(),
                 thresholdDetail.ndcConfig(),
-                thresholdDetail.status()
+                thresholdDetail.status(),
+                thresholdDetail.createdAt(),
+                thresholdDetail.createdBy(),
+                thresholdDetail.updatedAt(),
+                thresholdDetail.updatedBy()
             )).toList());
 
         LOG.info("Get NDC Threshold Detail List Response : [{}]", this.objectMapper.writeValueAsString(response));
@@ -84,6 +89,10 @@ public class GetThresholdDetailListController {
         @JsonProperty("currency") String currency,
         @JsonProperty("visualConfig") BigDecimal visualConfig,
         @JsonProperty("ndcConfig") BigDecimal ndcConfig,
-        @JsonProperty("status") Boolean status
+        @JsonProperty("status") Boolean status,
+        @JsonProperty("createdAt") Instant createdAt,
+        @JsonProperty("createdBy") String createdBy,
+        @JsonProperty("updatedAt") Instant updatedAt,
+        @JsonProperty("updatedBy") String updatedBy
     ) { }
 }

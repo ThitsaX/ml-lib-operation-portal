@@ -29,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+
 @RestController
 @RequiredArgsConstructor
 public class GetSchemeThresholdConfigurationController {
@@ -54,7 +56,9 @@ public class GetSchemeThresholdConfigurationController {
                 output.dfspId(),
                 output.thresholdEnabled(),
                 output.status().toString(),
+                output.createdAt(),
                 output.createdBy(),
+                output.updatedAt(),
                 output.updatedBy()
         );
 
@@ -71,7 +75,9 @@ public class GetSchemeThresholdConfigurationController {
             @JsonProperty("dfspId") String dfspId,
             @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
             @JsonProperty("ndcConfigurationStatus") String ndcConfigurationStatus,
+            @JsonProperty("createdAt") Instant createdAt,
             @JsonProperty("createdBy") String createdBy,
+            @JsonProperty("updatedAt") Instant updatedAt,
             @JsonProperty("updatedBy") String updatedBy
             ) { }
 

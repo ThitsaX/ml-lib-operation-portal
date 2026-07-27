@@ -17,21 +17,19 @@ package com.thitsaworks.operation_portal.core.notification.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdDetailId;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -39,7 +37,7 @@ import java.util.Objects;
 @Table(name = "tbl_threshold_detail")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ThresholdDetail {
+public class ThresholdDetail extends JpaEntity<ThresholdDetailId> {
 
     private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
 
@@ -62,14 +60,8 @@ public class ThresholdDetail {
     @Column(name = "status", nullable = false)
     private boolean status;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     @Column(name = "created_by", nullable = false, updatable = false, length = 100)
     private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
@@ -149,23 +141,7 @@ public class ThresholdDetail {
         return requireText(currency, "currency").trim().toUpperCase(Locale.ROOT);
     }
 
-    @PrePersist
-    private void onCreate() {
-
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
-        if (this.updatedAt == null) {
-            this.updatedAt = this.createdAt;
-        }
-    }
-
-    @PreUpdate
-    private void onUpdate() {
-
-        this.updatedAt = LocalDateTime.now();
-    }
-
+    @Override
     public ThresholdDetailId getId() {
 
         return this.thresholdDetailId;

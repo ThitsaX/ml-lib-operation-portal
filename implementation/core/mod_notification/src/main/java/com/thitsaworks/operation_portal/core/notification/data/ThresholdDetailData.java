@@ -20,7 +20,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.ThresholdDet
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ThresholdDetailData(
     ThresholdDetailId thresholdDetailId,
@@ -29,9 +29,9 @@ public record ThresholdDetailData(
     BigDecimal visualConfig,
     BigDecimal ndcConfig,
     boolean status,
-    LocalDateTime createdAt,
+    Instant createdAt,
     String createdBy,
-    LocalDateTime updatedAt,
+    Instant updatedAt,
     String updatedBy
 ) {
 

@@ -28,6 +28,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +81,6 @@ public interface NdcNotificationDispatchLogRepository
     List<Object[]> search(@Param("participantName") String participantName,
                           @Param("currency") String currency,
                           @Param("deliveryStatus") NdcDeliveryStatus deliveryStatus,
-                          @Param("fromTime") LocalDateTime from,
-                          @Param("toTime") LocalDateTime to);
+                          @Param("fromTime") Instant from,
+                          @Param("toTime") Instant to);
 }

@@ -19,7 +19,7 @@ import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.core.notification.data.NdcNotificationDispatchLogData;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public interface GetNdcDeliveryLogList
@@ -28,8 +28,8 @@ public interface GetNdcDeliveryLogList
     record Input(String participantName,
                  String currency,
                  NdcDeliveryStatus deliveryStatus,
-                 LocalDateTime from,
-                 LocalDateTime to) {
+                 Instant from,
+                 Instant to) {
     }
 
     record Output(List<NdcNotificationDispatchLogData> deliveryLogs) {

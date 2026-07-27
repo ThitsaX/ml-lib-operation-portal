@@ -59,7 +59,9 @@ public class GetDfspThresholdConfigurationHandler
                 thresholdConfiguration.get().dfspId(),
                 thresholdConfiguration.get().thresholdEnabled(),
                 thresholdConfiguration.get().status(),
+                thresholdConfiguration.get().createdAt(),
                 thresholdConfiguration.get().createdBy(),
+                thresholdConfiguration.get().updatedAt(),
                 thresholdConfiguration.get().updatedBy()
         );
     }

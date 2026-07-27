@@ -18,7 +18,7 @@ package com.thitsaworks.operation_portal.usecase.operation_portal;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public interface GetThresholdDetail
     extends UseCase<GetThresholdDetail.Input, GetThresholdDetail.Output> {
@@ -33,8 +33,8 @@ public interface GetThresholdDetail
                            BigDecimal visualConfig,
                            BigDecimal ndcConfig,
                            boolean status,
-                           LocalDateTime createdAt,
+                           Instant createdAt,
                            String createdBy,
-                           LocalDateTime updatedAt,
+                           Instant updatedAt,
                            String updatedBy) { }
 }

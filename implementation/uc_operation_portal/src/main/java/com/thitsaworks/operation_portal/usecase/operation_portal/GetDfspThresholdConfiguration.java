@@ -20,6 +20,8 @@ import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationSt
 import com.thitsaworks.operation_portal.component.common.type.ThresholdScopeType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
+import java.time.Instant;
+
 public interface GetDfspThresholdConfiguration
     extends UseCase<GetDfspThresholdConfiguration.Input, GetDfspThresholdConfiguration.Output> {
 
@@ -31,7 +33,9 @@ public interface GetDfspThresholdConfiguration
             String dfspId,
             boolean thresholdEnabled,
             NdcConfigurationStatus status,
+            Instant createdAt,
             String createdBy,
+            Instant updatedAt,
             String updatedBy
     ) { }
 

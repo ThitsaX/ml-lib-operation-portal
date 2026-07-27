@@ -58,7 +58,9 @@ public class GetThresholdConfigurationListHandler
               tc.dfspId(),
               tc.thresholdEnabled(),
               tc.status(),
+              tc.createdAt(),
               tc.createdBy(),
+              tc.updatedAt(),
               tc.updatedBy()
       )).toList());
     }

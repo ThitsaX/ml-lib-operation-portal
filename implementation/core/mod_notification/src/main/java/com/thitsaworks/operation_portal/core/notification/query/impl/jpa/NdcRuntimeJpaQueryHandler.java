@@ -31,6 +31,7 @@ import com.thitsaworks.operation_portal.core.notification.query.NdcRuntimeQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -84,8 +85,8 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
     public List<NdcNotificationDispatchLogData> getDispatchLogs(String participantName,
                                                                 String currency,
                                                                 NdcDeliveryStatus deliveryStatus,
-                                                                LocalDateTime from,
-                                                                LocalDateTime to) {
+                                                                Instant from,
+                                                                Instant to) {
 
         return this.ndcNotificationDispatchLogRepository.search(participantName, currency, deliveryStatus, from, to)
                                                         .stream()
@@ -127,6 +128,7 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
             event.getCurrentNdcUsed(),
             event.getEventMessage(),
             event.getEventTime(),
-            event.getCreatedAt());
+            event.getCreatedAt(),
+            event.getUpdatedAt());
     }
 }
