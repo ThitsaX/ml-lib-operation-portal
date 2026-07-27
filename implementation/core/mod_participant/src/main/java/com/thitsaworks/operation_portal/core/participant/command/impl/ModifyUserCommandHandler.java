@@ -58,8 +58,7 @@ public class ModifyUserCommandHandler implements ModifyUserCommand {
                     .firstName(input.firstName())
                     .lastName(input.lastName())
                     .participant(participant)
-                    .jobTitle(input.jobTitle())
-                    .allowNotification(input.allowNotification()));
+                    .jobTitle(input.jobTitle()));
 
         return new ModifyUserCommand.Output(user.getUserId(), true);
     }

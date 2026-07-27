@@ -118,7 +118,7 @@ public class ModifyUserHandler
         ModifyUserCommand.Output output = this.modifyUserCommand.execute(
             new ModifyUserCommand.Input(
                 userId, input.name(), input.firstName(), input.lastName(), input.jobTitle(),
-                participantId, input.email(), input.allowNotification()));
+                participantId, input.email()));
 
         var principalId = new PrincipalId(userId.getId());
 

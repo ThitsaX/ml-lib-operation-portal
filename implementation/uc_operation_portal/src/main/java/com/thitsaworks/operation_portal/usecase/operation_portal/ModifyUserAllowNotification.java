@@ -15,28 +15,16 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
-import com.thitsaworks.operation_portal.component.common.identifier.RoleId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
-import com.thitsaworks.operation_portal.component.common.type.Email;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-import java.util.List;
-
-public interface ModifyUser
-    extends UseCase<ModifyUser.Input, ModifyUser.Output> {
+public interface ModifyUserAllowNotification
+    extends UseCase<ModifyUserAllowNotification.Input, ModifyUserAllowNotification.Output> {
 
     record Input(UserId userId,
-                 String name,
-                 String firstName,
-                 String lastName,
-                 ParticipantId participantId,
-                 String jobTitle,
-                 Email email,
-                 List<RoleId> roleIdList) { }
+                 boolean allowNotification) { }
 
     record Output(boolean modified,
-                  UserId userId
-    ) { }
+                  UserId userId) { }
 
 }
