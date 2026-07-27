@@ -50,6 +50,8 @@ public enum ActionCategory {
 
     REVENUE_PARTY("Revenue Party"),
 
+    REVENUE_TRANSACTION("Revenue Transaction"),
+
     SYSTEM_JOBS_AND_SCHEDULED_EXECUTORS("Scheduled Job Executors / System Jobs");
 
     private final String displayName;
