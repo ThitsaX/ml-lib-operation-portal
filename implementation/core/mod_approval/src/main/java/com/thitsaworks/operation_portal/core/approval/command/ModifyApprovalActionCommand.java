@@ -26,7 +26,17 @@ public interface ModifyApprovalActionCommand {
 
     record Input(ApprovalRequestId approvalRequestId,
                  ApprovalActionType action,
-                 UserId respondedBy) { }
+                 UserId respondedBy,
+                 String reason) {
+
+        public Input(ApprovalRequestId approvalRequestId,
+                     ApprovalActionType action,
+                     UserId respondedBy) {
+
+            this(approvalRequestId, action, respondedBy, null);
+        }
+
+    }
 
     record Output(ApprovalRequestId approvalRequestId) { }
 

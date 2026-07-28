@@ -96,7 +96,7 @@ public class GetPendingApprovalListHandler
         }
 
         return new Output(requests.stream().map(request -> new Output.PendingApproval(
-            request.getApprovalRequestId(), request.getFundInOutAction(),
+            request.getApprovalRequestId(), request.getRequestedAction(),
             request.getParticipantName(), request.getCurrency(),
             this.normalize(request.getAmount()),
             this.utility.getEmail(new UserId(request.getRequestedBy().getId())),

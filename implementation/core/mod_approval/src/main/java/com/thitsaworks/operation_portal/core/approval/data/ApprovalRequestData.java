@@ -35,7 +35,7 @@ public class ApprovalRequestData {
 
     private ApprovalRequestId approvalRequestId;
 
-    private String fundInOutAction;
+    private String requestedAction;
 
     private String participantName;
 
@@ -59,6 +59,8 @@ public class ApprovalRequestData {
 
     private Instant respondedDtm;
 
+    private String reason;
+
     private List<ApprovalRequestFieldDetailData> fieldDetails = List.of();
 
     public ApprovalRequestData() { }
@@ -72,7 +74,7 @@ public class ApprovalRequestData {
                                List<ApprovalRequestFieldDetailData> fieldDetails) {
 
         this.approvalRequestId = request.getApprovalRequestId();
-        this.fundInOutAction = request.getRequestedAction();
+        this.requestedAction = request.getRequestedAction();
         this.participantName = request.getParticipantName();
         this.currency = request.getParticipantCurrency();
         this.participantSettlementCurrencyId = request.getParticipantSettlementCurrencyId();
@@ -84,6 +86,7 @@ public class ApprovalRequestData {
         this.action = request.getAction();
         this.requestCategory = request.getRequestCategory();
         this.respondedDtm = request.getRespondedDtm();
+        this.reason = request.getReason();
         this.fieldDetails = fieldDetails == null ? List.of() : fieldDetails;
     }
 

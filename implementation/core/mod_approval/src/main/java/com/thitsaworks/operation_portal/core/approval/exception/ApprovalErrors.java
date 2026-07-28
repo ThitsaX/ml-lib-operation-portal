@@ -27,6 +27,7 @@ public class ApprovalErrors {
     public static final ErrorMessage INVALID_AMOUNT = new ErrorMessage("INVALID_AMOUNT", "Amount is required and must NOT be blank or empty.");
     public static final ErrorMessage INVALID_REQUESTED_BY = new ErrorMessage("INVALID_REQUESTED_BY", "Requested By is required and must NOT be blank or empty.");
     public static final ErrorMessage INVALID_RESPONDED_BY = new ErrorMessage("INVALID_RESPONDED_BY", "Responded By is required and must NOT be blank or empty.");
+    public static final ErrorMessage INVALID_REASON = new ErrorMessage("INVALID_REASON", "Reason is required and must NOT be blank or empty.");
     public static final ErrorMessage INVALID_APPROVAL_TAB_CODE = new ErrorMessage("INVALID_APPROVAL_TAB_CODE", "Approval Tab Code is invalid : [{0}].");
 
     public static final ErrorMessage APPROVAL_REQUEST_NOT_FOUND = new ErrorMessage("APPROVAL_REQUEST_NOT_FOUND", "System cannot find the Approval Request with provided : [{0}].");

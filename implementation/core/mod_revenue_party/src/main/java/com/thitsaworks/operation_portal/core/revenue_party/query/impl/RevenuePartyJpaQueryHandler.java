@@ -43,6 +43,10 @@ public class RevenuePartyJpaQueryHandler implements RevenuePartyQuery {
                 .orElseThrow(() -> new RevenuePartyException(RevenuePartyErrors.REVENUE_PARTY_NOT_FOUND.format(id.toString())));
     }
     @Override
+    public Optional<RevenuePartyData> findById(RevenuePartyId id) {
+        return this.revenuePartyRepository.findById(id).map(RevenuePartyData::new);
+    }
+    @Override
     public Optional<RevenuePartyData> get(String partyCode) {
         return this.revenuePartyRepository.findByPartyCode(partyCode).map(RevenuePartyData::new);
     }

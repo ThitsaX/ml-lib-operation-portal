@@ -93,6 +93,9 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
     @Convert(converter = JpaInstantConverter.class)
     protected Instant respondedDtm;
 
+    @Column(name = "reason")
+    protected String reason;
+
     public ApprovalRequest(String requestedAction,
                            String participantName,
                            String participantCurrency,
@@ -216,6 +219,11 @@ public class ApprovalRequest extends JpaEntity<ApprovalRequestId> {
     public void requestCategory(String requestCategory) {
 
         this.requestCategory = requestCategory;
+    }
+
+    public void reason(String reason) {
+
+        this.reason = reason;
     }
 
     public void respondedDtm() {
