@@ -60,7 +60,8 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
             input.responsibleMinistryCode(), input.thirdPartyProviderCode(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
-            input.updatedBy(), input.effectiveDate(), input.respondedDate());
+            input.updatedBy(), input.effectiveDate(), input.effectiveTimezone(),
+            input.respondedDate());
 
         this.revenueConfigRepository.saveAndFlush(revenueConfig);
 

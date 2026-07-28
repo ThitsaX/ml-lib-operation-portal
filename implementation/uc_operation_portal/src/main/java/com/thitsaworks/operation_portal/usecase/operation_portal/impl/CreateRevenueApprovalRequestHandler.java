@@ -77,6 +77,8 @@ public class CreateRevenueApprovalRequestHandler
 
     private static final String EFFECTIVE_DATE_FIELD_KEY = "effective_date";
 
+    private static final String EFFECTIVE_TIMEZONE_FIELD_KEY = "effective_timezone";
+
     private static final String STATUS_FIELD_KEY = "status";
 
     private final CreateApprovalRequestByCategoryCommand createApprovalRequestByCategoryCommand;
@@ -226,9 +228,13 @@ public class CreateRevenueApprovalRequestHandler
                 String.valueOf(input.effectiveDate().getEpochSecond()), 6);
         }
 
+        this.createTextFieldDetail(
+            output, EFFECTIVE_TIMEZONE_FIELD_KEY, "Effective Timezone",
+            input.effectiveTimezone(), 7);
+
         this.createJsonFieldDetail(
             output, PERCENTAGES_FIELD_KEY, PERCENTAGES_FIELD_LABEL, null,
-            this.objectMapper.writeValueAsString(this.toPercentageJson(input.percentages())), 7);
+            this.objectMapper.writeValueAsString(this.toPercentageJson(input.percentages())), 8);
     }
 
     private void updateRequestDetails(CreateApprovalRequestByCategoryCommand.Output output,
@@ -268,8 +274,12 @@ public class CreateRevenueApprovalRequestHandler
             this.createChangedTextFieldDetail(
                 output, EFFECTIVE_DATE_FIELD_KEY, "Effective Date",
                 this.toNullableString(revenueConfig.effectiveDate()),
-                this.toNullableString(this.toNullableInstant(String.valueOf(input.effectiveDate()))), 6);
+                this.toNullableString(input.effectiveDate()), 6);
         }
+
+        this.createChangedTextFieldDetail(
+            output, EFFECTIVE_TIMEZONE_FIELD_KEY, "Effective Timezone",
+            revenueConfig.effectiveTimezone(), input.effectiveTimezone(), 7);
 
         this.createChangedJsonFieldDetail(output, input, revenueConfig);
     }

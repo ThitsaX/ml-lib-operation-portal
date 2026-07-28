@@ -84,6 +84,8 @@ public class ModifyRevenueApprovalActionHandler
 
     private static final String EFFECTIVE_DATE_FIELD_KEY = "effective_date";
 
+    private static final String EFFECTIVE_TIMEZONE_FIELD_KEY = "effective_timezone";
+
     private static final Comparator<RevenueConfigData> LATEST_UPDATED_REVENUE_CONFIG_FIRST = Comparator
                                                                                                  .comparing(
                                                                                                      ModifyRevenueApprovalActionHandler::updatedAtOrCreatedAt,
@@ -205,6 +207,7 @@ public class ModifyRevenueApprovalActionHandler
                 null), percentages.get(0), percentages.get(1), percentages.get(2),
             percentages.get(3), responseUserId, this.toNullableInstant(
             this.afterValueOrDefault(approvalRequestData, EFFECTIVE_DATE_FIELD_KEY, null)),
+            this.afterOrFieldValueOrDefault(approvalRequestData, EFFECTIVE_TIMEZONE_FIELD_KEY, null),
             RevenueConfigStatus.ACTIVE, respondedDate, true));
     }
 
@@ -220,6 +223,8 @@ public class ModifyRevenueApprovalActionHandler
             this.afterValueOrDefault(
                 approvalRequestData, EFFECTIVE_DATE_FIELD_KEY,
                 this.toNullableString(revenueConfig.effectiveDate())));
+        String effectiveTimezone = this.afterOrFieldValueOrDefault(
+            approvalRequestData, EFFECTIVE_TIMEZONE_FIELD_KEY, revenueConfig.effectiveTimezone());
 
         String taxCodeId = this.afterOrFieldValueOrDefault(
             approvalRequestData, TAX_CODE_ID_FIELD_KEY, revenueConfig.taxCodeId());
@@ -238,8 +243,7 @@ public class ModifyRevenueApprovalActionHandler
             approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
             revenueConfig.thirdPartyProviderCode()), percentages.get(0), percentages.get(1),
             percentages.get(2), percentages.get(3), responseUserId, effectiveDate,
-
-            RevenueConfigStatus.ACTIVE, respondedDate, false));
+            effectiveTimezone, RevenueConfigStatus.ACTIVE, respondedDate, false));
     }
 
     private List<BigDecimal> approvedPercentages(ApprovalRequestData approvalRequestData,

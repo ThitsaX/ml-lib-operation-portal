@@ -130,6 +130,11 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
     @Convert(converter = JpaInstantConverter.class)
     protected Instant effectiveDate;
 
+    @Column(
+        name = "effective_timezone",
+        length = 50)
+    protected String effectiveTimezone;
+
     @Column(name = "responded_date")
     @Convert(converter = JpaInstantConverter.class)
     protected Instant respondedDate;
@@ -145,6 +150,7 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                          BigDecimal sendingDfspPercentage,
                          UserId createdBy,
                          Instant effectiveDate,
+                         String effectiveTimezone,
                          RevenueConfigStatus status,
                          Instant respondedDate) {
 
@@ -161,6 +167,7 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         this.status(status == null ? RevenueConfigStatus.ACTIVE : status);
         this.createdBy = createdBy;
         this.effectiveDate(effectiveDate);
+        this.effectiveTimezone(effectiveTimezone);
         this.respondedDate(respondedDate);
     }
 
@@ -258,6 +265,12 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
         return this;
     }
 
+    public RevenueConfig effectiveTimezone(String effectiveTimezone) {
+
+        this.effectiveTimezone = effectiveTimezone;
+        return this;
+    }
+
     public RevenueConfig respondedDate(Instant respondedDate) {
 
         this.respondedDate = respondedDate;
@@ -275,6 +288,7 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                                 BigDecimal sendingDfspPercentage,
                                 UserId updatedBy,
                                 Instant effectiveDate,
+                                String effectiveTimezone,
                                 Instant respondedDate) {
 
         return this
@@ -289,6 +303,7 @@ public class RevenueConfig extends JpaEntity<RevenueConfigId> {
                    .sendingDfspPercentage(sendingDfspPercentage)
                    .updatedBy(updatedBy)
                    .effectiveDate(effectiveDate)
+                   .effectiveTimezone(effectiveTimezone)
                    .respondedDate(respondedDate);
     }
 

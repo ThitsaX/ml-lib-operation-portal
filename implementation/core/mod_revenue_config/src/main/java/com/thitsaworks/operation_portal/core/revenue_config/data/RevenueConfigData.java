@@ -41,6 +41,7 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
                                 UserId createdBy,
                                 UserId updatedBy,
                                 Instant effectiveDate,
+                                String effectiveTimezone,
                                 Instant respondedDate) {
 
     public RevenueConfigData(RevenueConfig revenueConfig) {
@@ -53,7 +54,8 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
             revenueConfig.getThirdPartyPercentage(), revenueConfig.getSendingDfspPercentage(),
             revenueConfig.getStatus(), revenueConfig.getCreatedAt(), revenueConfig.getUpdatedAt(),
             revenueConfig.getCreatedBy(), revenueConfig.getUpdatedBy(),
-            revenueConfig.getEffectiveDate(), revenueConfig.getRespondedDate());
+            revenueConfig.getEffectiveDate(), revenueConfig.getEffectiveTimezone(),
+            revenueConfig.getRespondedDate());
     }
 
 }

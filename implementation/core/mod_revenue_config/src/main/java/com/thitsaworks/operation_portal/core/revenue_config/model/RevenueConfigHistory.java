@@ -137,6 +137,11 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
     @Convert(converter = JpaInstantConverter.class)
     protected Instant effectiveDate;
 
+    @Column(
+        name = "effective_timezone",
+        length = 50)
+    protected String effectiveTimezone;
+
     @Column(name = "responded_date")
     @Convert(converter = JpaInstantConverter.class)
     protected Instant respondedDate;
@@ -162,6 +167,7 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         this.createdBy = revenueConfig.getCreatedBy();
         this.updatedBy = revenueConfig.getUpdatedBy();
         this.effectiveDate = revenueConfig.getEffectiveDate();
+        this.effectiveTimezone = revenueConfig.getEffectiveTimezone();
         this.respondedDate = revenueConfig.getRespondedDate();
 
     }
