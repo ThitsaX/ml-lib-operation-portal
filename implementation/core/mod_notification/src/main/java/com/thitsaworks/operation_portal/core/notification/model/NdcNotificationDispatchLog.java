@@ -20,9 +20,11 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificat
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -33,7 +35,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -70,10 +74,12 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
     private int attemptNo;
 
     @Column(name = "last_attempt_at")
-    private LocalDateTime lastAttemptAt;
+    @Convert(converter = JpaInstantConverter.class)
+    private Instant lastAttemptAt;
 
     @Column(name = "sent_at")
-    private LocalDateTime sentAt;
+    @Convert(converter = JpaInstantConverter.class)
+    private Instant sentAt;
 
     @Column(name = "error_message")
     private String errorMessage;
@@ -114,7 +120,7 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
         }
 
         this.attemptNo++;
-        this.lastAttemptAt = Objects.requireNonNull(attemptTime, "attemptTime is required");
+        this.lastAttemptAt = toInstant(Objects.requireNonNull(attemptTime, "attemptTime is required"));
         this.deliveryStatus = this.attemptNo == 1 ? NdcDeliveryStatus.PENDING : NdcDeliveryStatus.RETRYING;
         this.errorMessage = null;
         this.updatedBy = updatedBy;
@@ -123,7 +129,7 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
     public void markSent(LocalDateTime sentAt, String updatedBy) {
 
         this.deliveryStatus = NdcDeliveryStatus.SENT;
-        this.sentAt = Objects.requireNonNull(sentAt, "sentAt is required");
+        this.sentAt = toInstant(Objects.requireNonNull(sentAt, "sentAt is required"));
         this.errorMessage = null;
         this.updatedBy = updatedBy;
     }
@@ -133,6 +139,11 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
         this.deliveryStatus = NdcDeliveryStatus.FAILED;
         this.errorMessage = errorMessage;
         this.updatedBy = updatedBy;
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+
+        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override

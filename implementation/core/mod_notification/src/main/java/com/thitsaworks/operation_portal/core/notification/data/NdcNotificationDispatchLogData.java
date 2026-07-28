@@ -21,7 +21,6 @@ import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 public record NdcNotificationDispatchLogData(NdcNotificationDispatchLogId ndcNotificationDispatchLogId,
                                              NdcAlertEventId alertEventId,
@@ -33,8 +32,8 @@ public record NdcNotificationDispatchLogData(NdcNotificationDispatchLogId ndcNot
                                              String recipientEmail,
                                              NdcDeliveryStatus deliveryStatus,
                                              int attemptNo,
-                                             LocalDateTime lastAttemptAt,
-                                             LocalDateTime sentAt,
+                                             Instant lastAttemptAt,
+                                             Instant sentAt,
                                              String errorMessage,
                                              Instant createdAt,
                                              Instant updatedAt) {

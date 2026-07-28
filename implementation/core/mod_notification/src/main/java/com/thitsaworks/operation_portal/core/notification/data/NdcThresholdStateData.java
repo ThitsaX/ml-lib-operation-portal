@@ -20,7 +20,6 @@ import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateT
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 public record NdcThresholdStateData(NdcThresholdStateId ndcThresholdStateId,
                                     String participantName,
@@ -29,8 +28,8 @@ public record NdcThresholdStateData(NdcThresholdStateId ndcThresholdStateId,
                                     long breachCycleNo,
                                     BigDecimal lastEvaluatedBalance,
                                     BigDecimal lastEvaluatedNdcUsed,
-                                    LocalDateTime lastBreachedAt,
-                                    LocalDateTime lastRecoveredAt,
+                                    Instant lastBreachedAt,
+                                    Instant lastRecoveredAt,
                                     Instant createdAt,
                                     Instant updatedAt) {
 }

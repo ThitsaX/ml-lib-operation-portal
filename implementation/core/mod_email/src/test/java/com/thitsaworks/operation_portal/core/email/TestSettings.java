@@ -33,11 +33,11 @@ public class TestSettings {
     public EmailConfiguration.EmailSettings emailSettings() {
 
         return new EmailConfiguration.EmailSettings(
-            "smtp.gmail.com",
+            "test.com",
             587,
             "OP System",
-            "nweni2203@gmail.com",
-            "irjb ulzm lwzc mrvj",
+            "test@thitsa.com",
+            "**",
             true,
             true,
             false);
@@ -46,7 +46,7 @@ public class TestSettings {
     @Bean
     public UserQuery userQuery() {
 
-        UserData receiver = this.userData(865225336894033920L, "niniwinshwe.nnw@gmail.com");
+        UserData receiver = this.userData(865225336894033920L, "test@thitsa.com");
 
         return new UserQuery() {
 

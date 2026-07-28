@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Locale;
 import java.util.Properties;
 
 public class SmtpEmailSender implements EmailSender {
@@ -55,7 +56,11 @@ public class SmtpEmailSender implements EmailSender {
             message.setFrom(this.senderAddress());
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(receiverEmail));
             message.setSubject(subject);
-            message.setText(content);
+            if (this.isHtmlContent(content)) {
+                message.setContent(content, "text/html; charset=UTF-8");
+            } else {
+                message.setText(content);
+            }
 
             Transport.send(message);
 
@@ -117,6 +122,17 @@ public class SmtpEmailSender implements EmailSender {
         }
 
         return value;
+    }
+
+    private boolean isHtmlContent(String content) {
+
+        if (content == null) {
+            return false;
+        }
+
+        String normalizedContent = content.toLowerCase(Locale.ROOT);
+        return normalizedContent.contains("<html")
+               || normalizedContent.contains("<table");
     }
 
 }

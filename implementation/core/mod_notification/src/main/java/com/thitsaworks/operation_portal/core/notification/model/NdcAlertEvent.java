@@ -18,8 +18,10 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,7 +32,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -75,7 +79,8 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
     private String eventMessage;
 
     @Column(name = "event_time", nullable = false)
-    private LocalDateTime eventTime;
+    @Convert(converter = JpaInstantConverter.class)
+    private Instant eventTime;
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
@@ -109,8 +114,13 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
         this.ndcLimit = Objects.requireNonNull(ndcLimit, "ndcLimit is required");
         this.currentNdcUsed = Objects.requireNonNull(currentNdcUsed, "currentNdcUsed is required");
         this.eventMessage = eventMessage;
-        this.eventTime = Objects.requireNonNull(eventTime, "eventTime is required");
+        this.eventTime = toInstant(Objects.requireNonNull(eventTime, "eventTime is required"));
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+
+        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override

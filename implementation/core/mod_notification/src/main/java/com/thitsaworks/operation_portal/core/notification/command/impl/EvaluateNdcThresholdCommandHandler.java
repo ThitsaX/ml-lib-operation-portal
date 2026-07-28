@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -23,7 +25,10 @@ public class EvaluateNdcThresholdCommandHandler
     private static final Logger LOG =
         LoggerFactory.getLogger(EvaluateNdcThresholdCommandHandler.class);
 
-    private static final String NDC_USAGE_ALERT_SUBJECT = "NDC Usage Alert – Action Required";
+    private static final String NDC_THRESHOLD_FUNCTION = "NDC Threshold Triggered";
+
+    private static final DateTimeFormatter ALERT_EVENT_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, yyyy h:mm:ss a 'UTC'", Locale.ENGLISH);
 
     private final NdcThresholdStateRepository stateRepository;
     private final NdcAlertEventRepository alertEventRepository;
@@ -131,22 +136,45 @@ public class EvaluateNdcThresholdCommandHandler
 
         return """
             %s,
-            Dear User,
-            Your %s account has reached %s%% of its NDC usage limit.
-            Please deposit additional funds to prevent transaction blockage.
-            DFSP: %s
-            Currency: %s
-            Current NDC Usage: %s%%
-            This is an automated notification. Please do not reply to this email.
-            Regards,
-            Operations Team
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #30343b;">
+            <table style="border-collapse: collapse; width: 100%%; margin: 16px 0;">
+                <thead>
+                    <tr>
+                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Date/Time</th>
+                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Function</th>
+                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Threshold Value</th>
+                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Current Metric</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
+                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
+                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
+                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
+                    </tr>
+                </tbody>
+            </table>
+            </body>
+            </html>
             """.formatted(
-            NDC_USAGE_ALERT_SUBJECT,
-            input.currency(),
-            input.currentNdcUsed().toPlainString(),
-            input.participantName(),
-            input.currency(),
-            input.currentNdcUsed().toPlainString()
+            buildSubject(input.participantName()),
+            input.evaluatedAt().format(ALERT_EVENT_TIME_FORMATTER),
+            NDC_THRESHOLD_FUNCTION,
+            formatPercent(input.thresholdPercent()),
+            formatPercent(input.currentNdcUsed())
         );
     }
+
+    private String buildSubject(String participantName) {
+
+        return "[ALERT][" + participantName + "] " + NDC_THRESHOLD_FUNCTION;
+    }
+
+    private String formatPercent(BigDecimal value) {
+
+        return value.stripTrailingZeros().toPlainString() + "%";
+    }
+
 }

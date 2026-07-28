@@ -25,7 +25,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,6 +71,6 @@ public interface NdcAlertEventRepository
     List<NdcAlertEvent> search(@Param("participantName") String participantName,
                                @Param("currency") String currency,
                                @Param("currentState") NdcThresholdStateType currentState,
-                               @Param("fromTime") LocalDateTime from,
-                               @Param("toTime") LocalDateTime to);
+                               @Param("fromTime") Instant from,
+                               @Param("toTime") Instant to);
 }

@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -75,7 +76,8 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
                                                   LocalDateTime from,
                                                   LocalDateTime to) {
 
-        return this.ndcAlertEventRepository.search(participantName, currency, currentState, from, to)
+        return this.ndcAlertEventRepository.search(participantName, currency, currentState,
+                                                   toInstant(from), toInstant(to))
                                            .stream()
                                            .map(this::toAlertEventData)
                                            .toList();
@@ -130,5 +132,14 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
             event.getEventTime(),
             event.getCreatedAt(),
             event.getUpdatedAt());
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        return value.toInstant(ZoneOffset.UTC);
     }
 }

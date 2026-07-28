@@ -42,7 +42,7 @@ public class EmailConfiguration {
                            Boolean startTlsEnable,
                            Boolean sslEnable) {
 
-        private static final String DEFAULT_SENDER_NAME = "OP System";
+        private static final String DEFAULT_SENDER_NAME = "Operation Portal";
 
         public int smtpPort() {
 

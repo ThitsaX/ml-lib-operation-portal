@@ -29,7 +29,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +54,7 @@ public interface NdcNotificationDispatchLogRepository
     List<NdcNotificationDispatchLog> findRetryable(
         @Param("statuses") List<NdcDeliveryStatus> statuses,
         @Param("maximumAttempts") int maximumAttempts,
-        @Param("retryBefore") LocalDateTime retryBefore,
+        @Param("retryBefore") Instant retryBefore,
         Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

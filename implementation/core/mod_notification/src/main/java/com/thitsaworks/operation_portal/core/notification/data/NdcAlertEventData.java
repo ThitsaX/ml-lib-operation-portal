@@ -20,7 +20,6 @@ import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateT
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 public record NdcAlertEventData(NdcAlertEventId ndcAlertEventId,
                                 String participantName,
@@ -33,7 +32,7 @@ public record NdcAlertEventData(NdcAlertEventId ndcAlertEventId,
                                 BigDecimal ndcLimit,
                                 BigDecimal currentNdcUsed,
                                 String eventMessage,
-                                LocalDateTime eventTime,
+                                Instant eventTime,
                                 Instant createdAt,
                                 Instant updatedAt) {
 }

@@ -18,8 +18,10 @@ package com.thitsaworks.operation_portal.core.notification.model;
 import com.thitsaworks.operation_portal.component.common.identifier.NdcThresholdStateId;
 import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateType;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,7 +32,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -62,10 +66,12 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
     private BigDecimal lastEvaluatedNdcUsed;
 
     @Column(name = "last_breached_at")
-    private LocalDateTime lastBreachedAt;
+    @Convert(converter = JpaInstantConverter.class)
+    private Instant lastBreachedAt;
 
     @Column(name = "last_recovered_at")
-    private LocalDateTime lastRecoveredAt;
+    @Convert(converter = JpaInstantConverter.class)
+    private Instant lastRecoveredAt;
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
@@ -102,7 +108,7 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
 
         this.currentState = NdcThresholdStateType.BREACHED;
         this.breachCycleNo++;
-        this.lastBreachedAt = Objects.requireNonNull(breachedAt, "breachedAt is required");
+        this.lastBreachedAt = toInstant(Objects.requireNonNull(breachedAt, "breachedAt is required"));
         this.updatedBy = updatedBy;
         return true;
     }
@@ -114,9 +120,14 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
         }
 
         this.currentState = NdcThresholdStateType.SAFE;
-        this.lastRecoveredAt = Objects.requireNonNull(recoveredAt, "recoveredAt is required");
+        this.lastRecoveredAt = toInstant(Objects.requireNonNull(recoveredAt, "recoveredAt is required"));
         this.updatedBy = updatedBy;
         return true;
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+
+        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override
