@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Import;
         ParticipantConfiguration.class, AuditConfiguration.class, IAMConfiguration.class,
         HubServicesConfiguration.class, ApprovalConfiguration.class,
         ReportConfiguration.class, SchedulerConfiguration.class, SettlementConfiguration.class,
-        RevenuePartyConfiguration.class, RevenueTransactionConfiguration.class
+        RevenuePartyConfiguration.class, RevenueTransactionConfiguration.class,
         RevenueConfigConfiguration.class,RevenuePartyConfiguration.class
     })
 @RequiredArgsConstructor
