@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
+package com.thitsaworks.operation_portal.api.operation.portal.controller.revenueServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

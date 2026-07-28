@@ -15,6 +15,9 @@
  */
 package com.thitsaworks.operation_portal.component.common.type;
 
-public enum RevenueConfigStatus {
-    ACTIVE, INACTIVE, EXPIRED
+public enum RevenueRemainderRecipient {
+    GOL_GRA,
+    MINISTRY,
+    THIRD_PARTY,
+    DFSP
 }

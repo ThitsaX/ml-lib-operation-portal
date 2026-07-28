@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
+package com.thitsaworks.operation_portal.api.operation.portal.controller.revenueServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -83,7 +83,8 @@ public class GetRevenueConfigListController {
                            @JsonProperty("thirdPartyPercentage") BigDecimal thirdPartyPercentage,
                            @JsonProperty("sendingDfspPercentage") BigDecimal sendingDfspPercentage,
                            @JsonProperty("status") String status,
-                           @JsonProperty("startDate") Long startDate,
+                           @JsonProperty("effectiveDate") Long effectiveDate,
+                           @JsonProperty("respondedDate") Long respondedDate,
                            @JsonProperty("createdAt") Long createdAt,
                            @JsonProperty("createdBy") String createdBy,
                            @JsonProperty("updatedAt") Long updatedAt,
@@ -99,9 +100,13 @@ public class GetRevenueConfigListController {
                 revenueConfig.thirdPartyProviderCode(),
                 revenueConfig.thirdPartyProviderName(), revenueConfig.golPercentage(),
                 revenueConfig.ministryPercentage(), revenueConfig.thirdPartyPercentage(),
-                revenueConfig.sendingDfspPercentage(), revenueConfig.status().name(),
-                revenueConfig.startDate().getEpochSecond(), revenueConfig.createdAt(),
-                revenueConfig.createdBy(), revenueConfig.updatedAt(), revenueConfig.updatedBy());
+                revenueConfig.sendingDfspPercentage(), revenueConfig.status(),
+                revenueConfig.effectiveDate() == null ? null :
+                    revenueConfig.effectiveDate().getEpochSecond(),
+                revenueConfig.respondedDate() == null ? null :
+                    revenueConfig.respondedDate().getEpochSecond(),
+                revenueConfig.createdAt(), revenueConfig.createdBy(), revenueConfig.updatedAt(),
+                revenueConfig.updatedBy());
         }
 
     }

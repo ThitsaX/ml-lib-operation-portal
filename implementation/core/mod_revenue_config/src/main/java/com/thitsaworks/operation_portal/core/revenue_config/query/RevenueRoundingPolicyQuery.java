@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.thitsaworks.operation_portal.core.revenue_config.query;
 
-import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
-import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.core.revenue_config.data.RevenueConfigData;
-import org.springframework.data.domain.Sort;
+import com.thitsaworks.operation_portal.core.revenue_config.data.RevenueRoundingPolicyData;
 
-import java.util.List;
 import java.util.Optional;
 
-public interface RevenueConfigQuery {
+public interface RevenueRoundingPolicyQuery {
 
-    List<RevenueConfigData> getRevenueConfigs(Sort sort);
-
-    List<RevenueConfigData> getActiveRevenueConfigs(Sort sort);
-
-    RevenueConfigData get(RevenueConfigId revenueConfigId) throws DomainException;
-
-    Optional<RevenueConfigData> findById(RevenueConfigId revenueConfigId);
-
-    List<RevenueConfigData> findByTaxCodeId(String taxCodeId);
-
+    Optional<RevenueRoundingPolicyData> findLatest();
 }

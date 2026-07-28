@@ -13,8 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.component.common.type;
+package com.thitsaworks.operation_portal.component.common.identifier;
 
-public enum RevenueConfigStatus {
-    ACTIVE, INACTIVE, EXPIRED
+import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@Embeddable
+public class RevenueRoundingPolicyId extends JpaId<Long> {
+
+    @Column(name = "id")
+    private Long id;
+
+    @Override
+    public Long getEntityId() {
+
+        return this.id;
+    }
 }

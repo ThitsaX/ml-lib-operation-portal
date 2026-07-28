@@ -15,13 +15,17 @@
  */
 package com.thitsaworks.operation_portal.core.revenue_config.validator;
 
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
+import com.thitsaworks.operation_portal.core.revenue_config.model.repository.RevenueConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,8 @@ public class RevenueConfigValidator {
     private static final int PERCENTAGE_SCALE = 2;
 
     private final PartyRegistryValidator partyRegistryValidator;
+
+    private final RevenueConfigRepository revenueConfigRepository;
 
     public void validate(RevenueConfigCategory category,
                          String responsibleMinistryCode,
@@ -49,6 +55,29 @@ public class RevenueConfigValidator {
 
         validatePartyRegistryReferences(responsibleMinistryCode, thirdPartyProviderCode);
         validatePercentages(golPercentage, ministryPercentage, thirdPartyPercentage, sendingDfspPercentage);
+    }
+
+    public void validateUniqueTaxCode(String taxCodeId,
+                                      RevenueConfigId allowedRevenueConfigId)
+        throws RevenueConfigException {
+
+        if (taxCodeId == null || taxCodeId.isBlank()) {
+            return;
+        }
+
+        boolean duplicateExists = this.revenueConfigRepository
+                                      .findByTaxCodeId(taxCodeId)
+                                      .stream()
+                                      .filter(revenueConfig -> revenueConfig.getStatus() ==
+                                          RevenueConfigStatus.ACTIVE)
+                                      .anyMatch(revenueConfig -> !Objects.equals(
+                                          revenueConfig.getRevenueConfigId(),
+                                          allowedRevenueConfigId));
+
+        if (duplicateExists) {
+            throw new RevenueConfigException(
+                RevenueConfigErrors.TAX_CODE_ALREADY_REGISTERED.format(taxCodeId));
+        }
     }
 
     private void validatePartyRegistryReferences(String responsibleMinistryCode,
@@ -72,6 +101,14 @@ public class RevenueConfigValidator {
                                      BigDecimal thirdPartyPercentage,
                                      BigDecimal sendingDfspPercentage) throws RevenueConfigException {
 
+        if (isOverScale(golPercentage) ||
+                isOverScale(ministryPercentage) ||
+                isOverScale(thirdPartyPercentage) ||
+                isOverScale(sendingDfspPercentage)) {
+            throw new RevenueConfigException(
+                RevenueConfigErrors.INVALID_REVENUE_PERCENTAGE_SCALE.format(PERCENTAGE_SCALE));
+        }
+
         if (isOutOfRange(golPercentage) ||
                 isOutOfRange(ministryPercentage) ||
                 isOutOfRange(thirdPartyPercentage) ||
@@ -91,7 +128,12 @@ public class RevenueConfigValidator {
 
         return percentage == null ||
                    percentage.compareTo(ZERO_PERCENTAGE) < 0 ||
-                   percentage.compareTo(TOTAL_PERCENTAGE) > 0 ||
+                   percentage.compareTo(TOTAL_PERCENTAGE) > 0;
+    }
+
+    private boolean isOverScale(BigDecimal percentage) {
+
+        return percentage != null &&
                    percentage.stripTrailingZeros().scale() > PERCENTAGE_SCALE;
     }
 }

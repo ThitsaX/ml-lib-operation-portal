@@ -29,8 +29,6 @@ import com.thitsaworks.operation_portal.core.revenue_config.validator.RevenueCon
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCommand {
@@ -51,17 +49,6 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
                                               RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
                                                   input.revenueConfigId())));
 
-        Optional<RevenueConfig> existingRevenueConfig = this.revenueConfigRepository
-                                                            .findByTaxCodeId(input.taxCodeId())
-                                                            .filter(existing -> !existing
-                                                                                     .getRevenueConfigId()
-                                                                                     .equals(
-                                                                                         input.revenueConfigId()));
-        if (existingRevenueConfig.isPresent()) {
-            throw new RevenueConfigException(
-                RevenueConfigErrors.TAX_CODE_ALREADY_REGISTERED.format(input.taxCodeId()));
-        }
-
         this.revenueConfigValidator.validate(
             input.category(), input.responsibleMinistryCode(), input.thirdPartyProviderCode(),
             input.golPercentage(), input.ministryPercentage(), input.thirdPartyPercentage(),
@@ -73,7 +60,7 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
             input.responsibleMinistryCode(), input.thirdPartyProviderCode(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
-            input.updatedBy(), input.startDate());
+            input.updatedBy(), input.effectiveDate(), input.respondedDate());
 
         this.revenueConfigRepository.saveAndFlush(revenueConfig);
 

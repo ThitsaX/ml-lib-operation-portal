@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
 @CoreReadTransactional
 public class RevenueConfigJpaQueryHandler implements RevenueConfigQuery {
 
-    private static final List<RevenueConfigStatus> ACTIVE_AND_PENDING_STATUSES =
-        List.of(RevenueConfigStatus.ACTIVE, RevenueConfigStatus.PENDING);
+    private static final List<RevenueConfigStatus> ACTIVE_STATUSES =
+        List.of(RevenueConfigStatus.ACTIVE);
 
     private final RevenueConfigRepository revenueConfigRepository;
 
@@ -56,11 +56,11 @@ public class RevenueConfigJpaQueryHandler implements RevenueConfigQuery {
     }
 
     @Override
-    public List<RevenueConfigData> getActiveAndPendingRevenueConfigs(Sort sort) {
+    public List<RevenueConfigData> getActiveRevenueConfigs(Sort sort) {
 
         Sort effectiveSort = sort == null ? Sort.by(Sort.Direction.ASC, "taxCodeId") : sort;
 
-        return this.revenueConfigRepository.findByStatusIn(ACTIVE_AND_PENDING_STATUSES, effectiveSort)
+        return this.revenueConfigRepository.findByStatusIn(ACTIVE_STATUSES, effectiveSort)
                                            .stream()
                                            .map(RevenueConfigData::new)
                                            .collect(Collectors.toList());
@@ -78,14 +78,16 @@ public class RevenueConfigJpaQueryHandler implements RevenueConfigQuery {
     public Optional<RevenueConfigData> findById(RevenueConfigId revenueConfigId) {
 
         return this.revenueConfigRepository.findByRevenueConfigIdAndStatusIn(
-                                               revenueConfigId, ACTIVE_AND_PENDING_STATUSES)
+                                               revenueConfigId, ACTIVE_STATUSES)
                                            .map(RevenueConfigData::new);
     }
 
     @Override
-    public Optional<RevenueConfigData> findByTaxCodeId(String taxCodeId) {
+    public List<RevenueConfigData> findByTaxCodeId(String taxCodeId) {
 
         return this.revenueConfigRepository.findByTaxCodeId(taxCodeId)
-                                           .map(RevenueConfigData::new);
+                                           .stream()
+                                           .map(RevenueConfigData::new)
+                                           .collect(Collectors.toList());
     }
 }

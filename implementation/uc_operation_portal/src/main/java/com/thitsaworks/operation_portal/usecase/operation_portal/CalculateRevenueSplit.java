@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.core.revenue_config;
+package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-import com.thitsaworks.operation_portal.component.infra.mysql.core.CorePersistenceConfiguration;
-import com.thitsaworks.operation_portal.component.misc.MiscConfiguration;
+import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.util.Locale;
+import java.math.BigDecimal;
 
-@ComponentScan("com.thitsaworks.operation_portal.core.revenue_config")
-@Import(value = {MiscConfiguration.class, CorePersistenceConfiguration.class})
-public class RevenueConfigConfiguration {
+public interface CalculateRevenueSplit
+    extends UseCase<CalculateRevenueSplit.Input, CalculateRevenueSplit.Output> {
 
+    record Input(String taxCodeId, BigDecimal amount) { }
 
+    record Output(RevenueEngine.RevenueSplit revenueSplit) { }
 }

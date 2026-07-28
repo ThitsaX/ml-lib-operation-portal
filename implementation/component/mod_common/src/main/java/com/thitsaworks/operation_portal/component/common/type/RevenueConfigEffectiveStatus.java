@@ -15,6 +15,13 @@
  */
 package com.thitsaworks.operation_portal.component.common.type;
 
-public enum RevenueConfigStatus {
-    ACTIVE, INACTIVE, EXPIRED
+import java.time.Instant;
+
+public enum RevenueConfigEffectiveStatus {
+    CURRENT, FUTURE, EXPIRED;
+
+    public static RevenueConfigEffectiveStatus fromEffectiveDate(Instant effectiveDate) {
+
+        return effectiveDate != null && effectiveDate.isAfter(Instant.now()) ? FUTURE : CURRENT;
+    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.thitsaworks.operation_portal.api.operation.portal.controller.coreServices;
+package com.thitsaworks.operation_portal.api.operation.portal.controller.revenueServices;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -71,9 +72,9 @@ public class CreateRevenueApprovalRequestController {
                 request.requestedAction(),
                 this.toNullableRevenueConfigId(request.revenueConfigId()), request.taxCodeId(),
                 request.taxCodeDescription(), request.category() == null ? null :
-                                                  RevenueConfigCategory.valueOf(request.category()),
+                                           RevenueConfigCategory.valueOf(request.category()),
                 request.responsibleMinistryCode(), request.thirdPartyProviderCode(),
-                request.startDate(), request.percentages(), userContext.userId()));
+                request.effectiveDate(), request.percentages(), userContext.userId()));
 
         var response = new Response(output.approvalRequestId().getEntityId().toString());
 
@@ -89,11 +90,11 @@ public class CreateRevenueApprovalRequestController {
                           @JsonProperty("revenueConfigId") String revenueConfigId,
                           @NotBlank @JsonProperty("taxCodeId") String taxCodeId,
                           @NotBlank @JsonProperty("taxCodeDescription") String taxCodeDescription,
-                          @JsonProperty("category") String category,
-                          @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
+                          @NotBlank @JsonProperty("category") String category,
+                          @NotBlank @JsonProperty("responsibleMinistryCode") String responsibleMinistryCode,
                           @JsonProperty("thirdPartyProviderCode") String thirdPartyProviderCode,
-                          @JsonProperty("startDate") String startDate,
-                          @JsonProperty("percentages") Map<@NotBlank String, @NotNull BigDecimal> percentages)
+                          @NotNull @JsonProperty("effectiveDate") Instant effectiveDate,
+                          @NotNull @JsonProperty("percentages") Map<@NotBlank String, @NotNull BigDecimal> percentages)
         implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

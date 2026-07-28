@@ -17,6 +17,8 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigEffectiveStatus;
+import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
@@ -32,7 +34,15 @@ import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationM
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_CONFIG)
@@ -45,6 +55,16 @@ public class GetRevenueConfigListHandler
     private final RevenuePartyQuery revenuePartyQuery;
 
     private final Utility utility;
+
+    private static final Comparator<RevenueConfigData> LATEST_UPDATED_REVENUE_CONFIG_FIRST =
+        Comparator
+            .comparing(
+                GetRevenueConfigListHandler::updatedAtOrCreatedAt,
+                Comparator.nullsFirst(Comparator.naturalOrder()))
+            .thenComparing(
+                data -> data.revenueConfigId().getEntityId(),
+                Comparator.nullsLast(Comparator.naturalOrder()))
+            .reversed();
 
     public GetRevenueConfigListHandler(PrincipalCache principalCache,
                                        ActionAuthorizationManager actionAuthorizationManager,
@@ -63,13 +83,67 @@ public class GetRevenueConfigListHandler
 
         Sort sort = Sort.by(input.sortDirection(), this.sortField(input.sortBy()));
         List<GetRevenueConfigList.RevenueConfig> revenueConfigs = this.revenueConfigQuery
-                                                                      .getActiveAndPendingRevenueConfigs(
-                                                                          sort)
+                                                                      .getRevenueConfigs(sort)
+                                                                      .stream()
+                                                                      .filter(this::isVisibleStatus)
+                                                                      .collect(Collectors.collectingAndThen(
+                                                                          Collectors.toList(),
+                                                                          this::visibleRevenueConfigs))
                                                                       .stream()
                                                                       .map(this::map)
                                                                       .toList();
 
         return new Output(revenueConfigs);
+    }
+
+    private List<RevenueConfigData> visibleRevenueConfigs(List<RevenueConfigData> revenueConfigs) {
+
+        Set<Long> visibleIds = new HashSet<>();
+        revenueConfigs
+            .stream()
+            .filter(data -> data.status() == RevenueConfigStatus.INACTIVE)
+            .map(data -> data.revenueConfigId().getEntityId())
+            .forEach(visibleIds::add);
+
+        Map<String, List<RevenueConfigData>> activeConfigsByTaxCode = revenueConfigs
+                                                                          .stream()
+                                                                          .filter(data -> data.status() ==
+                                                                                              RevenueConfigStatus.ACTIVE)
+                                                                          .collect(Collectors.groupingBy(
+                                                                              RevenueConfigData::taxCodeId));
+
+        Instant now = Instant.now();
+        for (List<RevenueConfigData> taxCodeConfigs : activeConfigsByTaxCode.values()) {
+            this.visibleActiveRevenueConfigs(taxCodeConfigs, now)
+                .stream()
+                .map(data -> data.revenueConfigId().getEntityId())
+                .forEach(visibleIds::add);
+        }
+
+        return revenueConfigs
+                   .stream()
+                   .filter(data -> visibleIds.contains(data.revenueConfigId().getEntityId()))
+                   .toList();
+    }
+
+    private List<RevenueConfigData> visibleActiveRevenueConfigs(List<RevenueConfigData> revenueConfigs,
+                                                                Instant now) {
+
+        Optional<RevenueConfigData> currentRevenueConfig = revenueConfigs
+                                                              .stream()
+                                                              .filter(data -> this.isCurrent(data, now))
+                                                              .sorted(
+                                                                  LATEST_UPDATED_REVENUE_CONFIG_FIRST)
+                                                              .findFirst();
+
+        List<RevenueConfigData> futureRevenueConfigs = revenueConfigs
+                                                           .stream()
+                                                           .filter(data -> !this.isCurrent(data, now))
+                                                           .toList();
+
+        return Stream
+                   .concat(currentRevenueConfig.stream(), futureRevenueConfigs.stream())
+                   .toList();
     }
 
     private String sortField(String sortBy) {
@@ -85,13 +159,34 @@ public class GetRevenueConfigListHandler
             this.revenuePartyName(data.responsibleMinistryCode()), data.thirdPartyProviderCode(),
             this.revenuePartyName(data.thirdPartyProviderCode()), data.golPercentage(),
             data.ministryPercentage(), data.thirdPartyPercentage(), data.sendingDfspPercentage(),
-            data.status(), data.startDate(),
+            this.status(data), data.effectiveDate(), data.respondedDate(),
             data.createdAt() == null ? null : data.createdAt().getEpochSecond(),
             data.createdBy() == null ? null :
                 this.utility.getEmail(new UserId(data.createdBy().getId())),
-            data.updatedBy() == null ? null : data.updatedAt().getEpochSecond(),
+            data.respondedDate() == null ? null : data.respondedDate().getEpochSecond(),
             data.updatedBy() == null ? null :
                 this.utility.getEmail(new UserId(data.updatedBy().getId())));
+    }
+
+    private String status(RevenueConfigData data) {
+
+        if (data.status() == RevenueConfigStatus.INACTIVE) {
+            return RevenueConfigStatus.INACTIVE.name();
+        }
+
+        return RevenueConfigEffectiveStatus.fromEffectiveDate(data.effectiveDate()).name();
+    }
+
+    private boolean isVisibleStatus(RevenueConfigData data) {
+
+        return data.status() == RevenueConfigStatus.ACTIVE ||
+                   data.status() == RevenueConfigStatus.INACTIVE;
+    }
+
+    private boolean isCurrent(RevenueConfigData data, Instant now) {
+
+        Instant effectiveDate = data.effectiveDate();
+        return effectiveDate == null || !effectiveDate.isAfter(now);
     }
 
     private String revenuePartyName(String partyCode) {
@@ -101,6 +196,11 @@ public class GetRevenueConfigListHandler
         }
 
         return this.revenuePartyQuery.get(partyCode).map(RevenuePartyData::partyName).orElse(null);
+    }
+
+    private static Instant updatedAtOrCreatedAt(RevenueConfigData data) {
+
+        return data.updatedAt() != null ? data.updatedAt() : data.createdAt();
     }
 
 }

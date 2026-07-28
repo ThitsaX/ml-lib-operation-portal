@@ -28,6 +28,10 @@ public class RevenueConfigErrors {
     public static final ErrorMessage INVALID_REVENUE_CONFIG_CATEGORY = new ErrorMessage("INVALID_REVENUE_CONFIG_CATEGORY", "Revenue configuration category must be DOMESTIC or CUSTOMS.");
     public static final ErrorMessage INVALID_REVENUE_PERCENTAGE_TOTAL = new ErrorMessage("INVALID_REVENUE_PERCENTAGE_TOTAL", "Revenue configuration percentage total must equal 100. Current total is [{0}].");
     public static final ErrorMessage INVALID_REVENUE_PERCENTAGE = new ErrorMessage("INVALID_REVENUE_PERCENTAGE", "Revenue configuration percentages must be between 0 and 100.");
+    public static final ErrorMessage INVALID_REVENUE_PERCENTAGE_SCALE = new ErrorMessage("INVALID_REVENUE_PERCENTAGE_SCALE", "Revenue configuration percentages must contain no more than [{0}] digits after the decimal point.");
+    public static final ErrorMessage REVENUE_ROUNDING_POLICY_NOT_FOUND = new ErrorMessage("REVENUE_ROUNDING_POLICY_NOT_FOUND", "Revenue rounding policy has not been configured.");
+    public static final ErrorMessage INVALID_REVENUE_AMOUNT = new ErrorMessage("INVALID_REVENUE_AMOUNT", "Revenue calculation amount must be zero or greater and contain no more than [2] digits after the decimal point.");
+    public static final ErrorMessage INVALID_REVENUE_SPLIT = new ErrorMessage("INVALID_REVENUE_SPLIT", "Revenue split produced a negative amount for remainder recipient [{0}].");
     public static final ErrorMessage INVALID_RESPONSIBLE_MINISTRY = new ErrorMessage("INVALID_RESPONSIBLE_MINISTRY", "Responsible Ministry must reference an active Responsible Ministry from the Party Registry : [{0}].");
     public static final ErrorMessage INVALID_THIRD_PARTY_PROVIDER = new ErrorMessage("INVALID_THIRD_PARTY_PROVIDER", "Third Party Provider must reference an active Third Party Provider from the Party Registry : [{0}].");
     //@@formatter:on

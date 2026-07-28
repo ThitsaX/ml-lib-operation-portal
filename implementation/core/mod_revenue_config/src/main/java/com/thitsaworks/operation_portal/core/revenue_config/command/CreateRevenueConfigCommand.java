@@ -37,8 +37,10 @@ public interface CreateRevenueConfigCommand {
                  BigDecimal thirdPartyPercentage,
                  BigDecimal sendingDfspPercentage,
                  UserId createdBy,
-                 Instant startDate,
-                 RevenueConfigStatus status) { }
+                 Instant effectiveDate,
+                 RevenueConfigStatus status,
+                 Instant respondedDate,
+                 boolean rejectDuplicateTaxCode) { }
 
     record Output(RevenueConfigId revenueConfigId) { }
 

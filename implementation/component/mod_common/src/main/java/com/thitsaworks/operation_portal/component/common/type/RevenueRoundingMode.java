@@ -15,6 +15,21 @@
  */
 package com.thitsaworks.operation_portal.component.common.type;
 
-public enum RevenueConfigStatus {
-    ACTIVE, INACTIVE, EXPIRED
+import java.math.RoundingMode;
+
+public enum RevenueRoundingMode {
+    UP(RoundingMode.UP),
+    DOWN(RoundingMode.DOWN);
+
+    private final RoundingMode roundingMode;
+
+    RevenueRoundingMode(RoundingMode roundingMode) {
+
+        this.roundingMode = roundingMode;
+    }
+
+    public RoundingMode toRoundingMode() {
+
+        return this.roundingMode;
+    }
 }

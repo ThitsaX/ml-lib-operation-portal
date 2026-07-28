@@ -46,10 +46,9 @@ public class ModifyRevenueConfigStatusCommandHandler implements ModifyRevenueCon
                                               RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
                                                   input.revenueConfigId())));
 
-        this.revenueConfigHistoryRepository.save(new RevenueConfigHistory(revenueConfig));
-
         revenueConfig.status(input.status())
-                     .updatedBy(input.updatedBy());
+                     .updatedBy(input.updatedBy())
+                     .respondedDate(input.respondedDate());
 
         this.revenueConfigRepository.saveAndFlush(revenueConfig);
 

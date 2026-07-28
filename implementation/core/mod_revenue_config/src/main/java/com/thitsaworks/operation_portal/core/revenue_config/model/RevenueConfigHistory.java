@@ -133,11 +133,19 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         column = @Column(name = "updated_by"))
     private UserId updatedBy;
 
-    @Column(name = "start_date")
+    @Column(name = "effective_date")
     @Convert(converter = JpaInstantConverter.class)
-    protected Instant startDate;
+    protected Instant effectiveDate;
+
+    @Column(name = "responded_date")
+    @Convert(converter = JpaInstantConverter.class)
+    protected Instant respondedDate;
 
     public RevenueConfigHistory(RevenueConfig revenueConfig) {
+        this(revenueConfig, revenueConfig.getStatus());
+    }
+
+    public RevenueConfigHistory(RevenueConfig revenueConfig, RevenueConfigStatus status) {
 
         this.revenueConfigHistoryId = new RevenueConfigHistoryId(Snowflake.get().nextId());
         this.revenueConfigId = revenueConfig.getRevenueConfigId();
@@ -150,10 +158,11 @@ public class RevenueConfigHistory extends JpaEntity<RevenueConfigHistoryId> {
         this.ministryPercentage = revenueConfig.getMinistryPercentage();
         this.thirdPartyPercentage = revenueConfig.getThirdPartyPercentage();
         this.sendingDfspPercentage = revenueConfig.getSendingDfspPercentage();
-        this.status = revenueConfig.getStatus();
+        this.status = status;
         this.createdBy = revenueConfig.getCreatedBy();
         this.updatedBy = revenueConfig.getUpdatedBy();
-        this.startDate = revenueConfig.getStartDate();
+        this.effectiveDate = revenueConfig.getEffectiveDate();
+        this.respondedDate = revenueConfig.getRespondedDate();
 
     }
 

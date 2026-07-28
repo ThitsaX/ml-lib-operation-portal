@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.thitsaworks.operation_portal.core.revenue_config.command;
 
-import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueRoundingPolicyId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
+import com.thitsaworks.operation_portal.component.common.type.RevenueRemainderRecipient;
+import com.thitsaworks.operation_portal.component.common.type.RevenueRoundingMode;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
-import java.time.Instant;
+public interface CreateRevenueRoundingPolicyCommand {
 
-public interface ModifyRevenueConfigStatusCommand {
+    record Input(RevenueRoundingMode roundingMode,
+                 RevenueRemainderRecipient remainderRecipient,
+                 UserId createdBy) { }
 
-    record Input(RevenueConfigId revenueConfigId,
-                 RevenueConfigStatus status,
-                 UserId updatedBy,
-                 Instant respondedDate) { }
-
-    record Output(RevenueConfigId revenueConfigId) { }
+    record Output(RevenueRoundingPolicyId revenueRoundingPolicyId) { }
 
     Output execute(Input input) throws DomainException;
-
 }

@@ -37,7 +37,8 @@ public interface ModifyRevenueConfigCommand {
                  BigDecimal thirdPartyPercentage,
                  BigDecimal sendingDfspPercentage,
                  UserId updatedBy,
-                 Instant startDate) { }
+                 Instant effectiveDate,
+                 Instant respondedDate) { }
 
     record Output(RevenueConfigId revenueConfigId, boolean modified) { }
 

@@ -40,7 +40,8 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
                                 Instant updatedAt,
                                 UserId createdBy,
                                 UserId updatedBy,
-                                Instant startDate) {
+                                Instant effectiveDate,
+                                Instant respondedDate) {
 
     public RevenueConfigData(RevenueConfig revenueConfig) {
 
@@ -51,7 +52,8 @@ public record RevenueConfigData(RevenueConfigId revenueConfigId,
             revenueConfig.getGolPercentage(), revenueConfig.getMinistryPercentage(),
             revenueConfig.getThirdPartyPercentage(), revenueConfig.getSendingDfspPercentage(),
             revenueConfig.getStatus(), revenueConfig.getCreatedAt(), revenueConfig.getUpdatedAt(),
-            revenueConfig.getCreatedBy(), revenueConfig.getUpdatedBy(), revenueConfig.getStartDate());
+            revenueConfig.getCreatedBy(), revenueConfig.getUpdatedBy(),
+            revenueConfig.getEffectiveDate(), revenueConfig.getRespondedDate());
     }
 
 }

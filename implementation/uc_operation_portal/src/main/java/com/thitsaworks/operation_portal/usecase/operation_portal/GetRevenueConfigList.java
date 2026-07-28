@@ -17,7 +17,6 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.component.misc.util.BigDecimalUtil;
 import jakarta.validation.constraints.NotNull;
@@ -65,8 +64,9 @@ public interface GetRevenueConfigList
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
                          BigDecimal sendingDfspPercentage,
-                         RevenueConfigStatus status,
-                         Instant startDate,
+                         String status,
+                         Instant effectiveDate,
+                         Instant respondedDate,
                          Long createdAt,
                          String createdBy,
                          Long updatedAt,

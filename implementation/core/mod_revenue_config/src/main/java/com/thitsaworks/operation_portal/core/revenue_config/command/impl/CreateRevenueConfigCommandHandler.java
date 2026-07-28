@@ -19,8 +19,6 @@ package com.thitsaworks.operation_portal.core.revenue_config.command.impl;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.revenue_config.command.CreateRevenueConfigCommand;
-import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
-import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
 import com.thitsaworks.operation_portal.core.revenue_config.model.RevenueConfig;
 import com.thitsaworks.operation_portal.core.revenue_config.model.repository.RevenueConfigRepository;
 import com.thitsaworks.operation_portal.core.revenue_config.validator.RevenueConfigValidator;
@@ -39,9 +37,8 @@ public class CreateRevenueConfigCommandHandler implements CreateRevenueConfigCom
     @CoreWriteTransactional
     public Output execute(Input input) throws DomainException {
 
-        if (this.revenueConfigRepository.existsByTaxCodeId(input.taxCodeId())) {
-            throw new RevenueConfigException(
-                RevenueConfigErrors.TAX_CODE_ALREADY_REGISTERED.format(input.taxCodeId()));
+        if (input.rejectDuplicateTaxCode()) {
+            this.revenueConfigValidator.validateUniqueTaxCode(input.taxCodeId(), null);
         }
 
         this.revenueConfigValidator.validate(
@@ -53,7 +50,7 @@ public class CreateRevenueConfigCommandHandler implements CreateRevenueConfigCom
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
             input.responsibleMinistryCode(), input.thirdPartyProviderCode(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
-            input.createdBy(), input.startDate(), input.status());
+            input.createdBy(), input.effectiveDate(), input.status(), input.respondedDate());
 
         this.revenueConfigRepository.save(revenueConfig);
 

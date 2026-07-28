@@ -13,28 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.thitsaworks.operation_portal.core.revenue_config.model.repository;
 
-import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
-import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
-import com.thitsaworks.operation_portal.core.revenue_config.model.RevenueConfig;
-import org.springframework.data.domain.Sort;
+import com.thitsaworks.operation_portal.component.common.identifier.RevenueRoundingPolicyId;
+import com.thitsaworks.operation_portal.core.revenue_config.model.RevenueRoundingPolicy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RevenueConfigRepository extends JpaRepository<RevenueConfig, RevenueConfigId> {
+public interface RevenueRoundingPolicyRepository
+    extends JpaRepository<RevenueRoundingPolicy, RevenueRoundingPolicyId> {
 
-    List<RevenueConfig> findByTaxCodeId(String taxCodeId);
-
-    Optional<RevenueConfig> findByRevenueConfigIdAndStatusIn(RevenueConfigId revenueConfigId,
-                                                             Collection<RevenueConfigStatus> statuses);
-
-    List<RevenueConfig> findByStatusIn(Collection<RevenueConfigStatus> statuses, Sort sort);
-
+    Optional<RevenueRoundingPolicy>
+        findFirstByOrderByCreatedAtDescRevenueRoundingPolicyId_IdDesc();
 }

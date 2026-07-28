@@ -22,6 +22,7 @@ import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCateg
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Map;
 
 public interface CreateRevenueApprovalRequest
@@ -34,7 +35,7 @@ public interface CreateRevenueApprovalRequest
                  RevenueConfigCategory category,
                  String responsibleMinistryCode,
                  String thirdPartyProviderCode,
-                 String startDate,
+                 Instant effectiveDate,
                  Map<String, BigDecimal> percentages,
                  UserId requestedBy) { }
 
