@@ -387,7 +387,7 @@ public class FinalizeSettlementHandler
                                 account.getNetSettlementAmount().getCurrency().toString());
                             approvalRequestData.setParticipantName(
                                 hubParticipantDetailData.getParticipantName());
-                            approvalRequestData.setFundInOutAction(positionActionType.toString());
+                            approvalRequestData.setRequestedAction(positionActionType.toString());
 
                             if (participantPositionData != null) {
 

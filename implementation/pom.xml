@@ -266,6 +266,11 @@
             </dependency>
             <dependency>
                 <groupId>com.thitsaworks.operation_portal.core</groupId>
+                <artifactId>mod_revenue_config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.thitsaworks.operation_portal.core</groupId>
                 <artifactId>mod_revenue_party</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -274,8 +279,6 @@
                 <artifactId>mod_revenue_transaction</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-
             <dependency>
                 <groupId>com.thitsaworks.operation_portal</groupId>
                 <artifactId>uc_operation_portal</artifactId>

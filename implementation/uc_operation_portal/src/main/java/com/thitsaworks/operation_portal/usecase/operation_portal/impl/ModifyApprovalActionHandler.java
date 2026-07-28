@@ -147,7 +147,7 @@ public class ModifyApprovalActionHandler
             return new Output(output.approvalRequestId());
         }
 
-        final String fundInOutAction = approvalRequestData.getFundInOutAction();
+        final String fundInOutAction = approvalRequestData.getRequestedAction();
         final PositionActionType actionType = parsePositionAction(fundInOutAction);
 
         final String action = switch (actionType) {

@@ -24,5 +24,6 @@ import java.util.Optional;
 public interface RevenuePartyQuery {
     List<RevenuePartyData> getRevenueParties();
     RevenuePartyData get(RevenuePartyId revenuePartyId) throws RevenuePartyException;
+    Optional<RevenuePartyData> findById(RevenuePartyId revenuePartyId);
     Optional<RevenuePartyData> get(String partyCode);
 }
