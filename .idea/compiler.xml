@@ -17,6 +17,7 @@
         <module name="mod_fspiop" />
         <module name="mod_pending_approval" />
         <module name="mod_hub_services" />
+        <module name="mod_revenue_transaction" />
         <module name="mod_scheduler" />
         <module name="mod_settlement" />
         <module name="mod_misc" />
@@ -82,6 +83,7 @@
       <module name="mod_report_querydsl" options="-parameters" />
       <module name="mod_revenue_config" options="-parameters" />
       <module name="mod_revenue_party" options="-parameters" />
+      <module name="mod_revenue_transaction" options="-parameters" />
       <module name="mod_scheduler" options="-parameters" />
       <module name="mod_settlement" options="-parameters" />
       <module name="mod_test_iam" options="-parameters" />

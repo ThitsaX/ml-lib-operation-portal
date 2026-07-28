@@ -44,6 +44,7 @@
     <file url="file://$PROJECT_DIR$/implementation/core/mod_report/src/main/resources/local" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/implementation/core/mod_revenue_config/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/implementation/core/mod_revenue_party/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/implementation/core/mod_revenue_transaction/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/implementation/core/mod_scheduler/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/implementation/core/mod_settlement/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/implementation/core/mod_test_iam/src/main/java" charset="UTF-8" />

@@ -26,7 +26,7 @@
         <module>mod_settlement</module>
         <module>mod_revenue_config</module>
         <module>mod_revenue_party</module>
-
+        <module>mod_revenue_transaction</module>
     </modules>
 
     <properties>
