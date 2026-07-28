@@ -15,36 +15,33 @@
  */
 package com.thitsaworks.operation_portal.core.revenue_party.data;
 
-import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
-import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.core.revenue_party.model.RevenueParty;
 
 import java.io.Serializable;
-import java.time.Instant;
 
-public record RevenuePartyData(RevenuePartyId revenuePartyId,
+public record RevenuePartyData(String revenuePartyId,
                                String partyCode,
                                String partyName,
                                String partyType,
                                String description,
                                boolean isActive,
-                               UserId createdBy,
-                               UserId updatedBy,
-                               Instant createdDate,
-                               Instant updatedDate) implements Serializable {
+                               String createdBy,
+                               String updatedBy,
+                               Long createdDate,
+                               Long updatedDate) implements Serializable {
 
     public RevenuePartyData(RevenueParty revenueParty) {
 
-        this(revenueParty.getRevenuePartyId(),
+        this(revenueParty.getRevenuePartyId().getId().toString(),
              revenueParty.getPartyCode(),
              revenueParty.getPartyName(),
              revenueParty.getPartyType(),
              revenueParty.getDescription(),
              revenueParty.isActive(),
-             revenueParty.getCreatedBy(),
-             revenueParty.getUpdatedBy(),
-             revenueParty.getCreatedAt(),
-             revenueParty.getUpdatedAt());
+             revenueParty.getCreatedBy().getId().toString(),
+             revenueParty.getUpdatedBy() == null ? null : revenueParty.getUpdatedBy().getId().toString(),
+             revenueParty.getCreatedAt().getEpochSecond(),
+             revenueParty.getUpdatedAt().getEpochSecond());
     }
 
 }

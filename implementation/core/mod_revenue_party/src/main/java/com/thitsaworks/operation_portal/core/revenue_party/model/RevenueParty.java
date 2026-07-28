@@ -17,6 +17,7 @@ package com.thitsaworks.operation_portal.core.revenue_party.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RevenuePartyId;
 import com.thitsaworks.operation_portal.component.common.identifier.UserId;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyStatus;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.AttributeOverride;
@@ -27,6 +28,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "tbl_revenue_party")
@@ -64,15 +67,21 @@ public class RevenueParty extends JpaEntity<RevenuePartyId> {
                         String partyName,
                         String partyType,
                         String description,
+                        RevenuePartyStatus status,
                         UserId createdBy) {
+
+        Instant createdAt = Instant.now();
 
         this.revenuePartyId = new RevenuePartyId(Snowflake.get().nextId());
         this.partyCode(partyCode);
         this.partyName(partyName);
         this.partyType(partyType);
         this.description(description);
-        this.isActive(true);
+        this.isActive(status == RevenuePartyStatus.ACTIVE);
         this.createdBy(createdBy);
+        this.updatedBy(createdBy);
+        this.setCreatedAt(createdAt);
+        this.setUpdatedAt(createdAt);
     }
 
     @Override

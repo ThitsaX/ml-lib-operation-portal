@@ -13,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.usecase.operation_portal;
+package com.thitsaworks.operation_portal.component.common.type;
 
-import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
-import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
-import java.util.List;
-
-public interface GetRevenuePartyList extends UseCase<GetRevenuePartyList.Input, GetRevenuePartyList.Output> {
-
-    record Input() { }
-
-    record Output(List<RevenuePartyData> revenueParties) { }
-
+public enum RevenuePartyStatus {
+    ACTIVE, INACTIVE
 }
-
