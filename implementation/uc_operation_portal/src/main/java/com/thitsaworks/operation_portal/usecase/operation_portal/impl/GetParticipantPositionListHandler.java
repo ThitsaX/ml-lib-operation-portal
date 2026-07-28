@@ -170,7 +170,7 @@ public class GetParticipantPositionListHandler
     private ParticipantData unknownParticipant(String dfspId) {
 
         return new ParticipantData(
-            new ParticipantId(1L), "", 1, null, null, "", null, null, null,
+            new ParticipantId(1L), "", 1, null, null, null, "", null, null, null,
             null, null, null);
     }
 
