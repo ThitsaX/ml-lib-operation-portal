@@ -199,7 +199,7 @@ public class NdcNotificationDispatcher
     @Override
     protected boolean shouldPersistExecutionLog(DispatchSummary summary) {
 
-        return summary.hasWork();
+        return summary.hasDeliveryOutcome();
     }
 
     @Override
@@ -235,6 +235,11 @@ public class NdcNotificationDispatcher
         public boolean hasWork() {
 
             return this.undispatchedEvents > 0 || this.retryableDeliveries > 0;
+        }
+
+        public boolean hasDeliveryOutcome() {
+
+            return this.sent > 0 || this.failed > 0;
         }
 
         public static DispatchSummary empty() {

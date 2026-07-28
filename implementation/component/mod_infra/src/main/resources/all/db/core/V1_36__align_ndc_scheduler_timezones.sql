@@ -9,8 +9,28 @@ WHERE name IN ('NdcThresholdWorkerSync', 'NdcNotificationDispatcherSync');
 
 CREATE TEMPORARY TABLE tmp_ndc_threshold_state_event_timestamps AS
 SELECT id,
-       UNIX_TIMESTAMP(last_breached_at)  AS last_breached_at,
-       UNIX_TIMESTAMP(last_recovered_at) AS last_recovered_at
+       CASE
+           WHEN (
+               SELECT data_type
+               FROM information_schema.columns
+               WHERE table_schema = DATABASE()
+                 AND table_name = 'tbl_ndc_threshold_state'
+                 AND column_name = 'last_breached_at'
+           ) = 'timestamp'
+           THEN UNIX_TIMESTAMP(last_breached_at)
+           ELSE last_breached_at
+       END AS last_breached_at,
+       CASE
+           WHEN (
+               SELECT data_type
+               FROM information_schema.columns
+               WHERE table_schema = DATABASE()
+                 AND table_name = 'tbl_ndc_threshold_state'
+                 AND column_name = 'last_recovered_at'
+           ) = 'timestamp'
+           THEN UNIX_TIMESTAMP(last_recovered_at)
+           ELSE last_recovered_at
+       END AS last_recovered_at
 FROM tbl_ndc_threshold_state;
 
 ALTER TABLE tbl_ndc_threshold_state
@@ -27,11 +47,21 @@ DROP TEMPORARY TABLE tmp_ndc_threshold_state_event_timestamps;
 
 CREATE TEMPORARY TABLE tmp_ndc_alert_event_timestamps AS
 SELECT id,
-       UNIX_TIMESTAMP(event_time) AS event_time
+       CASE
+           WHEN (
+               SELECT data_type
+               FROM information_schema.columns
+               WHERE table_schema = DATABASE()
+                 AND table_name = 'tbl_ndc_alert_event'
+                 AND column_name = 'event_time'
+           ) = 'timestamp'
+           THEN UNIX_TIMESTAMP(event_time)
+           ELSE event_time
+       END AS event_time
 FROM tbl_ndc_alert_event;
 
 ALTER TABLE tbl_ndc_alert_event
-    DROP INDEX idx_ndc_alert_participant_ndc_time,
+    DROP INDEX idx_ndc_alert_participant_currency_time,
     MODIFY COLUMN event_time BIGINT NOT NULL;
 
 UPDATE tbl_ndc_alert_event event
@@ -40,14 +70,35 @@ UPDATE tbl_ndc_alert_event event
 SET event.event_time = converted.event_time;
 
 ALTER TABLE tbl_ndc_alert_event
-    ADD INDEX idx_ndc_alert_participant_ndc_time (participant_ndc_id, event_time);
+    ADD INDEX idx_ndc_alert_participant_currency_time
+        (participant_name, currency, event_time);
 
 DROP TEMPORARY TABLE tmp_ndc_alert_event_timestamps;
 
 CREATE TEMPORARY TABLE tmp_ndc_notification_dispatch_log_timestamps AS
 SELECT id,
-       UNIX_TIMESTAMP(last_attempt_at) AS last_attempt_at,
-       UNIX_TIMESTAMP(sent_at)         AS sent_at
+       CASE
+           WHEN (
+               SELECT data_type
+               FROM information_schema.columns
+               WHERE table_schema = DATABASE()
+                 AND table_name = 'tbl_ndc_notification_dispatch_log'
+                 AND column_name = 'last_attempt_at'
+           ) = 'timestamp'
+           THEN UNIX_TIMESTAMP(last_attempt_at)
+           ELSE last_attempt_at
+       END AS last_attempt_at,
+       CASE
+           WHEN (
+               SELECT data_type
+               FROM information_schema.columns
+               WHERE table_schema = DATABASE()
+                 AND table_name = 'tbl_ndc_notification_dispatch_log'
+                 AND column_name = 'sent_at'
+           ) = 'timestamp'
+           THEN UNIX_TIMESTAMP(sent_at)
+           ELSE sent_at
+       END AS sent_at
 FROM tbl_ndc_notification_dispatch_log;
 
 ALTER TABLE tbl_ndc_notification_dispatch_log
