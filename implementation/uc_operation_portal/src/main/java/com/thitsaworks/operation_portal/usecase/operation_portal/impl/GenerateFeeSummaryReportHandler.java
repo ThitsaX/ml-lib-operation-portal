@@ -79,14 +79,14 @@ public class GenerateFeeSummaryReportHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        var getUser = this.userQuery.get(new UserId(input.userId()));
         Map<String, String> params = new HashMap<>();
         params.put("startDate", input.startDate());
         params.put("endDate", input.endDate());
         params.put("dfspId", this.normalizeAllToken(input.fspId()));
         params.put("timezoneOffset", input.timezone());
-        params.put("loginDfspId", this.userQuery.get(new UserId(input.userId()))
-                                                .participantName()
-                                                .getValue());
+        params.put("loginDfspId", getUser.participantName().getValue());
+        params.put("userName", getUser.name());
 
         ReportDownloadRequestManager.CreateOrReuseResult result = this.reportDownloadRequestManager.createPendingOrReuse(
             ReportType.FEE_SUMMARY, ReportDownloadUtil.normalizeFileType(input.fileType()), params);

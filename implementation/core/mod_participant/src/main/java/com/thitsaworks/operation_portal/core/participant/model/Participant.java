@@ -67,6 +67,9 @@ public class Participant extends JpaEntity<ParticipantId> {
     @Column(name = "parent_participant_name")
     protected String parentParticipantName = null;
 
+    @Column(name = "participant_type")
+    protected String participantType = null;
+
     @Column(name = "dfsp_id")
     protected Integer dfspId;
 
@@ -339,6 +342,13 @@ public class Participant extends JpaEntity<ParticipantId> {
     public Participant status(ParticipantStatus participantStatus) {
 
         this.participantStatus = participantStatus;
+        return this;
+
+    }
+
+    public Participant participantType(String participantType) {
+
+        this.participantType = participantType;
         return this;
 
     }
