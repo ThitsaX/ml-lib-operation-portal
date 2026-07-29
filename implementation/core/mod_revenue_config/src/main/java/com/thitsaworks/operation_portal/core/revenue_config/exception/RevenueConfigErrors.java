@@ -25,6 +25,7 @@ public class RevenueConfigErrors {
     public static final ErrorMessage REVENUE_CONFIG_ID_REQUIRED = new ErrorMessage("REVENUE_CONFIG_ID_REQUIRED", "Revenue Config ID is required and must NOT be blank or null.");
     public static final ErrorMessage REVENUE_CONFIG_CATEGORY_REQUIRED = new ErrorMessage("REVENUE_CONFIG_CATEGORY_REQUIRED", "Revenue Config Catagory is required and must NOT be blank or null.");
     public static final ErrorMessage TAX_CODE_ALREADY_REGISTERED = new ErrorMessage("TAX_CODE_ALREADY_REGISTERED", "Revenue configuration has already registered in the system with provided Tax Code ID : [{0}].");
+    public static final ErrorMessage TAX_CODE_MODIFICATION_NOT_ALLOWED = new ErrorMessage("TAX_CODE_MODIFICATION_NOT_ALLOWED", "Revenue configuration Tax Code ID cannot be changed from [{0}] to [{1}].");
     public static final ErrorMessage INVALID_REVENUE_CONFIG_CATEGORY = new ErrorMessage("INVALID_REVENUE_CONFIG_CATEGORY", "Revenue configuration category must be DOMESTIC or CUSTOMS.");
     public static final ErrorMessage INVALID_REVENUE_PERCENTAGE_TOTAL = new ErrorMessage("INVALID_REVENUE_PERCENTAGE_TOTAL", "Revenue configuration percentage total must equal 100. Current total is [{0}].");
     public static final ErrorMessage INVALID_REVENUE_PERCENTAGE = new ErrorMessage("INVALID_REVENUE_PERCENTAGE", "Revenue configuration percentages must be between 0 and 100.");
@@ -32,6 +33,7 @@ public class RevenueConfigErrors {
     public static final ErrorMessage REVENUE_ROUNDING_POLICY_NOT_FOUND = new ErrorMessage("REVENUE_ROUNDING_POLICY_NOT_FOUND", "Revenue rounding policy has not been configured.");
     public static final ErrorMessage INVALID_REVENUE_AMOUNT = new ErrorMessage("INVALID_REVENUE_AMOUNT", "Revenue calculation amount must be zero or greater and contain no more than [2] digits after the decimal point.");
     public static final ErrorMessage INVALID_REVENUE_SPLIT = new ErrorMessage("INVALID_REVENUE_SPLIT", "Revenue split produced a negative amount for remainder recipient [{0}].");
+    public static final ErrorMessage INVALID_EFFECTIVE_DATE = new ErrorMessage("INVALID_EFFECTIVE_DATE", "Revenue configuration effective date cannot be backdated.");
     public static final ErrorMessage INVALID_RESPONSIBLE_MINISTRY = new ErrorMessage("INVALID_RESPONSIBLE_MINISTRY", "Responsible Ministry must reference an active Responsible Ministry from the Party Registry : [{0}].");
     public static final ErrorMessage INVALID_THIRD_PARTY_PROVIDER = new ErrorMessage("INVALID_THIRD_PARTY_PROVIDER", "Third Party Provider must reference an active Third Party Provider from the Party Registry : [{0}].");
     //@@formatter:on

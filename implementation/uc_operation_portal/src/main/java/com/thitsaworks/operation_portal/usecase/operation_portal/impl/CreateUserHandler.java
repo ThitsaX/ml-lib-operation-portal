@@ -104,7 +104,7 @@ public class CreateUserHandler
 
         var roleIdList = input.roleIdList();
 
-        if (!this.userPermissionManager.areRolesAllowed(isDfsp, roleIdList)) {
+        if (!this.userPermissionManager.areRolesAllowed(isDfsp, input.participantId(), roleIdList)) {
             throw new IAMException(IAMErrors.UNAUTHORIZED_ROLE_CREATION);
         }
 
@@ -117,4 +117,3 @@ public class CreateUserHandler
     }
 
 }
-

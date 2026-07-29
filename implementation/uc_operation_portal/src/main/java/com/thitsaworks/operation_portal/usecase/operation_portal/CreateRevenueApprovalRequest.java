@@ -36,6 +36,8 @@ public interface CreateRevenueApprovalRequest
                  String responsibleMinistryCode,
                  String thirdPartyProviderCode,
                  Instant effectiveDate,
+                 String effectiveDateDisplay,
+                 String effectiveTimezone,
                  Map<String, BigDecimal> percentages,
                  UserId requestedBy) { }
 

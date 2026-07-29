@@ -44,13 +44,14 @@ public class CreateRevenueConfigCommandHandler implements CreateRevenueConfigCom
         this.revenueConfigValidator.validate(
             input.category(), input.responsibleMinistryCode(), input.thirdPartyProviderCode(),
             input.golPercentage(), input.ministryPercentage(), input.thirdPartyPercentage(),
-            input.sendingDfspPercentage());
+            input.sendingDfspPercentage(), input.effectiveDate(), input.effectiveTimezone());
 
         RevenueConfig revenueConfig = new RevenueConfig(
             input.taxCodeId(), input.taxCodeDescription(), input.category(),
             input.responsibleMinistryCode(), input.thirdPartyProviderCode(), input.golPercentage(),
             input.ministryPercentage(), input.thirdPartyPercentage(), input.sendingDfspPercentage(),
-            input.createdBy(), input.effectiveDate(), input.status(), input.respondedDate());
+            input.createdBy(), input.effectiveDate(), input.effectiveTimezone(), input.status(),
+            input.respondedDate());
 
         this.revenueConfigRepository.save(revenueConfig);
 

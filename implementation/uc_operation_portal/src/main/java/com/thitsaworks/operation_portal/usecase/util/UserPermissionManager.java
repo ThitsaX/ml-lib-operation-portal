@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.util;
 
 import com.thitsaworks.operation_portal.component.common.identifier.AccessKey;
@@ -28,6 +29,8 @@ import com.thitsaworks.operation_portal.core.iam.exception.IAMErrors;
 import com.thitsaworks.operation_portal.core.iam.exception.IAMException;
 import com.thitsaworks.operation_portal.core.iam.query.IAMQuery;
 import com.thitsaworks.operation_portal.core.iam.query.RoleQuery;
+import com.thitsaworks.operation_portal.core.participant.exception.ParticipantException;
+import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +46,17 @@ public class UserPermissionManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserPermissionManager.class);
 
+    private static final String DFSP_ROLE_TYPE = "DFSP";
+
+    private static final String LRA_ROLE_TYPE = "LRA";
+
+    private static final String LRA_PARTICIPANT_TYPE = "LRA";
+
     private final IAMQuery iamQuery;
 
     private final RoleQuery roleQuery;
+
+    private final ParticipantQuery participantQuery;
 
     private final PrincipalCache principalCache;
 
@@ -57,7 +68,7 @@ public class UserPermissionManager {
 
         for (var role : roleList) {
 
-            if (!role.isDfsp()) {
+            if (!this.isRoleType(role, DFSP_ROLE_TYPE)) {
                 isDfsp = false;
                 break;
             }
@@ -67,29 +78,43 @@ public class UserPermissionManager {
 
     }
 
-    public boolean areRolesAllowed(boolean isDfsp, List<RoleId> roleIdList)
-        throws IAMException {
+    public boolean areRolesAllowed(boolean isDfsp,
+                                   ParticipantId participantId,
+                                   List<RoleId> roleIdList)
+        throws IAMException, ParticipantException {
 
         List<RoleData> roleList = this.roleQuery.getAll();
 
         if (isDfsp) {
-            roleList = roleList.stream()
-                               .filter(role -> role.name() != null && role.name()
-                                                                          .startsWith("DFSP"))
-                               .toList();
+
+            String participantType = this.participantQuery.get(participantId).participantType();
+
+            boolean isLraParticipant =
+                participantType != null && participantType.equalsIgnoreCase(LRA_PARTICIPANT_TYPE);
+
+            Set<String> allowedRoleTypes =
+                isLraParticipant ? Set.of(DFSP_ROLE_TYPE, LRA_ROLE_TYPE) : Set.of(DFSP_ROLE_TYPE);
+
+            roleList = roleList
+                           .stream()
+                           .filter(role -> role.roleType() != null &&
+                                               allowedRoleTypes.contains(role.roleType()))
+                           .toList();
         }
 
-        Set<String> allowedRoleIds = roleList.stream()
-                                             .map(r -> r.roleId()
-                                                        .getId()
-                                                        .toString())
-                                             .collect(Collectors.toSet());
+        Set<String> allowedRoleIds = roleList
+                                         .stream()
+                                         .map(r -> r.roleId().getId().toString())
+                                         .collect(Collectors.toSet());
 
-        return roleIdList != null
-                   && !roleIdList.isEmpty()
-                   && roleIdList.stream()
-                                .allMatch(roleId -> roleId != null && allowedRoleIds.contains(roleId.getId()
-                                                                                                    .toString()));
+        return roleIdList != null && !roleIdList.isEmpty() && roleIdList
+                                                                  .stream()
+                                                                  .allMatch(
+                                                                      roleId -> roleId != null &&
+                                                                                    allowedRoleIds.contains(
+                                                                                        roleId
+                                                                                            .getId()
+                                                                                            .toString()));
 
     }
 
@@ -97,21 +122,27 @@ public class UserPermissionManager {
 
         SecurityContext securityContext = (SecurityContext) UseCaseContext.get();
 
-        PrincipalData currentUser =
-            this.principalCache.get(new AccessKey(securityContext.accessKey()));
+        PrincipalData currentUser = this.principalCache.get(
+            new AccessKey(securityContext.accessKey()));
 
         if (currentUser == null) {
-            throw new IAMException(IAMErrors.PRINCIPAL_NOT_FOUND.format(securityContext.userId()
-                                                                                       .toString()));
+            throw new IAMException(
+                IAMErrors.PRINCIPAL_NOT_FOUND.format(securityContext.userId().toString()));
 
         }
 
         return currentUser;
     }
 
-    public boolean isSameParticipant(ParticipantId loggedInUserParticipantId, ParticipantId requestParticipantId) {
+    public boolean isSameParticipant(ParticipantId loggedInUserParticipantId,
+                                     ParticipantId requestParticipantId) {
 
         return loggedInUserParticipantId.equals(requestParticipantId);
+    }
+
+    private boolean isRoleType(RoleData role, String roleType) {
+
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(roleType);
     }
 
 }

@@ -60,6 +60,8 @@ public class Role extends JpaEntity<RoleId> {
     @Column(name = "is_dfsp")
     protected Boolean isDfsp = true;
 
+    @Column(name = "role_type")
+    protected String roleType;
 
     @Getter(AccessLevel.NONE)
     @OneToMany(

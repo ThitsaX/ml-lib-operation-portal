@@ -38,6 +38,7 @@ public interface CreateRevenueConfigCommand {
                  BigDecimal sendingDfspPercentage,
                  UserId createdBy,
                  Instant effectiveDate,
+                 String effectiveTimezone,
                  RevenueConfigStatus status,
                  Instant respondedDate,
                  boolean rejectDuplicateTaxCode) { }

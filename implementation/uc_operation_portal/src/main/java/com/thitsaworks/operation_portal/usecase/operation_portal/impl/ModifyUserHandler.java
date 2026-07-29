@@ -110,7 +110,7 @@ public class ModifyUserHandler
                 throw new IAMException(IAMErrors.UNAUTHORIZED_CREATION);
             }
 
-            if (!this.userPermissionManager.areRolesAllowed(true, roleIdList)) {
+            if (!this.userPermissionManager.areRolesAllowed(true, participantId, roleIdList)) {
                 throw new IAMException(IAMErrors.UNAUTHORIZED_ROLE_CREATION);
             }
         }

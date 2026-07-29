@@ -38,6 +38,7 @@ public interface ModifyRevenueConfigCommand {
                  BigDecimal sendingDfspPercentage,
                  UserId updatedBy,
                  Instant effectiveDate,
+                 String effectiveTimezone,
                  Instant respondedDate) { }
 
     record Output(RevenueConfigId revenueConfigId, boolean modified) { }

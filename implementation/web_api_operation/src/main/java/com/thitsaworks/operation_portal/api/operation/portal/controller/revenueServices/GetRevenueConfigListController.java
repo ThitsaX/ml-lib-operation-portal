@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.util.TimeZoneUtil;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenueConfigList;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -33,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -40,6 +43,11 @@ import java.util.List;
 public class GetRevenueConfigListController {
 
     private static final Logger LOG = LoggerFactory.getLogger(GetRevenueConfigListController.class);
+
+    private static final String DEFAULT_EFFECTIVE_TIMEZONE = "GMT+00:00";
+
+    private static final DateTimeFormatter EFFECTIVE_DATE_FORMAT =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final GetRevenueConfigList getRevenueConfigList;
 
@@ -83,7 +91,8 @@ public class GetRevenueConfigListController {
                            @JsonProperty("thirdPartyPercentage") BigDecimal thirdPartyPercentage,
                            @JsonProperty("sendingDfspPercentage") BigDecimal sendingDfspPercentage,
                            @JsonProperty("status") String status,
-                           @JsonProperty("effectiveDate") Long effectiveDate,
+                           @JsonProperty("effectiveDate") String effectiveDate,
+                           @JsonProperty("effectiveTimezone") String effectiveTimezone,
                            @JsonProperty("respondedDate") Long respondedDate,
                            @JsonProperty("createdAt") Long createdAt,
                            @JsonProperty("createdBy") String createdBy,
@@ -101,12 +110,30 @@ public class GetRevenueConfigListController {
                 revenueConfig.thirdPartyProviderName(), revenueConfig.golPercentage(),
                 revenueConfig.ministryPercentage(), revenueConfig.thirdPartyPercentage(),
                 revenueConfig.sendingDfspPercentage(), revenueConfig.status(),
-                revenueConfig.effectiveDate() == null ? null :
-                    revenueConfig.effectiveDate().getEpochSecond(),
+                formatEffectiveDate(
+                    revenueConfig.effectiveDate(), revenueConfig.effectiveTimezone()),
+                effectiveTimezone(revenueConfig.effectiveTimezone()),
                 revenueConfig.respondedDate() == null ? null :
                     revenueConfig.respondedDate().getEpochSecond(),
                 revenueConfig.createdAt(), revenueConfig.createdBy(), revenueConfig.updatedAt(),
                 revenueConfig.updatedBy());
+        }
+
+        private static String formatEffectiveDate(Instant effectiveDate,
+                                                  String effectiveTimezone) {
+
+            if (effectiveDate == null) {
+                return null;
+            }
+
+            return EFFECTIVE_DATE_FORMAT.format(
+                effectiveDate.atZone(TimeZoneUtil.zoneId(effectiveTimezone)));
+        }
+
+        private static String effectiveTimezone(String effectiveTimezone) {
+
+            return effectiveTimezone == null || effectiveTimezone.isBlank() ?
+                       DEFAULT_EFFECTIVE_TIMEZONE : effectiveTimezone;
         }
 
     }

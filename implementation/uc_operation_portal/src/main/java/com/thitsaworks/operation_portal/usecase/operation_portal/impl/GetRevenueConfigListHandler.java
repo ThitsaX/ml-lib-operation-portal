@@ -159,7 +159,7 @@ public class GetRevenueConfigListHandler
             this.revenuePartyName(data.responsibleMinistryCode()), data.thirdPartyProviderCode(),
             this.revenuePartyName(data.thirdPartyProviderCode()), data.golPercentage(),
             data.ministryPercentage(), data.thirdPartyPercentage(), data.sendingDfspPercentage(),
-            this.status(data), data.effectiveDate(), data.respondedDate(),
+            this.status(data), data.effectiveDate(), data.effectiveTimezone(), data.respondedDate(),
             data.createdAt() == null ? null : data.createdAt().getEpochSecond(),
             data.createdBy() == null ? null :
                 this.utility.getEmail(new UserId(data.createdBy().getId())),

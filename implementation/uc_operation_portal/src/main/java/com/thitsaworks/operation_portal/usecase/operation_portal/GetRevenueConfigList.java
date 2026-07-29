@@ -66,6 +66,7 @@ public interface GetRevenueConfigList
                          BigDecimal sendingDfspPercentage,
                          String status,
                          Instant effectiveDate,
+                         String effectiveTimezone,
                          Instant respondedDate,
                          Long createdAt,
                          String createdBy,
