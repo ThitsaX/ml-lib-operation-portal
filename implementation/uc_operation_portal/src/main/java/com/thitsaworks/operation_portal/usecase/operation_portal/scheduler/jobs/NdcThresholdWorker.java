@@ -60,6 +60,12 @@ public class NdcThresholdWorker
 
     private static final Logger LOG = LoggerFactory.getLogger(NdcThresholdWorker.class);
 
+    @Override
+    protected boolean shouldCreateAudit() {
+
+        return false;
+    }
+
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
     private final EvaluateNdcThresholdCommand evaluateNdcThresholdCommand;

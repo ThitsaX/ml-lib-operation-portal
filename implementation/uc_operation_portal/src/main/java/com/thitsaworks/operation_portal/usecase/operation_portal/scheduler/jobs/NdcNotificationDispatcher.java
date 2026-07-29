@@ -197,6 +197,12 @@ public class NdcNotificationDispatcher
     }
 
     @Override
+    protected boolean shouldCreateAudit() {
+
+        return false;
+    }
+
+    @Override
     protected boolean shouldPersistExecutionLog(DispatchSummary summary) {
 
         return summary.hasDeliveryOutcome();

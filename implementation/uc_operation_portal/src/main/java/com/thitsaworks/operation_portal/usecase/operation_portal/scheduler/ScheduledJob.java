@@ -158,6 +158,10 @@ public abstract class ScheduledJob<I, O> {
             this.createExecutionLog(schedulerConfigData);
         }
 
+        if (!this.shouldCreateAudit()) {
+            return;
+        }
+
         var action = this.actionAuthorizationManager.getAction(new ActionCode(schedulerConfigData.jobName()));
 
         String inputJson, inputInfo;
@@ -257,6 +261,11 @@ public abstract class ScheduledJob<I, O> {
     protected boolean deferExecutionLog() {
 
         return false;
+    }
+
+    protected boolean shouldCreateAudit() {
+
+        return true;
     }
 
     protected boolean shouldPersistExecutionLog(O output) {
