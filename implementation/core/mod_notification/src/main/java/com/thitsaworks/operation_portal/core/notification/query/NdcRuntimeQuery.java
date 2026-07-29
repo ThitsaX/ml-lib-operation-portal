@@ -21,7 +21,6 @@ import com.thitsaworks.operation_portal.core.notification.data.NdcAlertEventData
 import com.thitsaworks.operation_portal.core.notification.data.NdcNotificationDispatchLogData;
 import com.thitsaworks.operation_portal.core.notification.data.NdcThresholdStateData;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,9 +36,12 @@ public interface NdcRuntimeQuery {
                                            LocalDateTime from,
                                            LocalDateTime to);
 
-    List<NdcNotificationDispatchLogData> getDispatchLogs(String participantName,
-                                                         String currency,
-                                                         NdcDeliveryStatus deliveryStatus,
-                                                         Instant from,
-                                                         Instant to);
+    DispatchLogOutput getDispatchLogs(NdcDeliveryStatus deliveryStatus,
+                                      int page,
+                                      int pageSize);
+
+    record DispatchLogOutput(List<NdcNotificationDispatchLogData> deliveryLogs,
+                             long totalElements,
+                             int totalPages) {
+    }
 }

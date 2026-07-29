@@ -29,6 +29,9 @@ import com.thitsaworks.operation_portal.core.notification.model.repository.NdcNo
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcThresholdStateRepository;
 import com.thitsaworks.operation_portal.core.notification.query.NdcRuntimeQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -84,35 +87,40 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
     }
 
     @Override
-    public List<NdcNotificationDispatchLogData> getDispatchLogs(String participantName,
-                                                                String currency,
-                                                                NdcDeliveryStatus deliveryStatus,
-                                                                Instant from,
-                                                                Instant to) {
+    public DispatchLogOutput getDispatchLogs(NdcDeliveryStatus deliveryStatus,
+                                             int page,
+                                             int pageSize) {
 
-        return this.ndcNotificationDispatchLogRepository.search(participantName, currency, deliveryStatus, from, to)
-                                                        .stream()
-                                                        .map(row -> {
-                                                            NdcNotificationDispatchLog log =
-                                                                (NdcNotificationDispatchLog) row[0];
-                                                            return new NdcNotificationDispatchLogData(
-                                                                log.getNdcNotificationDispatchLogId(),
-                                                                log.getAlertEventId(),
-                                                                (String) row[1],
-                                                                (String) row[2],
-                                                                log.getRecipientType(),
-                                                                log.getRecipientUserId(),
-                                                                log.getRecipientName(),
-                                                                log.getRecipientEmail(),
-                                                                log.getDeliveryStatus(),
-                                                                log.getAttemptNo(),
-                                                                log.getLastAttemptAt(),
-                                                                log.getSentAt(),
-                                                                log.getErrorMessage(),
-                                                                log.getCreatedAt(),
-                                                                log.getUpdatedAt());
-                                                        })
-                                                        .toList();
+        int pageIndex = page > 0 ? page - 1 : 0;
+        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+
+        Page<Object[]> results = this.ndcNotificationDispatchLogRepository.search(deliveryStatus, pageable);
+
+        List<NdcNotificationDispatchLogData> deliveryLogs = results.getContent()
+                                                                   .stream()
+                                                                   .map(row -> {
+                                                                       NdcNotificationDispatchLog log =
+                                                                           (NdcNotificationDispatchLog) row[0];
+                                                                       return new NdcNotificationDispatchLogData(
+                                                                           log.getNdcNotificationDispatchLogId(),
+                                                                           log.getAlertEventId(),
+                                                                           (String) row[1],
+                                                                           (String) row[2],
+                                                                           log.getRecipientType(),
+                                                                           log.getRecipientUserId(),
+                                                                           log.getRecipientName(),
+                                                                           log.getRecipientEmail(),
+                                                                           log.getDeliveryStatus(),
+                                                                           log.getAttemptNo(),
+                                                                           log.getLastAttemptAt(),
+                                                                           log.getSentAt(),
+                                                                           log.getErrorMessage(),
+                                                                           log.getCreatedAt(),
+                                                                           log.getUpdatedAt());
+                                                                   })
+                                                                   .toList();
+
+        return new DispatchLogOutput(deliveryLogs, results.getTotalElements(), results.getTotalPages());
     }
 
     private NdcAlertEventData toAlertEventData(NdcAlertEvent event) {

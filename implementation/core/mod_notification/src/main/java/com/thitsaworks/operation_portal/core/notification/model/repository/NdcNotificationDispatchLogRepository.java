@@ -20,6 +20,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificat
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
 import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -66,20 +67,19 @@ public interface NdcNotificationDispatchLogRepository
     Optional<NdcNotificationDispatchLog> findByIdForUpdate(
         @Param("id") NdcNotificationDispatchLogId id);
 
-    @Query("""
+    @Query(value = """
         select d, e.participantName, e.currency
         from NdcNotificationDispatchLog d
         join NdcAlertEvent e on e.ndcAlertEventId = d.alertEventId
-        where (:participantName is null or e.participantName = :participantName)
-          and (:currency is null or e.currency = :currency)
-          and (:deliveryStatus is null or d.deliveryStatus = :deliveryStatus)
-          and (:fromTime is null or d.createdAt >= :fromTime)
-          and (:toTime is null or d.createdAt <= :toTime)
+        where (:deliveryStatus is null or d.deliveryStatus = :deliveryStatus)
         order by d.createdAt desc
+        """,
+        countQuery = """
+        select count(d)
+        from NdcNotificationDispatchLog d
+        join NdcAlertEvent e on e.ndcAlertEventId = d.alertEventId
+        where (:deliveryStatus is null or d.deliveryStatus = :deliveryStatus)
         """)
-    List<Object[]> search(@Param("participantName") String participantName,
-                          @Param("currency") String currency,
-                          @Param("deliveryStatus") NdcDeliveryStatus deliveryStatus,
-                          @Param("fromTime") Instant from,
-                          @Param("toTime") Instant to);
+    Page<Object[]> search(@Param("deliveryStatus") NdcDeliveryStatus deliveryStatus,
+                          Pageable pageable);
 }

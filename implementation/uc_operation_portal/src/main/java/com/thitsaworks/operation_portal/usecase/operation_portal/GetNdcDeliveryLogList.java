@@ -15,9 +15,11 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
+import com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId;
+import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
 import com.thitsaworks.operation_portal.component.common.type.NdcDeliveryStatus;
+import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
-import com.thitsaworks.operation_portal.core.notification.data.NdcNotificationDispatchLogData;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,13 +27,30 @@ import java.util.List;
 public interface GetNdcDeliveryLogList
     extends UseCase<GetNdcDeliveryLogList.Input, GetNdcDeliveryLogList.Output> {
 
-    record Input(String participantName,
-                 String currency,
-                 NdcDeliveryStatus deliveryStatus,
-                 Instant from,
-                 Instant to) {
+    record Input(NdcDeliveryStatus deliveryStatus,
+                 Integer page,
+                 Integer pageSize) {
     }
 
-    record Output(List<NdcNotificationDispatchLogData> deliveryLogs) {
+    record Output(List<NdcNotificationDispatch> deliveryLogs,
+                  Long total,
+                  Integer totalPages) {
+
+    }
+    record NdcNotificationDispatch(NdcNotificationDispatchLogId ndcNotificationDispatchLogId,
+                                   NdcAlertEventId alertEventId,
+                                   String participantName,
+                                   String currency,
+                                   NdcRecipientType recipientType,
+                                   String recipientUserId,
+                                   String recipientName,
+                                   String recipientEmail,
+                                   NdcDeliveryStatus deliveryStatus,
+                                   int attemptNo,
+                                   Instant lastAttemptAt,
+                                   Instant sentAt,
+                                   String errorMessage,
+                                   Instant createdAt,
+                                   Instant updatedAt) {
     }
 }

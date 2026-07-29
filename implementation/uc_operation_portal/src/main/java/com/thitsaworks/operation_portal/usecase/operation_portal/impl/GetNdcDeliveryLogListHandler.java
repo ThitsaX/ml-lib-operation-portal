@@ -25,6 +25,9 @@ import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcDeliveryL
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @ActionMetadata(category = ActionCategory.AUDIT_AND_LOGS)
 public class GetNdcDeliveryLogListHandler
@@ -45,11 +48,31 @@ public class GetNdcDeliveryLogListHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        return new Output(this.ndcRuntimeQuery.getDispatchLogs(
-            GetNdcThresholdStateListHandler.blankToNull(input.participantName()),
-            GetNdcThresholdStateListHandler.blankToNull(input.currency()),
+        var output = this.ndcRuntimeQuery.getDispatchLogs(
             input.deliveryStatus(),
-            input.from(),
-            input.to()));
+            input.page(),
+            input.pageSize());
+
+        List<GetNdcDeliveryLogList.NdcNotificationDispatch> deliveryLogs = new ArrayList<>();
+        for (var deliveryLog : output.deliveryLogs()) {
+            deliveryLogs.add(new GetNdcDeliveryLogList.NdcNotificationDispatch(
+                deliveryLog.ndcNotificationDispatchLogId(),
+                deliveryLog.alertEventId(),
+                deliveryLog.participantName(),
+                deliveryLog.currency(),
+                deliveryLog.recipientType(),
+                deliveryLog.recipientUserId(),
+                deliveryLog.recipientName(),
+                deliveryLog.recipientEmail(),
+                deliveryLog.deliveryStatus(),
+                deliveryLog.attemptNo(),
+                deliveryLog.lastAttemptAt(),
+                deliveryLog.sentAt(),
+                deliveryLog.errorMessage(),
+                deliveryLog.createdAt(),
+                deliveryLog.updatedAt()));
+        }
+
+        return new Output(deliveryLogs, output.totalElements(), output.totalPages());
     }
 }
