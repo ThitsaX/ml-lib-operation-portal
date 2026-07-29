@@ -33,8 +33,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -100,7 +98,7 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
         this.updatedBy = updatedBy;
     }
 
-    public boolean breach(LocalDateTime breachedAt, String updatedBy) {
+    public boolean breach(Instant breachedAt, String updatedBy) {
 
         if (this.currentState == NdcThresholdStateType.BREACHED) {
             return false;
@@ -108,26 +106,21 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
 
         this.currentState = NdcThresholdStateType.BREACHED;
         this.breachCycleNo++;
-        this.lastBreachedAt = toInstant(Objects.requireNonNull(breachedAt, "breachedAt is required"));
+        this.lastBreachedAt = Objects.requireNonNull(breachedAt, "breachedAt is required");
         this.updatedBy = updatedBy;
         return true;
     }
 
-    public boolean recover(LocalDateTime recoveredAt, String updatedBy) {
+    public boolean recover(Instant recoveredAt, String updatedBy) {
 
         if (this.currentState == NdcThresholdStateType.SAFE) {
             return false;
         }
 
         this.currentState = NdcThresholdStateType.SAFE;
-        this.lastRecoveredAt = toInstant(Objects.requireNonNull(recoveredAt, "recoveredAt is required"));
+        this.lastRecoveredAt = Objects.requireNonNull(recoveredAt, "recoveredAt is required");
         this.updatedBy = updatedBy;
         return true;
-    }
-
-    private Instant toInstant(LocalDateTime value) {
-
-        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override

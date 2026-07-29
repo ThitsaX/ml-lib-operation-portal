@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
@@ -28,7 +29,8 @@ public class EvaluateNdcThresholdCommandHandler
     private static final String NDC_THRESHOLD_FUNCTION = "NDC Threshold Triggered";
 
     private static final DateTimeFormatter ALERT_EVENT_TIME_FORMATTER =
-        DateTimeFormatter.ofPattern("MMM d, yyyy h:mm:ss a 'UTC'", Locale.ENGLISH);
+        DateTimeFormatter.ofPattern("MMM d, yyyy h:mm:ss a 'UTC'", Locale.ENGLISH)
+                         .withZone(ZoneOffset.UTC);
 
     private final NdcThresholdStateRepository stateRepository;
     private final NdcAlertEventRepository alertEventRepository;
@@ -160,7 +162,7 @@ public class EvaluateNdcThresholdCommandHandler
             </html>
             """.formatted(
             buildSubject(input.participantName()),
-            input.evaluatedAt().format(ALERT_EVENT_TIME_FORMATTER),
+            ALERT_EVENT_TIME_FORMATTER.format(input.evaluatedAt()),
             NDC_THRESHOLD_FUNCTION,
             formatPercent(input.thresholdPercent()),
             formatPercent(input.currentNdcUsed())

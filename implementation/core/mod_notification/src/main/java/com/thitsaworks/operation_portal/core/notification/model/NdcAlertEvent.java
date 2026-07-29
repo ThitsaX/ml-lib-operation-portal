@@ -33,8 +33,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -96,7 +94,7 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
                          BigDecimal ndcLimit,
                          BigDecimal currentNdcUsed,
                          String eventMessage,
-                         LocalDateTime eventTime,
+                         Instant eventTime,
                          String createdBy) {
 
         if (breachCycleNo <= 0) {
@@ -114,13 +112,8 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
         this.ndcLimit = Objects.requireNonNull(ndcLimit, "ndcLimit is required");
         this.currentNdcUsed = Objects.requireNonNull(currentNdcUsed, "currentNdcUsed is required");
         this.eventMessage = eventMessage;
-        this.eventTime = toInstant(Objects.requireNonNull(eventTime, "eventTime is required"));
+        this.eventTime = Objects.requireNonNull(eventTime, "eventTime is required");
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy is required");
-    }
-
-    private Instant toInstant(LocalDateTime value) {
-
-        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override

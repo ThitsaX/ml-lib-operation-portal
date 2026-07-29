@@ -42,7 +42,6 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
 @Component("NdcNotificationDispatcher")
@@ -142,7 +141,7 @@ public class NdcNotificationDispatcher
             }
         }
 
-        LocalDateTime retryBefore = LocalDateTime.now().minus(RETRY_DELAY);
+        Instant retryBefore = Instant.now().minus(RETRY_DELAY);
 
         var retryableLogs = dispatchLogRepository.findRetryable(
             List.of(
@@ -150,7 +149,7 @@ public class NdcNotificationDispatcher
                 NdcDeliveryStatus.FAILED,
                 NdcDeliveryStatus.RETRYING),
             MAXIMUM_ATTEMPTS,
-            toInstant(retryBefore),
+            retryBefore,
             PageRequest.of(0, EVENT_BATCH_SIZE));
 
         if (!retryableLogs.isEmpty()) {
@@ -224,11 +223,6 @@ public class NdcNotificationDispatcher
             endTime,
             schedulerConfigData.zoneId()
         );
-    }
-
-    private Instant toInstant(LocalDateTime value) {
-
-        return value.toInstant(ZoneOffset.UTC);
     }
 
     public record DispatchSummary(int undispatchedEvents,

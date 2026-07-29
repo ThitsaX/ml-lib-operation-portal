@@ -5,7 +5,7 @@ import com.thitsaworks.operation_portal.component.common.type.NdcThresholdStateT
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public interface EvaluateNdcThresholdCommand {
 
@@ -16,7 +16,7 @@ public interface EvaluateNdcThresholdCommand {
         BigDecimal ndcLimit,
         BigDecimal currentNdcUsed,
         BigDecimal thresholdPercent,
-        LocalDateTime evaluatedAt,
+        Instant evaluatedAt,
         String actor
     ) {}
 

@@ -44,8 +44,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -189,8 +191,12 @@ public class NdcThresholdWorker
                     continue;
                 }
 
-                LocalDateTime evaluatedAt = LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
-                                                          .withNano(0);
+                Instant evaluatedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+                LocalDateTime evaluationLogTime =
+                    LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
+                                 .withNano(0);
+                LOG.info("NDC evaluated at: {}", evaluatedAt);
+
                 BigDecimal ndcUsedPercent = ndcUsedData.ndcUsed();
                 String comparison = ndcUsedPercent.compareTo(detail.getNdcConfig()) >= 0
                     ? "AT_OR_ABOVE_THRESHOLD"
@@ -245,7 +251,7 @@ public class NdcThresholdWorker
                          evaluation.currentState(), evaluation.breachCycleNo(), decision,
                          evaluation.alertEventId());
 
-                persistEvaluationLog(schedulerConfigData, evaluation, evaluatedAt);
+                persistEvaluationLog(schedulerConfigData, evaluation, evaluationLogTime);
                 evaluations.add(evaluation);
             }
         }

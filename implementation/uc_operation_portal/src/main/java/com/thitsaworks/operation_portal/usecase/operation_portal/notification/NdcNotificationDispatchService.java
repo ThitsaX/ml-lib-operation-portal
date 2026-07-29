@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -86,7 +86,7 @@ public class NdcNotificationDispatchService {
             return new DeliveryResult(false, false, true);
         }
 
-        dispatchLog.startAttempt(LocalDateTime.now(), SYSTEM_USER);
+        dispatchLog.startAttempt(Instant.now(), SYSTEM_USER);
 
         LOG.info("NDC email delivery attempt: dispatchLogId={}, alertEventId={}, "
                      + "recipientUserId={}, recipientType={}, attempt={}",
@@ -107,7 +107,7 @@ public class NdcNotificationDispatchService {
                 alertMessage.subject(),
                 alertMessage.content());
 
-            dispatchLog.markSent(LocalDateTime.now(), SYSTEM_USER);
+            dispatchLog.markSent(Instant.now(), SYSTEM_USER);
             dispatchLogRepository.saveAndFlush(dispatchLog);
 
             LOG.info("NDC email delivery succeeded: dispatchLogId={}, alertEventId={}, "

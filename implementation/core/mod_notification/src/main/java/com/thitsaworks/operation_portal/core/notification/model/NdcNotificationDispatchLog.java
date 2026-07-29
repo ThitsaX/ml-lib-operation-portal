@@ -36,8 +36,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -113,23 +111,23 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
         return this.deliveryStatus != NdcDeliveryStatus.SENT && this.attemptNo < maximumAttempts;
     }
 
-    public void startAttempt(LocalDateTime attemptTime, String updatedBy) {
+    public void startAttempt(Instant attemptTime, String updatedBy) {
 
         if (this.deliveryStatus == NdcDeliveryStatus.SENT) {
             throw new IllegalStateException("A successfully delivered notification cannot be resent");
         }
 
         this.attemptNo++;
-        this.lastAttemptAt = toInstant(Objects.requireNonNull(attemptTime, "attemptTime is required"));
+        this.lastAttemptAt = Objects.requireNonNull(attemptTime, "attemptTime is required");
         this.deliveryStatus = this.attemptNo == 1 ? NdcDeliveryStatus.PENDING : NdcDeliveryStatus.RETRYING;
         this.errorMessage = null;
         this.updatedBy = updatedBy;
     }
 
-    public void markSent(LocalDateTime sentAt, String updatedBy) {
+    public void markSent(Instant sentAt, String updatedBy) {
 
         this.deliveryStatus = NdcDeliveryStatus.SENT;
-        this.sentAt = toInstant(Objects.requireNonNull(sentAt, "sentAt is required"));
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt is required");
         this.errorMessage = null;
         this.updatedBy = updatedBy;
     }
@@ -139,11 +137,6 @@ public class NdcNotificationDispatchLog extends JpaEntity<NdcNotificationDispatc
         this.deliveryStatus = NdcDeliveryStatus.FAILED;
         this.errorMessage = errorMessage;
         this.updatedBy = updatedBy;
-    }
-
-    private Instant toInstant(LocalDateTime value) {
-
-        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override
