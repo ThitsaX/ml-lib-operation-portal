@@ -36,16 +36,22 @@ public class ModifyRevenuePartyCommandHandler implements ModifyRevenuePartyComma
     @Override
     @CoreWriteTransactional
     public Output execute(Input input) throws RevenuePartyException {
+
         RevenueParty party = this.revenuePartyRepository.findById(input.revenuePartyId())
                 .orElseThrow(() -> new RevenuePartyException(RevenuePartyErrors.REVENUE_PARTY_NOT_FOUND.format(input.revenuePartyId().toString())));
+
         if (!input.partyCode().equals(party.getPartyCode()) &&
                 this.revenuePartyRepository.findByPartyCode(input.partyCode()).isPresent()) {
             throw new RevenuePartyException(RevenuePartyErrors.REVENUE_PARTY_ALREADY_REGISTERED.format(input.partyCode()));
         }
+
         this.revenuePartyHistoryRepository.save(new RevenuePartyHistory(party, RevenuePartyActionType.UPDATE, input.updatedBy()));
+
         party.partyCode(input.partyCode()).partyName(input.partyName()).partyType(input.partyType())
              .description(input.description()).updatedBy(input.updatedBy());
+
         this.revenuePartyRepository.save(party);
+
         return new Output(true, party.getRevenuePartyId());
     }
 }
