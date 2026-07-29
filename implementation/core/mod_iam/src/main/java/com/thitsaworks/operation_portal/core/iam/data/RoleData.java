@@ -24,14 +24,16 @@ import java.util.Objects;
 public record RoleData(RoleId roleId,
                        String name,
                        boolean active,
-                       boolean isDfsp) implements Serializable {
+                       boolean isDfsp,
+                       String roleType) implements Serializable {
 
     public RoleData(Role role) {
 
         this(role.getRoleId(),
              role.getName(),
              role.getActive(),
-             role.getIsDfsp());
+             role.getIsDfsp(),
+             role.getRoleType());
     }
 
     @Override
