@@ -129,6 +129,33 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
         this.sendingDfspCommissionAmount = sendingDfspCommissionAmount;
     }
 
+    public RevenueTransactionDetail revenueSplit(String category,
+                                                 String responsibleMinistryCode,
+                                                 String thirdPartyCode,
+                                                 BigDecimal golPercentage,
+                                                 BigDecimal golAmount,
+                                                 BigDecimal ministryPercent,
+                                                 BigDecimal ministryAmount,
+                                                 BigDecimal thirdPartyPercent,
+                                                 BigDecimal thirdPartyAmount,
+                                                 BigDecimal sendingDfspCommissionPercent,
+                                                 BigDecimal sendingDfspCommissionAmount) {
+
+        this.category = category;
+        this.responsibleMinistryCode = responsibleMinistryCode;
+        this.thirdPartyCode = thirdPartyCode;
+        this.golPercentage = golPercentage;
+        this.golAmount = golAmount;
+        this.ministryPercent = ministryPercent;
+        this.ministryAmount = ministryAmount;
+        this.thirdPartyPercent = thirdPartyPercent;
+        this.thirdPartyAmount = thirdPartyAmount;
+        this.sendingDfspCommissionPercent = sendingDfspCommissionPercent;
+        this.sendingDfspCommissionAmount = sendingDfspCommissionAmount;
+
+        return this;
+    }
+
     @Override
     public RevenueTransactionDetailId getId() {
 

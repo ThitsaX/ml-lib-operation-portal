@@ -20,15 +20,20 @@ import com.thitsaworks.operation_portal.core.revenue_transaction.command.ModifyR
 import com.thitsaworks.operation_portal.core.revenue_transaction.exception.RevenueTransactionErrors;
 import com.thitsaworks.operation_portal.core.revenue_transaction.exception.RevenueTransactionException;
 import com.thitsaworks.operation_portal.core.revenue_transaction.model.RevenueTransaction;
+import com.thitsaworks.operation_portal.core.revenue_transaction.model.RevenueTransactionDetail;
+import com.thitsaworks.operation_portal.core.revenue_transaction.repository.RevenueTransactionDetailRepository;
 import com.thitsaworks.operation_portal.core.revenue_transaction.repository.RevenueTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
 public class ModifyRevenueTransactionCommandHandler implements ModifyRevenueTransactionCommand {
 
     private final RevenueTransactionRepository revenueTransactionRepository;
+    private final RevenueTransactionDetailRepository revenueTransactionDetailRepository;
 
     @Override
     @CoreWriteTransactional
@@ -42,7 +47,40 @@ public class ModifyRevenueTransactionCommandHandler implements ModifyRevenueTran
 
         revenueTransaction.state(input.state());
 
-        this.revenueTransactionRepository.save(revenueTransaction);
+        var updatedDetails = new ArrayList<RevenueTransactionDetail>();
+        if (input.transactionDetails() != null) {
+            if (input.transactionDetails().size() != revenueTransaction.getTransactionDetails().size()) {
+                throw new IllegalStateException(
+                        "Revenue transaction detail count mismatch. Expected "
+                        + revenueTransaction.getTransactionDetails().size()
+                        + " but received " + input.transactionDetails().size());
+            }
+
+            input.transactionDetails().forEach(update -> {
+                var details = revenueTransaction.getTransactionDetails().stream()
+                    .filter(detail -> detail.getRevenueTransactionDetailId().getId().toString()
+                            .equals(update.revenueTransactionDetailId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Revenue transaction detail not found: " + update.revenueTransactionDetailId()));
+
+                updatedDetails.add(details.revenueSplit(
+                        update.category(),
+                        update.responsibleMinistryCode(),
+                        update.thirdPartyCode(),
+                        update.golPercentage(),
+                        update.golAmount(),
+                        update.ministryPercentage(),
+                        update.ministryAmount(),
+                        update.thirdPartyPercentage(),
+                        update.thirdPartyAmount(),
+                        update.sendingDfspPercentage(),
+                        update.sendingDfspAmount()));
+            });
+        }
+
+        this.revenueTransactionRepository.saveAndFlush(revenueTransaction);
+        this.revenueTransactionDetailRepository.saveAllAndFlush(updatedDetails);
 
         return new Output(true, revenueTransaction.getRevenueTransactionId());
     }

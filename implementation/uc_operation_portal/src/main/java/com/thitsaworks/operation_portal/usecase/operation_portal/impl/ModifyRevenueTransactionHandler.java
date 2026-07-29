@@ -24,12 +24,15 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditC
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
+import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
 import com.thitsaworks.operation_portal.core.revenue_transaction.command.ModifyRevenueTransactionCommand;
+import com.thitsaworks.operation_portal.core.revenue_transaction.query.RevenueTransactionQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyRevenueTransaction;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,6 +42,8 @@ public class ModifyRevenueTransactionHandler
         implements ModifyRevenueTransaction {
 
     private final ModifyRevenueTransactionCommand modifyRevenueTransactionCommand;
+    private final RevenueTransactionQuery revenueTransactionQuery;
+    private final RevenueEngine revenueEngine;
 
     public ModifyRevenueTransactionHandler(CreateInputAuditCommand createInputAuditCommand,
                                            CreateOutputAuditCommand createOutputAuditCommand,
@@ -46,36 +51,81 @@ public class ModifyRevenueTransactionHandler
                                            ObjectMapper objectMapper,
                                            PrincipalCache principalCache,
                                            ActionAuthorizationManager actionAuthorizationManager,
-                                           ModifyRevenueTransactionCommand modifyRevenueTransactionCommand) {
+                                           ModifyRevenueTransactionCommand modifyRevenueTransactionCommand,
+                                           RevenueTransactionQuery revenueTransactionQuery,
+                                           RevenueEngine revenueEngine) {
 
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
               objectMapper, principalCache, actionAuthorizationManager);
 
         this.modifyRevenueTransactionCommand = modifyRevenueTransactionCommand;
+        this.revenueTransactionQuery = revenueTransactionQuery;
+        this.revenueEngine = revenueEngine;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        var calculatedDetails = this.calculateTransactionDetails(input.revenueTransactionId());
+        var detailUpdates = calculatedDetails.stream()
+                .map(calculated -> {
+                    var detail = calculated.detail();
+                    return new ModifyRevenueTransactionCommand.TransactionDetail(
+                            calculated.revenueTransactionDetailId(),
+                            detail.category(),
+                            detail.responsibleMinistryCode(),
+                            detail.thirdPartyCode(),
+                            detail.golPercent(),
+                            detail.golAmount(),
+                            detail.ministryPercent(),
+                            detail.ministryAmount(),
+                            detail.thirdPartyPercent(),
+                            detail.thirdPartyAmount(),
+                            detail.sendingDfspCommissionPercent(),
+                            detail.sendingDfspCommissionAmount());
+                })
+                .toList();
         var output = this.modifyRevenueTransactionCommand.execute(new ModifyRevenueTransactionCommand.Input(
-                input.revenueTransactionId(), input.state()));
-
-        var transactionDetails = this.calculateTransactionDetails(output.revenueTransactionId());
+                input.revenueTransactionId(), input.state(), detailUpdates));
+        var transactionDetails = calculatedDetails.stream().map(CalculatedTransactionDetail::detail).toList();
 
         return new Output(output.modified(), output.revenueTransactionId(), transactionDetails);
     }
 
-    private List<ModifyRevenueTransaction.TransactionDetail> calculateTransactionDetails(
-            RevenueTransactionId revenueTransactionId) {
+    private List<CalculatedTransactionDetail> calculateTransactionDetails(
+            RevenueTransactionId revenueTransactionId) throws DomainException {
 
-        /*
-         * TODO Implement the revenue transaction detail calculation.
-         * The current implementation returns a default detail object.
-         */
-        return List.of(new ModifyRevenueTransaction.TransactionDetail(
-                null, null, null, null,
-                null, null, null, null,
-                null, null,
-                null));
+        var revenueTransaction = this.revenueTransactionQuery.get(revenueTransactionId);
+        var transactionDetails = new ArrayList<CalculatedTransactionDetail>();
+
+        for (var detail : revenueTransaction.transactionDetails()) {
+
+            var amount = detail.taxAmountCh() == null
+                             ? detail.taxAmount()
+                             : detail.taxAmountCh();
+            var revenueSplit = this.revenueEngine.calculateRevenue(detail.taxCode(), amount);
+
+            transactionDetails.add(new CalculatedTransactionDetail(
+                    detail.revenueTransactionDetailId(),
+                    new ModifyRevenueTransaction.TransactionDetail(
+                            revenueSplit.revenueConfigCategory().name(),
+                            revenueSplit.responsibleMinistryCode(),
+                            revenueSplit.thirdPartyProviderCode(),
+                            revenueSplit.golPercentage(),
+                            revenueSplit.golAmount(),
+                            revenueSplit.ministryPercentage(),
+                            revenueSplit.ministryAmount(),
+                            revenueSplit.thirdPartyPercentage(),
+                            revenueSplit.thirdPartyAmount(),
+                            revenueSplit.sendingDfspPercentage(),
+                            revenueSplit.sendingDfspAmount())));
+        }
+
+        return transactionDetails;
+    }
+
+    private record CalculatedTransactionDetail(
+            String revenueTransactionDetailId,
+            ModifyRevenueTransaction.TransactionDetail detail) {
     }
 }

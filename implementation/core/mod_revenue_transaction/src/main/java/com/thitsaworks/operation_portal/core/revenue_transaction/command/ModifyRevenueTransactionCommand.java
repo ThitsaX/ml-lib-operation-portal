@@ -19,10 +19,28 @@ import com.thitsaworks.operation_portal.component.common.identifier.RevenueTrans
 import com.thitsaworks.operation_portal.component.common.type.TransactionState;
 import com.thitsaworks.operation_portal.core.revenue_transaction.exception.RevenueTransactionException;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 public interface ModifyRevenueTransactionCommand {
 
     record Input(RevenueTransactionId revenueTransactionId,
-                 TransactionState state) {
+                 TransactionState state,
+                 List<TransactionDetail> transactionDetails) {
+    }
+
+    record TransactionDetail(String revenueTransactionDetailId,
+                             String category,
+                             String responsibleMinistryCode,
+                             String thirdPartyCode,
+                             BigDecimal golPercentage,
+                             BigDecimal golAmount,
+                             BigDecimal ministryPercentage,
+                             BigDecimal ministryAmount,
+                             BigDecimal thirdPartyPercentage,
+                             BigDecimal thirdPartyAmount,
+                             BigDecimal sendingDfspPercentage,
+                             BigDecimal sendingDfspAmount) {
     }
 
     record Output(boolean modified, RevenueTransactionId revenueTransactionId) {
