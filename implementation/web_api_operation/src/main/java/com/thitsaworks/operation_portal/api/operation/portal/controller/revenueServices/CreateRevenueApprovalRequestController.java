@@ -24,6 +24,7 @@ import com.thitsaworks.operation_portal.api.operation.portal.security.UserContex
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.util.TimeZoneUtil;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueApprovalRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -41,7 +42,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -53,7 +53,7 @@ public class CreateRevenueApprovalRequestController {
         CreateRevenueApprovalRequestController.class);
 
     private static final DateTimeFormatter EFFECTIVE_DATE_FORMAT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final CreateRevenueApprovalRequest createRevenueApprovalRequest;
 
@@ -80,7 +80,8 @@ public class CreateRevenueApprovalRequestController {
                                            RevenueConfigCategory.valueOf(request.category()),
                 request.responsibleMinistryCode(), request.thirdPartyProviderCode(),
                 this.toInstant(request.effectiveDate(), request.effectiveTimezone()),
-                request.effectiveTimezone(), request.percentages(), userContext.userId()));
+                request.effectiveDate(), request.effectiveTimezone(), request.percentages(),
+                userContext.userId()));
 
         var response = new Response(output.approvalRequestId().getEntityId().toString());
 
@@ -121,7 +122,7 @@ public class CreateRevenueApprovalRequestController {
         }
 
         LocalDateTime localDateTime = LocalDateTime.parse(effectiveDate, EFFECTIVE_DATE_FORMAT);
-        return localDateTime.atZone(ZoneId.of(effectiveTimezone)).toInstant();
+        return localDateTime.atZone(TimeZoneUtil.zoneId(effectiveTimezone)).toInstant();
     }
 
 }

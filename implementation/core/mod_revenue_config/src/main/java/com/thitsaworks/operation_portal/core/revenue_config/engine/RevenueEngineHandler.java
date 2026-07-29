@@ -79,31 +79,35 @@ public class RevenueEngineHandler implements RevenueEngine {
                                                                                RevenueConfig::getTaxCodeId));
 
         Instant now = Instant.now();
-        List<RevenueConfig> expiredRevenueConfigs = new ArrayList<>();
+        List<ArchiveCandidate> archiveCandidates = new ArrayList<>();
         for (List<RevenueConfig> revenueConfigs : revenueConfigsByTaxCode.values()) {
             if (revenueConfigs.size() <= 1) {
                 continue;
             }
 
-            expiredRevenueConfigs.addAll(this.expiredRevenueConfigs(revenueConfigs, now));
+            archiveCandidates.addAll(this.archiveCandidates(revenueConfigs, now));
         }
 
-        if (expiredRevenueConfigs.isEmpty()) {
-            LOGGER.debug("No expired revenue configurations found to archive.");
+        if (archiveCandidates.isEmpty()) {
+            LOGGER.debug("No revenue configurations found to archive.");
             return;
         }
 
-        List<RevenueConfigHistory> histories = expiredRevenueConfigs
+        List<RevenueConfigHistory> histories = archiveCandidates
                                                    .stream()
-                                                   .map(revenueConfig -> new RevenueConfigHistory(
-                                                       revenueConfig, RevenueConfigStatus.EXPIRED))
+                                                   .map(candidate -> new RevenueConfigHistory(
+                                                       candidate.revenueConfig(), candidate.status()))
                                                    .toList();
+        List<RevenueConfig> revenueConfigsToArchive = archiveCandidates
+                                                          .stream()
+                                                          .map(ArchiveCandidate::revenueConfig)
+                                                          .toList();
 
         this.revenueConfigHistoryRepository.saveAll(histories);
-        this.revenueConfigRepository.deleteAll(expiredRevenueConfigs);
+        this.revenueConfigRepository.deleteAll(revenueConfigsToArchive);
         this.revenueConfigRepository.flush();
 
-        LOGGER.info("Archived [{}] expired revenue configurations.", expiredRevenueConfigs.size());
+        LOGGER.info("Archived [{}] revenue configurations.", archiveCandidates.size());
     }
 
     @Override
@@ -256,14 +260,38 @@ public class RevenueEngineHandler implements RevenueEngine {
 
     }
 
-    private List<RevenueConfig> expiredRevenueConfigs(List<RevenueConfig> revenueConfigs,
-                                                      Instant now) {
+    private List<ArchiveCandidate> archiveCandidates(List<RevenueConfig> revenueConfigs,
+                                                     Instant now) {
+
+        List<ArchiveCandidate> candidates = new ArrayList<>();
+        candidates.addAll(this.currentArchiveCandidates(revenueConfigs, now));
+        candidates.addAll(this.futureArchiveCandidates(revenueConfigs, now));
+        return candidates;
+    }
+
+    private List<ArchiveCandidate> currentArchiveCandidates(List<RevenueConfig> revenueConfigs,
+                                                            Instant now) {
 
         return revenueConfigs
                    .stream()
                    .filter(revenueConfig -> this.isCurrent(revenueConfig, now))
                    .sorted(LATEST_UPDATED_REVENUE_CONFIG_FIRST)
                    .skip(1)
+                   .map(revenueConfig -> new ArchiveCandidate(
+                       revenueConfig, RevenueConfigStatus.EXPIRED))
+                   .toList();
+    }
+
+    private List<ArchiveCandidate> futureArchiveCandidates(List<RevenueConfig> revenueConfigs,
+                                                           Instant now) {
+
+        return revenueConfigs
+                   .stream()
+                   .filter(revenueConfig -> this.isFuture(revenueConfig, now))
+                   .sorted(LATEST_UPDATED_REVENUE_CONFIG_FIRST)
+                   .skip(1)
+                   .map(revenueConfig -> new ArchiveCandidate(
+                       revenueConfig, RevenueConfigStatus.SUPERSEDED))
                    .toList();
     }
 
@@ -283,5 +311,8 @@ public class RevenueEngineHandler implements RevenueEngine {
         return revenueConfig.getUpdatedAt() != null ? revenueConfig.getUpdatedAt() :
                    revenueConfig.getCreatedAt();
     }
+
+    private record ArchiveCandidate(RevenueConfig revenueConfig,
+                                    RevenueConfigStatus status) { }
 
 }

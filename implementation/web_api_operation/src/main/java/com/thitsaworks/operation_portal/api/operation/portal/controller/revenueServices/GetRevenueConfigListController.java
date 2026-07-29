@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.component.misc.util.TimeZoneUtil;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenueConfigList;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -34,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class GetRevenueConfigListController {
     private static final String DEFAULT_EFFECTIVE_TIMEZONE = "GMT+00:00";
 
     private static final DateTimeFormatter EFFECTIVE_DATE_FORMAT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final GetRevenueConfigList getRevenueConfigList;
 
@@ -127,7 +127,7 @@ public class GetRevenueConfigListController {
             }
 
             return EFFECTIVE_DATE_FORMAT.format(
-                effectiveDate.atZone(ZoneId.of(effectiveTimezone(effectiveTimezone))));
+                effectiveDate.atZone(TimeZoneUtil.zoneId(effectiveTimezone)));
         }
 
         private static String effectiveTimezone(String effectiveTimezone) {

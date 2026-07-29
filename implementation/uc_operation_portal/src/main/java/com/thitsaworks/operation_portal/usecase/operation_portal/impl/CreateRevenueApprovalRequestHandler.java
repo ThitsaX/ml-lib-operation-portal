@@ -24,6 +24,7 @@ import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatu
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
+import com.thitsaworks.operation_portal.component.misc.util.TimeZoneUtil;
 import com.thitsaworks.operation_portal.core.approval.command.CreateApprovalRequestByCategoryCommand;
 import com.thitsaworks.operation_portal.core.approval.command.CreateApprovalRequestFieldDetailCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
@@ -44,6 +45,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,6 +60,9 @@ public class CreateRevenueApprovalRequestHandler
     implements CreateRevenueApprovalRequest {
 
     private static final String REQUEST_CATEGORY = "REVENUE_CONFIG";
+
+    private static final DateTimeFormatter EFFECTIVE_DATE_DISPLAY_FORMAT =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final String REVENUE_CONFIG_ID_FIELD_KEY = "revenue_config_id";
 
@@ -76,6 +81,8 @@ public class CreateRevenueApprovalRequestHandler
     private static final String PERCENTAGES_FIELD_LABEL = "Percentages";
 
     private static final String EFFECTIVE_DATE_FIELD_KEY = "effective_date";
+
+    private static final String EFFECTIVE_DATE_DISPLAY_FIELD_KEY = "effective_date_display";
 
     private static final String EFFECTIVE_TIMEZONE_FIELD_KEY = "effective_timezone";
 
@@ -163,13 +170,14 @@ public class CreateRevenueApprovalRequestHandler
 
         if (validateUniqueTaxCode) {
             this.revenueConfigValidator.validateUniqueTaxCode(
-                input.taxCodeId(), input.revenueConfigId());
+                input.taxCodeId(), null);
         }
 
         List<BigDecimal> percentages = this.percentageValues(input.percentages());
         this.revenueConfigValidator.validate(
             input.category(), input.responsibleMinistryCode(), input.thirdPartyProviderCode(),
-            percentages.get(0), percentages.get(1), percentages.get(2), percentages.get(3));
+            percentages.get(0), percentages.get(1), percentages.get(2), percentages.get(3),
+            input.effectiveDate(), input.effectiveTimezone());
     }
 
     private RevenueConfigData existingRevenueConfig(Input input) throws DomainException {
@@ -195,6 +203,8 @@ public class CreateRevenueApprovalRequestHandler
                                                       input.revenueConfigId())));
 
         if (isUpdateRevenueConfig) {
+            this.revenueConfigValidator.validateTaxCodeUnchanged(
+                revenueConfig.taxCodeId(), input.taxCodeId());
             this.validateRevenueConfig(input, false);
         }
 
@@ -224,17 +234,21 @@ public class CreateRevenueApprovalRequestHandler
 
         if (input.effectiveDate() != null) {
             this.createTextFieldDetail(
-                output, EFFECTIVE_DATE_FIELD_KEY, "Effective Date",
-                String.valueOf(input.effectiveDate().getEpochSecond()), 6);
+                output, EFFECTIVE_DATE_FIELD_KEY, "Effective Date (UTC)",
+                this.toNullableString(input.effectiveDate()), 6);
+
+            this.createTextFieldDetail(
+                output, EFFECTIVE_DATE_DISPLAY_FIELD_KEY, "Effective Date",
+                input.effectiveDateDisplay(), 7);
         }
 
         this.createTextFieldDetail(
             output, EFFECTIVE_TIMEZONE_FIELD_KEY, "Effective Timezone",
-            input.effectiveTimezone(), 7);
+            input.effectiveTimezone(), 8);
 
         this.createJsonFieldDetail(
             output, PERCENTAGES_FIELD_KEY, PERCENTAGES_FIELD_LABEL, null,
-            this.objectMapper.writeValueAsString(this.toPercentageJson(input.percentages())), 8);
+            this.objectMapper.writeValueAsString(this.toPercentageJson(input.percentages())), 9);
     }
 
     private void updateRequestDetails(CreateApprovalRequestByCategoryCommand.Output output,
@@ -256,30 +270,36 @@ public class CreateRevenueApprovalRequestHandler
             "Tax Code ID (Description)", revenueConfig.taxCodeDescription(),
             input.taxCodeDescription(), 2);
 
-        this.createChangedTextFieldDetail(
+        this.createSnapshotTextFieldDetail(
             output, CATEGORY_FIELD_KEY, "Category",
             revenueConfig.category().name(), input.category().name(), 3);
 
-        this.createChangedRevenuePartyFieldDetail(
+        this.createRevenuePartySnapshotFieldDetail(
             output, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY,
             "Responsible Ministry Name", revenueConfig.responsibleMinistryCode(),
             input.responsibleMinistryCode(), 4);
 
-        this.createChangedRevenuePartyFieldDetail(
+        this.createRevenuePartySnapshotFieldDetail(
             output, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
             "Third Party Provider Name", revenueConfig.thirdPartyProviderCode(),
             input.thirdPartyProviderCode(), 5);
 
         if (input.effectiveDate() != null) {
-            this.createChangedTextFieldDetail(
-                output, EFFECTIVE_DATE_FIELD_KEY, "Effective Date",
+            this.createSnapshotTextFieldDetail(
+                output, EFFECTIVE_DATE_FIELD_KEY, "Effective Date (UTC)",
                 this.toNullableString(revenueConfig.effectiveDate()),
                 this.toNullableString(input.effectiveDate()), 6);
+
+            this.createSnapshotTextFieldDetail(
+                output, EFFECTIVE_DATE_DISPLAY_FIELD_KEY, "Effective Date",
+                this.formatEffectiveDateDisplay(
+                    revenueConfig.effectiveDate(), revenueConfig.effectiveTimezone()),
+                input.effectiveDateDisplay(), 7);
         }
 
-        this.createChangedTextFieldDetail(
+        this.createSnapshotTextFieldDetail(
             output, EFFECTIVE_TIMEZONE_FIELD_KEY, "Effective Timezone",
-            revenueConfig.effectiveTimezone(), input.effectiveTimezone(), 7);
+            revenueConfig.effectiveTimezone(), input.effectiveTimezone(), 8);
 
         this.createChangedJsonFieldDetail(output, input, revenueConfig);
     }
@@ -335,6 +355,19 @@ public class CreateRevenueApprovalRequestHandler
                 afterValue, "TEXT", displayOrder, ApprovalTabCode.REVENUE.name()));
     }
 
+    private void createSnapshotTextFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                               String fieldKey,
+                                               String fieldLabel,
+                                               String beforeValue,
+                                               String afterValue,
+                                               Integer displayOrder) {
+
+        this.createApprovalRequestFieldDetailCommand.execute(
+            new CreateApprovalRequestFieldDetailCommand.Input(
+                output.approvalRequestId(), fieldKey, fieldLabel, afterValue, beforeValue,
+                afterValue, "TEXT", displayOrder, ApprovalTabCode.REVENUE.name()));
+    }
+
     private void createTextFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
                                        String fieldKey,
                                        String fieldLabel,
@@ -364,24 +397,6 @@ public class CreateRevenueApprovalRequestHandler
                 "TEXT", displayOrder, ApprovalTabCode.REVENUE.name()));
     }
 
-    private void createChangedRevenuePartyFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
-                                                      String fieldKey,
-                                                      String fieldLabel,
-                                                      String beforeValue,
-                                                      String afterPartyCode,
-                                                      Integer displayOrder) {
-
-        if (Objects.equals(beforeValue, afterPartyCode)) {
-            return;
-        }
-
-        this.createApprovalRequestFieldDetailCommand.execute(
-            new CreateApprovalRequestFieldDetailCommand.Input(
-                output.approvalRequestId(), fieldKey, fieldLabel, afterPartyCode,
-                this.revenuePartyName(beforeValue), this.revenuePartyName(afterPartyCode), "TEXT",
-                displayOrder, ApprovalTabCode.REVENUE.name()));
-    }
-
     private void createRevenuePartyFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
                                                String fieldKey,
                                                String fieldLabel,
@@ -397,6 +412,24 @@ public class CreateRevenueApprovalRequestHandler
                 output.approvalRequestId(), fieldKey, fieldLabel, partyCode, null,
                 this.revenuePartyName(partyCode), "TEXT", displayOrder,
                 ApprovalTabCode.REVENUE.name()));
+    }
+
+    private void createRevenuePartySnapshotFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
+                                                       String fieldKey,
+                                                       String fieldLabel,
+                                                       String beforePartyCode,
+                                                       String afterPartyCode,
+                                                       Integer displayOrder) {
+
+        if (afterPartyCode == null || afterPartyCode.isBlank()) {
+            return;
+        }
+
+        this.createApprovalRequestFieldDetailCommand.execute(
+            new CreateApprovalRequestFieldDetailCommand.Input(
+                output.approvalRequestId(), fieldKey, fieldLabel, afterPartyCode,
+                this.revenuePartyName(beforePartyCode), this.revenuePartyName(afterPartyCode),
+                "TEXT", displayOrder, ApprovalTabCode.REVENUE.name()));
     }
 
     private void createJsonFieldDetail(CreateApprovalRequestByCategoryCommand.Output output,
@@ -420,14 +453,11 @@ public class CreateRevenueApprovalRequestHandler
         Map<String, Object> beforePercentages = this.toPercentageJson(
             input.percentages(), revenueConfig);
         Map<String, Object> afterPercentages = this.toPercentageJson(input.percentages());
-        if (Objects.equals(beforePercentages, afterPercentages)) {
-            return;
-        }
 
         this.createJsonFieldDetail(
             output, PERCENTAGES_FIELD_KEY, PERCENTAGES_FIELD_LABEL,
             this.objectMapper.writeValueAsString(beforePercentages),
-            this.objectMapper.writeValueAsString(afterPercentages), 8);
+            this.objectMapper.writeValueAsString(afterPercentages), 9);
     }
 
     private RevenueActionType toRequestedAction(String value) {
@@ -492,6 +522,17 @@ public class CreateRevenueApprovalRequestHandler
     private String toNullableString(Long value) {
 
         return value == null ? null : String.valueOf(value);
+    }
+
+    private String formatEffectiveDateDisplay(Instant effectiveDate,
+                                              String effectiveTimezone) {
+
+        if (effectiveDate == null) {
+            return null;
+        }
+
+        return EFFECTIVE_DATE_DISPLAY_FORMAT.format(
+            effectiveDate.atZone(TimeZoneUtil.zoneId(effectiveTimezone)));
     }
 
     private String revenuePartyName(String partyCode) {

@@ -52,7 +52,7 @@ public class ModifyRevenueConfigCommandHandler implements ModifyRevenueConfigCom
         this.revenueConfigValidator.validate(
             input.category(), input.responsibleMinistryCode(), input.thirdPartyProviderCode(),
             input.golPercentage(), input.ministryPercentage(), input.thirdPartyPercentage(),
-            input.sendingDfspPercentage());
+            input.sendingDfspPercentage(), input.effectiveDate(), input.effectiveTimezone());
 
         this.revenueConfigHistoryRepository.save(new RevenueConfigHistory(revenueConfig));
 

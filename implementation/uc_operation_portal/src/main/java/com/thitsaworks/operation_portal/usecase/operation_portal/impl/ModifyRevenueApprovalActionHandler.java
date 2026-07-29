@@ -44,6 +44,7 @@ import com.thitsaworks.operation_portal.core.iam.exception.IAMException;
 import com.thitsaworks.operation_portal.core.revenue_config.command.CreateRevenueConfigCommand;
 import com.thitsaworks.operation_portal.core.revenue_config.command.ModifyRevenueConfigStatusCommand;
 import com.thitsaworks.operation_portal.core.revenue_config.data.RevenueConfigData;
+import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
 import com.thitsaworks.operation_portal.core.revenue_config.query.RevenueConfigQuery;
@@ -55,7 +56,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -86,19 +86,6 @@ public class ModifyRevenueApprovalActionHandler
 
     private static final String EFFECTIVE_TIMEZONE_FIELD_KEY = "effective_timezone";
 
-    private static final Comparator<RevenueConfigData> LATEST_UPDATED_REVENUE_CONFIG_FIRST = Comparator
-                                                                                                 .comparing(
-                                                                                                     ModifyRevenueApprovalActionHandler::updatedAtOrCreatedAt,
-                                                                                                     Comparator.nullsFirst(
-                                                                                                         Comparator.naturalOrder()))
-                                                                                                 .thenComparing(
-                                                                                                     revenueConfig -> revenueConfig
-                                                                                                                          .revenueConfigId()
-                                                                                                                          .getEntityId(),
-                                                                                                     Comparator.nullsLast(
-                                                                                                         Comparator.naturalOrder()))
-                                                                                                 .reversed();
-
     private final ObjectMapper objectMapper;
 
     private final ModifyApprovalActionCommand modifyApprovalActionCommand;
@@ -111,6 +98,8 @@ public class ModifyRevenueApprovalActionHandler
 
     private final ModifyRevenueConfigStatusCommand modifyRevenueConfigStatusCommand;
 
+    private final RevenueEngine revenueEngine;
+
     public ModifyRevenueApprovalActionHandler(CreateInputAuditCommand createInputAuditCommand,
                                               CreateOutputAuditCommand createOutputAuditCommand,
                                               CreateExceptionAuditCommand createExceptionAuditCommand,
@@ -121,7 +110,8 @@ public class ModifyRevenueApprovalActionHandler
                                               ApprovalRequestQuery approvalRequestQuery,
                                               RevenueConfigQuery revenueConfigQuery,
                                               CreateRevenueConfigCommand createRevenueConfigCommand,
-                                              ModifyRevenueConfigStatusCommand modifyRevenueConfigStatusCommand) {
+                                              ModifyRevenueConfigStatusCommand modifyRevenueConfigStatusCommand,
+                                              RevenueEngine revenueEngine) {
 
         super(
             createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
@@ -133,6 +123,7 @@ public class ModifyRevenueApprovalActionHandler
         this.revenueConfigQuery = revenueConfigQuery;
         this.createRevenueConfigCommand = createRevenueConfigCommand;
         this.modifyRevenueConfigStatusCommand = modifyRevenueConfigStatusCommand;
+        this.revenueEngine = revenueEngine;
     }
 
     @Override
@@ -150,8 +141,8 @@ public class ModifyRevenueApprovalActionHandler
             approvalRequestData.getRequestedAction());
 
         RevenueConfigData revenueConfig =
-            requestedAction == RevenueActionType.CREATE_REVENUE_CONFIG ? null :
-                this.revenueConfig(approvalRequestData);
+            requestedAction == RevenueActionType.DELETE_REVENUE_CONFIG ?
+                this.revenueConfig(approvalRequestData) : null;
         Instant respondedDate = Instant.now();
 
         if (input.action() == ApprovalActionType.REJECTED) {
@@ -166,7 +157,7 @@ public class ModifyRevenueApprovalActionHandler
             } else if (requestedAction == RevenueActionType.UPDATE_REVENUE_CONFIG) {
 
                 this.createModifiedRevenueConfig(
-                    approvalRequestData, revenueConfig, input.responseUserId(), respondedDate);
+                    approvalRequestData, input.responseUserId(), respondedDate);
 
             } else if (requestedAction == RevenueActionType.DELETE_REVENUE_CONFIG) {
 
@@ -175,6 +166,8 @@ public class ModifyRevenueApprovalActionHandler
                         revenueConfig.revenueConfigId(), RevenueConfigStatus.INACTIVE,
                         input.responseUserId(), respondedDate));
             }
+
+            this.refreshRevenueEngine();
         }
 
         ModifyApprovalActionCommand.Output output = this.executeApprovalAction(input);
@@ -187,6 +180,12 @@ public class ModifyRevenueApprovalActionHandler
         if (reason == null || reason.isBlank()) {
             throw new ApprovalException(ApprovalErrors.INVALID_REASON);
         }
+    }
+
+    private void refreshRevenueEngine() {
+
+        this.revenueEngine.archiveExpiredRevenueConfigs();
+        this.revenueEngine.runStatusLifecycleJob();
     }
 
     private void createRevenueConfig(ApprovalRequestData approvalRequestData,
@@ -203,67 +202,41 @@ public class ModifyRevenueApprovalActionHandler
                 this.requiredFieldOrAfterValue(approvalRequestData, CATEGORY_FIELD_KEY)),
             this.requiredFieldValue(approvalRequestData, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY),
             this.fieldValueOrDefault(
-                approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
-                null), percentages.get(0), percentages.get(1), percentages.get(2),
-            percentages.get(3), responseUserId, this.toNullableInstant(
-            this.afterValueOrDefault(approvalRequestData, EFFECTIVE_DATE_FIELD_KEY, null)),
+                approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY, null),
+            percentages.get(0), percentages.get(1), percentages.get(2), percentages.get(3),
+            responseUserId,
+            this.toNullableInstant(
+                this.afterValueOrDefault(approvalRequestData, EFFECTIVE_DATE_FIELD_KEY, null)),
             this.afterOrFieldValueOrDefault(approvalRequestData, EFFECTIVE_TIMEZONE_FIELD_KEY, null),
             RevenueConfigStatus.ACTIVE, respondedDate, true));
     }
 
     private void createModifiedRevenueConfig(ApprovalRequestData approvalRequestData,
-                                             RevenueConfigData revenueConfig,
                                              UserId responseUserId,
                                              Instant respondedDate)
         throws DomainException, JsonProcessingException {
 
-        List<BigDecimal> percentages = this.approvedPercentages(approvalRequestData, revenueConfig);
+        List<BigDecimal> percentages = this.approvedPercentages(approvalRequestData);
 
         Instant effectiveDate = this.toNullableInstant(
-            this.afterValueOrDefault(
-                approvalRequestData, EFFECTIVE_DATE_FIELD_KEY,
-                this.toNullableString(revenueConfig.effectiveDate())));
-        String effectiveTimezone = this.afterOrFieldValueOrDefault(
-            approvalRequestData, EFFECTIVE_TIMEZONE_FIELD_KEY, revenueConfig.effectiveTimezone());
+            this.requiredFieldOrAfterValue(approvalRequestData, EFFECTIVE_DATE_FIELD_KEY));
+        String effectiveTimezone = this.requiredFieldOrAfterValue(
+            approvalRequestData, EFFECTIVE_TIMEZONE_FIELD_KEY);
 
-        String taxCodeId = this.afterOrFieldValueOrDefault(
-            approvalRequestData, TAX_CODE_ID_FIELD_KEY, revenueConfig.taxCodeId());
+        String taxCodeId = this.requiredFieldOrAfterValue(
+            approvalRequestData, TAX_CODE_ID_FIELD_KEY);
 
         this.createRevenueConfigCommand.execute(new CreateRevenueConfigCommand.Input(
             taxCodeId,
-            this.afterOrFieldValueOrDefault(
-                approvalRequestData, TAX_CODE_DESCRIPTION_FIELD_KEY,
-                revenueConfig.taxCodeDescription()), RevenueConfigCategory.valueOf(
-            this.afterValueOrDefault(
-                approvalRequestData, CATEGORY_FIELD_KEY,
-                revenueConfig.category().name())),
+            this.requiredFieldOrAfterValue(approvalRequestData, TAX_CODE_DESCRIPTION_FIELD_KEY),
+            RevenueConfigCategory.valueOf(
+                this.requiredFieldOrAfterValue(approvalRequestData, CATEGORY_FIELD_KEY)),
+            this.requiredFieldValue(approvalRequestData, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY),
             this.fieldValueOrDefault(
-                approvalRequestData, RESPONSIBLE_MINISTRY_NAME_FIELD_KEY,
-                revenueConfig.responsibleMinistryCode()), this.fieldValueOrDefault(
-            approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY,
-            revenueConfig.thirdPartyProviderCode()), percentages.get(0), percentages.get(1),
-            percentages.get(2), percentages.get(3), responseUserId, effectiveDate,
-            effectiveTimezone, RevenueConfigStatus.ACTIVE, respondedDate, false));
-    }
-
-    private List<BigDecimal> approvedPercentages(ApprovalRequestData approvalRequestData,
-                                                 RevenueConfigData revenueConfig)
-        throws JsonProcessingException {
-
-        Optional<ApprovalRequestFieldDetailData> percentageDetail = this.fieldDetail(
-            approvalRequestData, PERCENTAGES_FIELD_KEY);
-
-        if (percentageDetail.isEmpty()) {
-            return List.of(
-                revenueConfig.golPercentage(), revenueConfig.ministryPercentage(),
-                revenueConfig.thirdPartyPercentage(), revenueConfig.sendingDfspPercentage());
-        }
-
-        Map<String, BigDecimal> afterPercentages = this.objectMapper.readValue(
-            percentageDetail.get().getAfterValue(),
-            new TypeReference<LinkedHashMap<String, BigDecimal>>() { });
-
-        return this.percentageValues(afterPercentages);
+                approvalRequestData, THIRD_PARTY_PROVIDER_NAME_FIELD_KEY, null),
+            percentages.get(0), percentages.get(1), percentages.get(2), percentages.get(3),
+            responseUserId, effectiveDate, effectiveTimezone, RevenueConfigStatus.ACTIVE,
+            respondedDate, false));
     }
 
     private List<BigDecimal> approvedPercentages(ApprovalRequestData approvalRequestData)
@@ -308,62 +281,14 @@ public class ModifyRevenueApprovalActionHandler
     private RevenueConfigId requiredLookupRevenueConfigId(ApprovalRequestData approvalRequestData)
         throws RevenueConfigException {
 
-        Optional<RevenueConfigId> revenueConfigId = this
-                                                        .fieldDetail(
-                                                            approvalRequestData,
-                                                            REVENUE_CONFIG_ID_FIELD_KEY)
-                                                        .map(
-                                                            ApprovalRequestFieldDetailData::getFieldValue)
-                                                        .filter(value -> !value.isBlank())
-                                                        .map(value -> new RevenueConfigId(
-                                                            Long.parseLong(value)));
-
-        if (revenueConfigId.isPresent() &&
-                this.revenueConfigQuery.findById(revenueConfigId.get()).isPresent()) {
-            return revenueConfigId.get();
-        }
-
-        String taxCodeId = this.requiredLookupTaxCodeId(approvalRequestData);
-        Instant now = Instant.now();
-
-        return this.revenueConfigQuery
-                   .findByTaxCodeId(taxCodeId)
-                   .stream()
-                   .filter(revenueConfig -> revenueConfig.status() == RevenueConfigStatus.ACTIVE)
-                   .filter(revenueConfig -> this.isCurrent(revenueConfig, now))
-                   .sorted(LATEST_UPDATED_REVENUE_CONFIG_FIRST)
-                   .map(RevenueConfigData::revenueConfigId)
-                   .findFirst()
+        return this
+                   .fieldDetail(approvalRequestData, REVENUE_CONFIG_ID_FIELD_KEY)
+                   .map(ApprovalRequestFieldDetailData::getFieldValue)
+                   .filter(value -> !value.isBlank())
+                   .map(value -> new RevenueConfigId(Long.parseLong(value)))
                    .orElseThrow(() -> new RevenueConfigException(
-                       RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(taxCodeId)));
-    }
-
-    private String requiredLookupTaxCodeId(ApprovalRequestData approvalRequestData)
-        throws RevenueConfigException {
-
-        ApprovalRequestFieldDetailData taxCodeDetail = this
-                                                           .fieldDetail(
-                                                               approvalRequestData,
-                                                               TAX_CODE_ID_FIELD_KEY)
-                                                           .orElseThrow(
-                                                               () -> new RevenueConfigException(
-                                                                   RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
-                                                                       TAX_CODE_ID_FIELD_KEY)));
-
-        if (taxCodeDetail.getBeforeValue() != null && !taxCodeDetail.getBeforeValue().isBlank()) {
-            return taxCodeDetail.getBeforeValue();
-        }
-
-        if (taxCodeDetail.getFieldValue() != null && !taxCodeDetail.getFieldValue().isBlank()) {
-            return taxCodeDetail.getFieldValue();
-        }
-
-        if (taxCodeDetail.getAfterValue() != null && !taxCodeDetail.getAfterValue().isBlank()) {
-            return taxCodeDetail.getAfterValue();
-        }
-
-        throw new RevenueConfigException(
-            RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(TAX_CODE_ID_FIELD_KEY));
+                       RevenueConfigErrors.REVENUE_CONFIG_NOT_FOUND.format(
+                           REVENUE_CONFIG_ID_FIELD_KEY)));
     }
 
     private String requiredFieldOrAfterValue(ApprovalRequestData approvalRequestData,
@@ -478,18 +403,6 @@ public class ModifyRevenueApprovalActionHandler
     private String toNullableString(Instant value) {
 
         return value == null ? null : value.toString();
-    }
-
-    private boolean isCurrent(RevenueConfigData revenueConfig, Instant now) {
-
-        Instant effectiveDate = revenueConfig.effectiveDate();
-        return effectiveDate == null || !effectiveDate.isAfter(now);
-    }
-
-    private static Instant updatedAtOrCreatedAt(RevenueConfigData revenueConfig) {
-
-        return revenueConfig.updatedAt() != null ? revenueConfig.updatedAt() :
-                   revenueConfig.createdAt();
     }
 
 }

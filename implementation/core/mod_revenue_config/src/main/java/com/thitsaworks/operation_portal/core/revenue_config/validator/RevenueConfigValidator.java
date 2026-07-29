@@ -18,6 +18,7 @@ package com.thitsaworks.operation_portal.core.revenue_config.validator;
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueConfigId;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigCategory;
 import com.thitsaworks.operation_portal.component.common.type.RevenueConfigStatus;
+import com.thitsaworks.operation_portal.component.misc.util.TimeZoneUtil;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigErrors;
 import com.thitsaworks.operation_portal.core.revenue_config.exception.RevenueConfigException;
 import com.thitsaworks.operation_portal.core.revenue_config.model.repository.RevenueConfigRepository;
@@ -25,6 +26,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Objects;
 
 @Service
@@ -47,7 +51,9 @@ public class RevenueConfigValidator {
                          BigDecimal golPercentage,
                          BigDecimal ministryPercentage,
                          BigDecimal thirdPartyPercentage,
-                         BigDecimal sendingDfspPercentage) throws RevenueConfigException {
+                         BigDecimal sendingDfspPercentage,
+                         Instant effectiveDate,
+                         String effectiveTimezone) throws RevenueConfigException {
 
         if (category == null) {
             throw new RevenueConfigException(RevenueConfigErrors.INVALID_REVENUE_CONFIG_CATEGORY);
@@ -55,6 +61,7 @@ public class RevenueConfigValidator {
 
         validatePartyRegistryReferences(responsibleMinistryCode, thirdPartyProviderCode);
         validatePercentages(golPercentage, ministryPercentage, thirdPartyPercentage, sendingDfspPercentage);
+        validateEffectiveDate(effectiveDate, effectiveTimezone);
     }
 
     public void validateUniqueTaxCode(String taxCodeId,
@@ -77,6 +84,17 @@ public class RevenueConfigValidator {
         if (duplicateExists) {
             throw new RevenueConfigException(
                 RevenueConfigErrors.TAX_CODE_ALREADY_REGISTERED.format(taxCodeId));
+        }
+    }
+
+    public void validateTaxCodeUnchanged(String existingTaxCodeId,
+                                         String requestedTaxCodeId)
+        throws RevenueConfigException {
+
+        if (!Objects.equals(existingTaxCodeId, requestedTaxCodeId)) {
+            throw new RevenueConfigException(
+                RevenueConfigErrors.TAX_CODE_MODIFICATION_NOT_ALLOWED.format(
+                    existingTaxCodeId, requestedTaxCodeId));
         }
     }
 
@@ -135,5 +153,20 @@ public class RevenueConfigValidator {
 
         return percentage != null &&
                    percentage.stripTrailingZeros().scale() > PERCENTAGE_SCALE;
+    }
+
+    private void validateEffectiveDate(Instant effectiveDate,
+                                       String effectiveTimezone) throws RevenueConfigException {
+
+        if (effectiveDate == null) {
+            return;
+        }
+
+        ZoneId zoneId = TimeZoneUtil.zoneId(effectiveTimezone);
+        LocalDate effectiveLocalDate = LocalDate.ofInstant(effectiveDate, zoneId);
+        LocalDate currentLocalDate = LocalDate.now(zoneId);
+        if (effectiveLocalDate.isBefore(currentLocalDate)) {
+            throw new RevenueConfigException(RevenueConfigErrors.INVALID_EFFECTIVE_DATE);
+        }
     }
 }
