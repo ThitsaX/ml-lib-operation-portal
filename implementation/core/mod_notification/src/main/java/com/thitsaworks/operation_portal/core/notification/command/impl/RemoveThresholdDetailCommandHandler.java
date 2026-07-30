@@ -41,6 +41,13 @@ public class RemoveThresholdDetailCommandHandler implements RemoveThresholdDetai
                                                   "THRESHOLD_DETAIL_NOT_FOUND",
                                                   "Threshold detail was not found.")));
 
+        if (!detail.isStatus()) {
+            throw new InputException(
+                new ErrorMessage(
+                    "THRESHOLD_DETAIL_ALREADY_DELETED",
+                    "Threshold detail is already deleted."));
+        }
+
         detail.deactivate(input.updatedBy());
         this.thresholdDetailRepository.save(detail);
 

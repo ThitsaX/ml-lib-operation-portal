@@ -21,8 +21,7 @@ public enum NdcThresholdApprovalOperation {
     UPDATE_NDC_VISUAL_ALERT,
     UPDATE_NDC_NOTIFICATION_ALERT,
     UPDATE_NDC_VISUAL_AND_NOTIFICATION_ALERT,
-    ENABLE_NDC_ALERT,
-    DISABLE_NDC_ALERT;
+    DELETE_NDC_ALERT_THRESHOLD;
 
     public String requestedAction() {
 

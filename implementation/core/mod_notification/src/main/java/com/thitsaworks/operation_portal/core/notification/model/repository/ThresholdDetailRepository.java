@@ -49,10 +49,10 @@ public interface ThresholdDetailRepository
     Optional<ThresholdDetail> findFirstByThresholdConfigurationIdAndCurrencyAndStatusTrue(
         ThresholdConfigurationId thresholdConfigurationId, String currency);
 
-    boolean existsByThresholdConfigurationIdAndCurrency(
+    boolean existsByThresholdConfigurationIdAndCurrencyAndStatusTrue(
         ThresholdConfigurationId thresholdConfigurationId, String currency);
 
-    boolean existsByThresholdConfigurationIdAndCurrencyAndThresholdDetailIdNot(
+    boolean existsByThresholdConfigurationIdAndCurrencyAndStatusTrueAndThresholdDetailIdNot(
         ThresholdConfigurationId thresholdConfigurationId,
         String currency,
         ThresholdDetailId thresholdDetailId);

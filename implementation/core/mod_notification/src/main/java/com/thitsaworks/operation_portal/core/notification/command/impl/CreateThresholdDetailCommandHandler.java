@@ -55,13 +55,14 @@ public class CreateThresholdDetailCommandHandler implements CreateThresholdDetai
 
         String currency = ThresholdDetail.normalizeCurrency(input.currency());
 
-        if (this.thresholdDetailRepository.existsByThresholdConfigurationIdAndCurrency(
-            input.thresholdConfigurationId(), currency)) {
+        if (this.thresholdDetailRepository
+                .existsByThresholdConfigurationIdAndCurrencyAndStatusTrue(
+                    input.thresholdConfigurationId(), currency)) {
 
             throw new InputException(
                 new ErrorMessage(
-                    "THRESHOLD_DETAIL_CURRENCY_ALREADY_EXISTS",
-                    "Threshold detail already exists for this configuration and currency."));
+                    "THRESHOLD_DETAIL_ACTIVE_CURRENCY_ALREADY_EXISTS",
+                    "An active threshold detail already exists for this configuration and currency."));
         }
 
         ThresholdDetail detail = new ThresholdDetail(

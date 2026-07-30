@@ -33,6 +33,7 @@ import com.thitsaworks.operation_portal.core.approval.model.repository.ApprovalR
 import com.thitsaworks.operation_portal.core.approval.model.repository.ApprovalRequestRepository;
 import com.thitsaworks.operation_portal.core.notification.command.CreateThresholdDetailCommand;
 import com.thitsaworks.operation_portal.core.notification.command.ModifyThresholdDetailCommand;
+import com.thitsaworks.operation_portal.core.notification.command.RemoveThresholdDetailCommand;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdConfigurationData;
 import com.thitsaworks.operation_portal.core.notification.data.ThresholdDetailData;
 import com.thitsaworks.operation_portal.core.notification.model.ThresholdDetail;
@@ -88,6 +89,8 @@ public class NdcThresholdApprovalService {
     private final CreateThresholdDetailCommand createThresholdDetailCommand;
 
     private final ModifyThresholdDetailCommand modifyThresholdDetailCommand;
+
+    private final RemoveThresholdDetailCommand removeThresholdDetailCommand;
 
     private final ParticipantQuery participantQuery;
 
@@ -216,14 +219,14 @@ public class NdcThresholdApprovalService {
             validatePercentages(requestedVisualConfig, requestedNotificationConfig);
 
             boolean exists = this.thresholdDetailQuery
-                .getAll(configuration.thresholdConfigurationId(), null)
+                .getAll(configuration.thresholdConfigurationId(), true)
                 .stream()
                 .anyMatch(detail -> detail.currency().equalsIgnoreCase(currency));
 
             if (exists) {
                 throw error(
-                    "NDC_THRESHOLD_DETAIL_ALREADY_EXISTS",
-                    "A threshold detail already exists for this DFSP and currency.");
+                    "NDC_THRESHOLD_DETAIL_ALREADY_ACTIVE",
+                    "An active threshold detail already exists for this DFSP and currency.");
             }
 
             return new PreparedChange(
@@ -244,21 +247,11 @@ public class NdcThresholdApprovalService {
                 "thresholdDetailId is required for update and delete operations.");
         }
 
-        ThresholdDetailData current = getOwnedDetail(
+        ThresholdDetailData current = getOwnedActiveDetail(
             configuration,
             new ThresholdDetailId(requestedThresholdDetailId));
 
-        if (operation == NdcThresholdApprovalOperation.ENABLE_NDC_ALERT
-            || operation == NdcThresholdApprovalOperation.DISABLE_NDC_ALERT) {
-
-            boolean requestedStatus = operation == NdcThresholdApprovalOperation.ENABLE_NDC_ALERT;
-
-            if (current.status() == requestedStatus) {
-                throw error(
-                    "NDC_THRESHOLD_STATUS_UNCHANGED",
-                    "The NDC alert is already in the requested status.");
-            }
-
+        if (operation == NdcThresholdApprovalOperation.DELETE_NDC_ALERT_THRESHOLD) {
             return new PreparedChange(
                 configuration.thresholdConfigurationId(),
                 current.thresholdDetailId(),
@@ -267,8 +260,8 @@ public class NdcThresholdApprovalService {
                 current.visualConfig(),
                 current.ndcConfig(),
                 current.ndcConfig(),
-                current.status(),
-                requestedStatus);
+                true,
+                false);
         }
 
         String currency = this.currencyValidator.validateForDetail(
@@ -366,8 +359,16 @@ public class NdcThresholdApprovalService {
             parseRequiredLong(after(fields, FIELD_THRESHOLD_DETAIL_ID),
                               FIELD_THRESHOLD_DETAIL_ID));
 
-        ThresholdDetailData current = getOwnedDetail(configuration, thresholdDetailId);
+        ThresholdDetailData current = getOwnedActiveDetail(configuration, thresholdDetailId);
         verifyNotStale(current, fields);
+
+        if (operation == NdcThresholdApprovalOperation.DELETE_NDC_ALERT_THRESHOLD) {
+            this.removeThresholdDetailCommand.execute(
+                new RemoveThresholdDetailCommand.Input(
+                    thresholdDetailId,
+                    actor));
+            return;
+        }
 
         BigDecimal visualConfig = parseDecimal(after(fields, FIELD_VISUAL_CONFIG));
         BigDecimal notificationConfig = parseDecimal(after(fields, FIELD_NOTIFICATION_CONFIG));
@@ -573,8 +574,9 @@ public class NdcThresholdApprovalService {
                        "DFSP threshold configuration was not found."));
     }
 
-    private ThresholdDetailData getOwnedDetail(ThresholdConfigurationData configuration,
-                                               ThresholdDetailId thresholdDetailId) {
+    private ThresholdDetailData getOwnedActiveDetail(
+        ThresholdConfigurationData configuration,
+        ThresholdDetailId thresholdDetailId) {
 
         ThresholdDetailData detail = this.thresholdDetailQuery
             .get(thresholdDetailId)
@@ -588,6 +590,12 @@ public class NdcThresholdApprovalService {
             throw error(
                 "NDC_THRESHOLD_DETAIL_OWNERSHIP_MISMATCH",
                 "Threshold detail does not belong to the requested DFSP.");
+        }
+
+        if (!detail.status()) {
+            throw error(
+                "NDC_THRESHOLD_DETAIL_ALREADY_DELETED",
+                "The threshold detail has already been deleted.");
         }
 
         return detail;
