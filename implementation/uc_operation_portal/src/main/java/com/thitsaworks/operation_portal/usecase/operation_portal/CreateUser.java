@@ -37,7 +37,8 @@ public interface CreateUser extends
                  List<RoleId> roleIdList,
                  ParticipantId participantId,
                  PrincipalStatus status,
-                 boolean allowNotification) { }
+                 boolean allowNotification,
+                 boolean isVisible) { }
 
     record Output(UserId userId,
                   boolean created) { }

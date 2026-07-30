@@ -191,13 +191,19 @@ public class Participant extends JpaEntity<ParticipantId> {
     public User addUser(String name, Email email, String firstName, String lastName, String jobTitle,
                         boolean allowNotification) {
 
+        return addUser(name, email, firstName, lastName, jobTitle, allowNotification, true);
+    }
+
+    public User addUser(String name, Email email, String firstName, String lastName, String jobTitle,
+                        boolean allowNotification, boolean isVisible) {
+
         Validate.notBlank(name);
         Validate.notNull(email);
         Validate.notNull(firstName);
         Validate.notNull(lastName);
         Validate.notNull(jobTitle);
 
-        User user = new User(name, email, this, firstName, lastName, jobTitle, allowNotification);
+        User user = new User(name, email, this, firstName, lastName, jobTitle, allowNotification, isVisible);
         this.users.add(user);
 
         return user;

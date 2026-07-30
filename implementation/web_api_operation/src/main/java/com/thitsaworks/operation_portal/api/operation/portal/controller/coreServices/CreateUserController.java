@@ -74,7 +74,8 @@ public class CreateUserController {
                                                                                        .equalsIgnoreCase("ACTIVE") ?
                                                                                     PrincipalStatus.ACTIVE :
                                                                                     PrincipalStatus.INACTIVE,
-                                                                                Boolean.TRUE.equals(request.allowNotification())));
+                                                                                Boolean.TRUE.equals(request.allowNotification()),
+                                                                                request.isVisible() == null || request.isVisible()));
 
         Response response = new Response(output.userId()
                                                .getId()
@@ -100,7 +101,8 @@ public class CreateUserController {
         @NotNull @JsonProperty("roleIdList") List<String> roleIdList,
         @NotNull @NotBlank @JsonProperty("participantId") String participantId,
         @NotNull @NotBlank @JsonProperty("status") String status,
-        @JsonProperty("allowNotification") Boolean allowNotification) implements Serializable {
+        @JsonProperty("allowNotification") Boolean allowNotification,
+        @JsonProperty("is_visible") Boolean isVisible) implements Serializable {
 
     }
 

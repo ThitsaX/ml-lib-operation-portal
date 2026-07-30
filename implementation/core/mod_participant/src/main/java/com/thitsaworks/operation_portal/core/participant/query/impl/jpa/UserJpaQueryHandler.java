@@ -49,7 +49,8 @@ public class UserJpaQueryHandler implements UserQuery {
     @Override
     public List<UserData> getUsers() {
 
-        BooleanExpression predicate = this.user.isDeleted.isFalse();
+        BooleanExpression predicate = this.user.isDeleted.isFalse()
+            .and(this.user.isVisible.isTrue());
 
         List<User> users = (List<User>) this.userRepository.findAll(predicate);
 
@@ -64,6 +65,7 @@ public class UserJpaQueryHandler implements UserQuery {
         BooleanExpression
             predicate =
             this.user.isDeleted.isFalse()
+                               .and(this.user.isVisible.isTrue())
                                .and(this.user.participant.participantId.eq(participantId));
 
         List<User> users = (List<User>) this.userRepository.findAll(
