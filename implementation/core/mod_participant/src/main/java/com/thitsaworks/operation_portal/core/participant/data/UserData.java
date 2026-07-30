@@ -34,6 +34,7 @@ public record UserData(UserId userId,
                        String jobTitle,
                        boolean allowNotification,
                        boolean isDeleted,
+                       boolean isVisible,
                        Long createdDate) implements Serializable {
 
     public UserData(User user) {
@@ -49,6 +50,7 @@ public record UserData(UserId userId,
              user.getJobTitle(),
              user.isAllowNotification(),
              user.isDeleted(),
+             user.isVisible(),
              user.getCreatedAt().getEpochSecond());
     }
 

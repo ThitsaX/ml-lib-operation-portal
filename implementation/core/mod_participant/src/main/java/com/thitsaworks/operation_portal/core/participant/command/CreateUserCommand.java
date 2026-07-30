@@ -28,7 +28,8 @@ public interface CreateUserCommand {
                  String firstName,
                  String lastName,
                  String jobTitle,
-                 boolean allowNotification) {}
+                 boolean allowNotification,
+                 boolean isVisible) {}
 
     record Output(boolean created,
                   UserId userId) {}

@@ -94,7 +94,7 @@ public class CreateUserHandler
         CreateUserCommand.Output output = this.createUserCommand.execute(
             new CreateUserCommand.Input(
                 input.name(), input.email(), input.participantId(), input.firstName(),
-                input.lastName(), input.jobTitle(), input.allowNotification()));
+                input.lastName(), input.jobTitle(), input.allowNotification(), input.isVisible()));
 
         var principalId = new PrincipalId(output.userId().getId());
 

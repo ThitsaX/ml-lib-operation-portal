@@ -69,14 +69,23 @@ public class User extends JpaEntity<UserId> {
     @Column(name = "is_deleted")
     protected boolean isDeleted;
 
+    @Column(name = "is_visible", nullable = false)
+    protected boolean isVisible;
+
     public User(String name, Email email, Participant participant, String firstName, String lastName,
                 String jobTitle) {
 
-        this(name, email, participant, firstName, lastName, jobTitle, false);
+        this(name, email, participant, firstName, lastName, jobTitle, false, true);
     }
 
     public User(String name, Email email, Participant participant, String firstName, String lastName,
                 String jobTitle, boolean allowNotification) {
+
+        this(name, email, participant, firstName, lastName, jobTitle, allowNotification, true);
+    }
+
+    public User(String name, Email email, Participant participant, String firstName, String lastName,
+                String jobTitle, boolean allowNotification, boolean isVisible) {
 
         Validate.notNull(participant);
 
@@ -88,6 +97,7 @@ public class User extends JpaEntity<UserId> {
         this.lastName = lastName;
         this.jobTitle = jobTitle;
         this.allowNotification = allowNotification;
+        this.isVisible = isVisible;
     }
 
     @Override
@@ -147,6 +157,13 @@ public class User extends JpaEntity<UserId> {
     public User isDeleted(boolean isDeleted) {
 
         this.isDeleted = isDeleted;
+        return this;
+
+    }
+
+    public User isVisible(boolean isVisible) {
+
+        this.isVisible = isVisible;
         return this;
 
     }

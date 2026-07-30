@@ -49,7 +49,8 @@ public class CreateParticipantCommandUserUnitTest {
                                         "kim",
                                         "soohyun",
                                         "actor",
-                                        false));
+                                        false,
+                                        true));
 
     }
 
