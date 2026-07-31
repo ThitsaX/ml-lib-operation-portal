@@ -44,6 +44,7 @@ import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetNdcThresholdApprovalList;
 import com.thitsaworks.operation_portal.usecase.operation_portal.validation.ThresholdDetailCurrencyValidator;
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
+import com.thitsaworks.operation_portal.usecase.util.Utility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -95,6 +96,8 @@ public class NdcThresholdApprovalService {
     private final ParticipantQuery participantQuery;
 
     private final UserPermissionManager userPermissionManager;
+
+    private final Utility utility;
 
     public ApprovalRequestId submit(NdcThresholdApprovalOperation operation,
                                     String requestedParticipantName,
@@ -485,9 +488,11 @@ public class NdcThresholdApprovalService {
             nullableDecimal(after(fields, FIELD_VISUAL_CONFIG)),
             nullableDecimal(before(fields, FIELD_NOTIFICATION_CONFIG)),
             nullableDecimal(after(fields, FIELD_NOTIFICATION_CONFIG)),
-            request.getRequestedBy().getId().toString(),
+            this.utility.getEmail(request.getRequestedBy()),
             request.getRequestedDtm(),
-            request.getRespondedBy() == null ? null : request.getRespondedBy().getId().toString(),
+            request.getRespondedBy() == null
+                ? null
+                : this.utility.getEmail(request.getRespondedBy()),
             request.getRespondedDtm(),
             request.getAction().name());
     }

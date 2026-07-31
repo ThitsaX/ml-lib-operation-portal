@@ -178,9 +178,9 @@ public class NdcThresholdApprovalController {
         @JsonProperty("previousNotificationConfig") BigDecimal previousNotificationConfig,
         @JsonProperty("requestedNotificationConfig") BigDecimal requestedNotificationConfig,
         @JsonProperty("requestedBy") String requestedBy,
-        @JsonProperty("requestedAt") Instant requestedAt,
+        @JsonProperty("requestedAt") long requestedAt,
         @JsonProperty("respondedBy") String respondedBy,
-        @JsonProperty("respondedAt") Instant respondedAt,
+        @JsonProperty("respondedAt") Long respondedAt,
         @JsonProperty("status") String status
     ) {
 
@@ -197,9 +197,11 @@ public class NdcThresholdApprovalController {
                 approval.previousNotificationConfig(),
                 approval.requestedNotificationConfig(),
                 approval.requestedBy(),
-                approval.requestedAt(),
+                approval.requestedAt().getEpochSecond(),
                 approval.respondedBy(),
-                approval.respondedAt(),
+                approval.respondedAt() == null
+                    ? null
+                    : approval.respondedAt().getEpochSecond(),
                 approval.status());
         }
     }
