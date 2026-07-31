@@ -65,6 +65,7 @@ public class ModifyUserController {
                                                                       request.participantId())),
                                                                   request.jobTitle(),
                                                                   new Email(request.email()),
+                                                                    request.allowNotification(),
                                                                   request.roleIdList()
                                                                          .stream()
                                                                          .map(role -> new RoleId(Long.parseLong(role)))
@@ -89,6 +90,7 @@ public class ModifyUserController {
                               message = "Email must be with valid format.") @JsonProperty("email") String email,
                           @NotNull @NotBlank @JsonProperty("participantId") String participantId,
                           @NotNull @JsonProperty("jobTitle") String jobTitle,
+                          @JsonProperty("allowNotification") Boolean allowNotification,
                           @NotNull @JsonProperty("roleIdList") List<String> roleIdList
     ) implements Serializable { }
 
