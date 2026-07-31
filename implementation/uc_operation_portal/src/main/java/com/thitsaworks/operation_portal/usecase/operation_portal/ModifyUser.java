@@ -33,6 +33,7 @@ public interface ModifyUser
                  ParticipantId participantId,
                  String jobTitle,
                  Email email,
+                 boolean allowNotification,
                  List<RoleId> roleIdList) { }
 
     record Output(boolean modified,
