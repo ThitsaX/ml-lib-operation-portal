@@ -22,7 +22,7 @@ import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 public interface GenerateRevenueSharingSummaryReport
     extends UseCase<GenerateRevenueSharingSummaryReport.Input, GenerateRevenueSharingSummaryReport.Output> {
 
-    record Input(String date, String settlementId, String timezone, Long userId) { }
+    record Input(String date, String settlementId, String timezoneOffset, Long userId) { }
 
     record Output(ReportDownloadRequestId requestId,
                   FileDownloadStatus status,

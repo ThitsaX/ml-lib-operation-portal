@@ -78,7 +78,7 @@ public class GenerateRevenueSharingSummaryReportHandler
         Map<String, String> params = new HashMap<>();
         params.put("date", this.safe(input.date()));
         params.put("settlementId", this.safe(input.settlementId()));
-        params.put("timezoneOffset", this.safe(input.timezone()));
+        params.put("timezoneOffset", this.safe(input.timezoneOffset()));
 
         ReportDownloadRequestManager.CreateOrReuseResult result =
             this.reportDownloadRequestManager.createPendingOrReuse(

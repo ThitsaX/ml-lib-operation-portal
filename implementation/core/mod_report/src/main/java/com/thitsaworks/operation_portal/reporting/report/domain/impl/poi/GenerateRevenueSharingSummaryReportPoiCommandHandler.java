@@ -41,6 +41,7 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -54,8 +55,118 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private static final int DEFAULT_ROW_WINDOW = 200;
 
     private static final String REPORT_QUERY = """
-        SELECT '' AS responsibleMinistry, '' AS `type`, 0 AS balance, '' AS currency
-        FROM tbl_transaction_detail
+         SELECT   RegisteredParty AS responsibleMinistry,
+                       Type AS type,
+                       SUM(SettlementTransfer) AS balance,
+                       Currency AS currency,
+                       CONCAT(
+                           DATE_FORMAT(
+                               CASE
+                                   WHEN SUBSTRING(?,1,1)='-' THEN
+                                       CONVERT_TZ(
+                                           settlementCreatedDate,
+                                           '+00:00',
+                                           CONCAT('-',SUBSTRING(?,2,2),':',SUBSTRING(?,4,2))
+                                       )
+                                   ELSE
+                                       CONVERT_TZ(
+                                           settlementCreatedDate,
+                                           '+00:00',
+                                           CONCAT('+',SUBSTRING(?,1,2),':',SUBSTRING(?,3,2))
+                                       )
+                               END,
+                               '%Y-%m-%dT%H:%i:%s'
+                           ),
+                           CASE
+                               WHEN SUBSTRING(?,1,1)='-' THEN
+                                   CONCAT('-',SUBSTRING(?,2,2),':',SUBSTRING(?,4,2))
+                               ELSE
+                                   CONCAT('+',SUBSTRING(?,1,2),':',SUBSTRING(?,3,2))
+                           END
+                       ) AS settlementCreatedDate,
+                       CASE
+                           WHEN SUBSTRING(?,1,1)='-' THEN
+                               CONCAT('-',SUBSTRING(?,2,2),':',SUBSTRING(?,4,2))
+                           ELSE
+                               CONCAT('+',SUBSTRING(?,1,2),':',SUBSTRING(?,3,2))
+                       END AS timezoneoffset
+                   FROM
+                   (
+                       -- Government
+                       SELECT
+                           'Government of Liberia' AS RegisteredParty,
+                           'Government' AS Type,
+                           td.gol_amount AS SettlementTransfer,
+                           ts.sent_currency AS Currency,
+                           s.createdDate AS settlementCreatedDate
+                       FROM tbl_transaction ts
+                       JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
+                       JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
+                       JOIN central_ledger.transfer t ON t.transferId = tf.transferId
+                       JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
+                       JOIN central_ledger.settlement s ON sSW.settlementId = s.settlementId
+                       WHERE s.settlementId = ?
+                   
+                       UNION ALL
+                     
+                       -- Ministry
+                       SELECT
+                           rp.party_name,
+                           'Ministry',
+                           td.ministry_amount,
+                           ts.sent_currency,
+                           s.createdDate
+                       FROM tbl_transaction ts
+                       JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
+                       JOIN tbl_revenue_party rp ON rp.party_code = td.responsible_ministry_code
+                       JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
+                       JOIN central_ledger.transfer t ON t.transferId = tf.transferId
+                       JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
+                       JOIN central_ledger.settlement s ON sSW.settlementId = s.settlementId
+                       WHERE s.settlementId = ?
+                   
+                       UNION ALL
+                     
+                       -- Third Party
+                      SELECT
+                           rp.party_name,
+                           '3rd Party',
+                           td.third_party_amount,
+                           ts.sent_currency,
+                           s.createdDate
+                       FROM tbl_transaction ts
+                       JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
+                       JOIN tbl_revenue_party rp ON rp.party_code = td.third_party_code
+                       JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
+                       JOIN central_ledger.transfer t ON t.transferId = tf.transferId
+                       JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
+                       JOIN central_ledger.settlement s ON sSW.settlementId = s.settlementId
+                       WHERE s.settlementId = ?
+                   
+                       UNION ALL
+                     
+                       -- Sending DFSP 
+                       SELECT
+                           ts.sender_dfsp_id,
+                           'Sending DFSP',
+                           td.sending_dfsp_commission_amount,
+                           ts.sent_currency,
+                           s.createdDate
+                       FROM tbl_transaction ts
+                       JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
+                       JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
+                       JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
+                       JOIN central_ledger.settlement s ON sSW.settlementId = s.settlementId
+                       WHERE s.settlementId = ?
+                   ) Summary
+                   GROUP BY
+                       RegisteredParty,
+                       Type,
+                       Currency,
+                       settlementCreatedDate
+                   ORDER BY
+                       FIELD(Type,'Government','Ministry','3rd Party','Sending DFSP'),
+                       RegisteredParty
         """;
 
     private static final String[] COLUMN_HEADERS = {
@@ -102,10 +213,11 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     }
 
     @Override
-    public int countRows() {
+    public int countRows(CountInput input) {
 
         Integer rowCount = this.jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM (" + REPORT_QUERY + ") revenueSharingSummary",
+            this.reportParameters(input),
             Integer.class);
         return rowCount == null ? 0 : rowCount;
     }
@@ -113,10 +225,10 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private List<RevenueSharingSummaryRow> fetchRows(Input input) {
 
         String query = REPORT_QUERY;
-        Object[] parameters = new Object[0];
+        Object[] parameters = this.reportParameters(input);
         if (input.limit() != null && input.offset() != null) {
             query += " LIMIT ? OFFSET ?";
-            parameters = new Object[]{input.limit(), input.offset()};
+            parameters = this.reportParameters(input, true);
         }
 
         return this.jdbcTemplate.query(
@@ -147,9 +259,10 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
             int rowIndex = 0;
             rowIndex = this.writeMeta(
-                sheet, rowIndex, "Date", input.date(), metaLabelStyle, metaValueStyle);
-            rowIndex = this.writeMeta(
                 sheet, rowIndex, "Settlement ID", input.settlementId(), metaLabelStyle,
+                metaValueStyle);
+            rowIndex = this.writeMeta(
+                sheet, rowIndex, "TimeZoneOffset", this.formattedTimezoneOffset(input), metaLabelStyle,
                 metaValueStyle);
             rowIndex++;
 
@@ -219,8 +332,14 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
     private CellStyle metaLabelStyle(SXSSFWorkbook workbook) {
 
-        CellStyle style = this.borderedStyle(workbook);
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.MEDIUM);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.MEDIUM);
         style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
         var font = workbook.createFont();
         font.setFontName("Calibri");
         font.setFontHeightInPoints((short) 11);
@@ -231,8 +350,9 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
     private CellStyle metaValueStyle(SXSSFWorkbook workbook) {
 
-        CellStyle style = this.borderedStyle(workbook);
-        style.setAlignment(HorizontalAlignment.LEFT);
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.metaLabelStyle(workbook));
+        style.setBorderLeft(BorderStyle.THIN);
         var font = workbook.createFont();
         font.setFontName("Calibri");
         font.setFontHeightInPoints((short) 11);
@@ -242,16 +362,12 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
     private CellStyle columnHeaderStyle(SXSSFWorkbook workbook) {
 
-        CellStyle style = this.borderedStyle(workbook);
-        style.setAlignment(HorizontalAlignment.CENTER);
-        style.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+        CellStyle style = workbook.createCellStyle();
+        style.cloneStyleFrom(this.metaLabelStyle(workbook));
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        var font = workbook.createFont();
-        font.setFontName("Calibri");
-        font.setFontHeightInPoints((short) 11);
-        font.setBold(true);
-        font.setColor(IndexedColors.TURQUOISE.getIndex());
-        style.setFont(font);
         return style;
     }
 
@@ -288,6 +404,94 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private String safe(String value) {
 
         return value == null ? "" : value;
+    }
+
+    private Object[] reportParameters(Input input) {
+
+        return this.reportParameters(input, false);
+    }
+
+    private Object[] reportParameters(Input input, boolean paged) {
+
+        String settlementId = this.settlementId(input);
+        String timezoneOffset = this.timezoneOffset(input);
+        return this.reportParameters(settlementId, timezoneOffset, input.limit(), input.offset(), paged);
+    }
+
+    private Object[] reportParameters(CountInput input) {
+
+        return this.reportParameters(
+            this.settlementId(input), this.timezoneOffset(input), null, null, false);
+    }
+
+    private Object[] reportParameters(String settlementId,
+                                      String timezoneOffset,
+                                      Integer limit,
+                                      Integer offset,
+                                      boolean paged) {
+
+        List<Object> parameters = new ArrayList<>();
+        for (int index = 0; index < 15; index++) {
+            parameters.add(timezoneOffset);
+        }
+        parameters.add(settlementId);
+        parameters.add(settlementId);
+        parameters.add(settlementId);
+        parameters.add(settlementId);
+        if (paged) {
+            parameters.add(limit);
+            parameters.add(offset);
+        }
+        return parameters.toArray();
+    }
+
+    private String settlementId(Input input) {
+
+        return input == null || input.settlementId() == null ? "" : input.settlementId();
+    }
+
+    private String settlementId(CountInput input) {
+
+        return input == null || input.settlementId() == null ? "" : input.settlementId();
+    }
+
+    private String timezoneOffset(Input input) {
+
+        return input == null || input.timezone() == null ? "" : input.timezone();
+    }
+
+    private String timezoneOffset(CountInput input) {
+
+        return input == null || input.timezone() == null ? "" : input.timezone();
+    }
+
+    private String formattedTimezoneOffset(Input input) {
+
+        String timezoneOffset = this.timezoneOffset(input);
+        if (timezoneOffset == null || timezoneOffset.isBlank()) {
+            return "";
+        }
+
+        String normalizedTimezoneOffset = timezoneOffset.trim();
+        boolean negative = normalizedTimezoneOffset.startsWith("-");
+        if (negative || normalizedTimezoneOffset.startsWith("+")) {
+            normalizedTimezoneOffset = normalizedTimezoneOffset.substring(1);
+        }
+        normalizedTimezoneOffset = normalizedTimezoneOffset.replace(":", "");
+        if (normalizedTimezoneOffset.length() == 1) {
+            normalizedTimezoneOffset = "0" + normalizedTimezoneOffset + "00";
+        } else if (normalizedTimezoneOffset.length() == 2) {
+            normalizedTimezoneOffset = normalizedTimezoneOffset + "00";
+        } else if (normalizedTimezoneOffset.length() == 3) {
+            normalizedTimezoneOffset = "0" + normalizedTimezoneOffset;
+        }
+        if (normalizedTimezoneOffset.length() < 4) {
+            return timezoneOffset;
+        }
+
+        String sign = negative ? "-" : "+";
+        return sign + normalizedTimezoneOffset.substring(0, 2) + ":" +
+            normalizedTimezoneOffset.substring(2, 4);
     }
 
     private record RevenueSharingSummaryRow(String responsibleMinistry,

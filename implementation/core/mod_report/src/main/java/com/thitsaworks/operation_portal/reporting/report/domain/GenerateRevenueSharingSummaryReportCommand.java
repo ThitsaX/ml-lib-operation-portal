@@ -26,9 +26,12 @@ public interface GenerateRevenueSharingSummaryReportCommand {
                  Integer offset,
                  Integer limit) { }
 
+    record CountInput(String settlementId,
+                      String timezone) { }
+
     record Output(byte[] revenueSharingSummaryRptByte) { }
 
     Output execute(Input input) throws ReportException;
 
-    int countRows();
+    int countRows(CountInput input);
 }
