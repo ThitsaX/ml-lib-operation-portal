@@ -32,6 +32,7 @@ import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyRevenueTr
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,6 +73,7 @@ public class ModifyRevenueTransactionHandler
                     var detail = calculated.detail();
                     return new ModifyRevenueTransactionCommand.TransactionDetail(
                             calculated.revenueTransactionDetailId(),
+                            calculated.calculatedAmount(),
                             detail.category(),
                             detail.responsibleMinistryCode(),
                             detail.thirdPartyCode(),
@@ -86,7 +88,7 @@ public class ModifyRevenueTransactionHandler
                 })
                 .toList();
         var output = this.modifyRevenueTransactionCommand.execute(new ModifyRevenueTransactionCommand.Input(
-                input.revenueTransactionId(), input.state(), detailUpdates));
+            input.revenueTransactionId(), input.hubTransactionId(), input.state(), detailUpdates));
         var transactionDetails = calculatedDetails.stream().map(CalculatedTransactionDetail::detail).toList();
 
         return new Output(output.modified(), output.revenueTransactionId(), transactionDetails);
@@ -100,14 +102,15 @@ public class ModifyRevenueTransactionHandler
 
         for (var detail : revenueTransaction.transactionDetails()) {
 
-            var amount = detail.taxAmountCh() == null
-                             ? detail.taxAmount()
-                             : detail.taxAmountCh();
+            var amount = revenueTransaction.sentCurrency() == "USD" ? detail.taxAmount() : detail.taxAmountCh();
+            
             var revenueSplit = this.revenueEngine.calculateRevenue(detail.taxCode(), amount);
 
             transactionDetails.add(new CalculatedTransactionDetail(
                     detail.revenueTransactionDetailId(),
+                    amount,
                     new ModifyRevenueTransaction.TransactionDetail(
+                        amount,
                             revenueSplit.revenueConfigCategory().name(),
                             revenueSplit.responsibleMinistryCode(),
                             revenueSplit.thirdPartyProviderCode(),
@@ -126,6 +129,7 @@ public class ModifyRevenueTransactionHandler
 
     private record CalculatedTransactionDetail(
             String revenueTransactionDetailId,
+            BigDecimal calculatedAmount,
             ModifyRevenueTransaction.TransactionDetail detail) {
     }
 }

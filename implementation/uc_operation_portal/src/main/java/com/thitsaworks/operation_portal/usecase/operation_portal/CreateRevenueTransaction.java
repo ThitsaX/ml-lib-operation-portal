@@ -22,20 +22,19 @@ import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTra
 import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTransactionDetailInput;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 public interface CreateRevenueTransaction
         extends UseCase<CreateRevenueTransaction.Input, CreateRevenueTransaction.Output> {
 
     record Input(String hubTransactionId,
-                 Long settlementId,
                  String tin,
                  String taxPayerName,
                  String billNumber,
-                 Instant billDate,
+                 String billDate,
                  BigDecimal totalAmount,
                  String amountCurrency,
+                 String sentCurrency,
                  BigDecimal rateExchange,
                  String senderDfspId,
                  TransactionState state,

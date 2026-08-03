@@ -27,6 +27,7 @@ public interface ModifyRevenueTransaction
         extends UseCase<ModifyRevenueTransaction.Input, ModifyRevenueTransaction.Output> {
 
     record Input(RevenueTransactionId revenueTransactionId,
+                 String hubTransactionId,
                  TransactionState state) {
     }
 
@@ -35,7 +36,8 @@ public interface ModifyRevenueTransaction
                   List<TransactionDetail> transactionDetails) {
     }
 
-    record TransactionDetail(String category,
+    record TransactionDetail(BigDecimal calculatedAmount,
+                             String category,
                              String responsibleMinistryCode,
                              String thirdPartyCode,
                              BigDecimal golPercent,

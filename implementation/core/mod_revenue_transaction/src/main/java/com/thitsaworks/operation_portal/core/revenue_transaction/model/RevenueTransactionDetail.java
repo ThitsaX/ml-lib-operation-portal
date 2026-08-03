@@ -56,6 +56,9 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
     @Column(name = "tax_amount_ch")
     protected BigDecimal taxAmountCh;
 
+    @Column(name = "calculated_amount")
+    protected BigDecimal calculatedAmount;
+
     @Column(name = "category")
     protected String category;
 
@@ -94,6 +97,7 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
                                     String taxDescription,
                                     BigDecimal taxAmount,
                                     BigDecimal taxAmountCh,
+                                    BigDecimal calculatedAmount,
                                     String category,
                                     String responsibleMinistryCode,
                                     String thirdPartyCode,
@@ -116,6 +120,7 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
         this.taxDescription = taxDescription;
         this.taxAmount = taxAmount;
         this.taxAmountCh = taxAmountCh;
+        this.calculatedAmount = calculatedAmount;
         this.category = category;
         this.responsibleMinistryCode = responsibleMinistryCode;
         this.thirdPartyCode = thirdPartyCode;
@@ -129,7 +134,8 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
         this.sendingDfspCommissionAmount = sendingDfspCommissionAmount;
     }
 
-    public RevenueTransactionDetail revenueSplit(String category,
+    public RevenueTransactionDetail revenueSplit(BigDecimal calculatedAmount,
+                                                 String category,
                                                  String responsibleMinistryCode,
                                                  String thirdPartyCode,
                                                  BigDecimal golPercentage,
@@ -141,6 +147,7 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
                                                  BigDecimal sendingDfspCommissionPercent,
                                                  BigDecimal sendingDfspCommissionAmount) {
 
+        this.calculatedAmount = calculatedAmount;
         this.category = category;
         this.responsibleMinistryCode = responsibleMinistryCode;
         this.thirdPartyCode = thirdPartyCode;
