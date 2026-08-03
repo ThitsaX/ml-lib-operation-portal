@@ -357,8 +357,8 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
                     ELSE IFNULL(thirdParty.party_name, '-')
                   END AS thirdPartyName,
                   rt.sender_dfsp_id AS senderDfspName,
-                  rd.tax_amount AS amount,
-                  rt.amount_currency AS currency,
+                  rd.calculated_amount AS amount,
+                  rt.sent_currency AS currency,
                   rd.gol_percentage AS golPercentage,
                   rd.gol_amount AS golAmount,
                   rd.ministry_percent AS ministryPercentage,
