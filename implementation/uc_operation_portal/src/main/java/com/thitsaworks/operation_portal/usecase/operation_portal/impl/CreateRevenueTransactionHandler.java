@@ -59,9 +59,10 @@ public class CreateRevenueTransactionHandler
     protected Output onExecute(Input input) throws DomainException {
 
         var output = this.createRevenueTransactionCommand.execute(new CreateRevenueTransactionCommand.Input(
-                input.hubTransactionId(), input.settlementId(), input.tin(), input.taxPayerName(),
+                input.hubTransactionId(), input.tin(), input.taxPayerName(),
                 input.billNumber(), input.billDate(), input.totalAmount(), input.amountCurrency(),
-                input.rateExchange(), input.senderDfspId(), input.state(), input.transactionDetails()));
+                input.sentCurrency(), input.rateExchange(), input.senderDfspId(), input.state(),
+                input.transactionDetails()));
 
         return new Output(output.created(), output.revenueTransactionId(), null,
                           this.revenueTransactionQuery.get(output.revenueTransactionId()));

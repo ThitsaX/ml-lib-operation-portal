@@ -37,19 +37,20 @@ public class CreateRevenueTransactionCommandHandler implements CreateRevenueTran
     @CoreWriteTransactional
     public Output execute(Input input) throws RevenueTransactionException {
 
-        if (this.revenueTransactionRepository.findByHubTransactionId(input.hubTransactionId()).isPresent()) {
+        if (input.hubTransactionId() != null &&
+                this.revenueTransactionRepository.findByHubTransactionId(input.hubTransactionId()).isPresent()) {
             throw new RevenueTransactionException(
                     RevenueTransactionErrors.REVENUE_TRANSACTION_ALREADY_REGISTERED.format(input.hubTransactionId()));
         }
 
         RevenueTransaction revenueTransaction = new RevenueTransaction(input.hubTransactionId(),
-                                                                        input.settlementId(),
                                                                         input.tin(),
                                                                         input.taxPayerName(),
                                                                         input.billNumber(),
                                                                         input.billDate(),
                                                                         input.totalAmount(),
                                                                         input.amountCurrency(),
+                                                                        input.sentCurrency(),
                                                                         input.rateExchange(),
                                                                         input.senderDfspId(),
                                                                         input.state());
@@ -72,6 +73,7 @@ public class CreateRevenueTransactionCommandHandler implements CreateRevenueTran
                 detail.taxDescription(),
                 detail.taxAmount(),
                 detail.taxAmountCh(),
+                detail.calculatedAmount(),
                 detail.category(),
                 detail.responsibleMinistryCode(),
                 detail.thirdPartyCode(),

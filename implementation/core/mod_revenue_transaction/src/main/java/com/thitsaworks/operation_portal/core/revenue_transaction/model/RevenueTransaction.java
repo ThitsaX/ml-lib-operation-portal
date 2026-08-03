@@ -18,11 +18,9 @@ package com.thitsaworks.operation_portal.core.revenue_transaction.model;
 import com.thitsaworks.operation_portal.component.common.identifier.RevenueTransactionId;
 import com.thitsaworks.operation_portal.component.common.type.TransactionState;
 import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaEntity;
-import com.thitsaworks.operation_portal.component.misc.persistence.jpa.JpaInstantConverter;
 import com.thitsaworks.operation_portal.component.misc.util.Snowflake;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,7 +33,6 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.Validate;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,9 +48,6 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
     @Column(name = "hub_transaction_id")
     protected String hubTransactionId;
 
-    @Column(name = "settlement_id")
-    protected Long settlementId;
-
     @Column(name = "tin")
     protected String tin;
 
@@ -64,14 +58,16 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
     protected String billNumber;
 
     @Column(name = "bill_date")
-    @Convert(converter = JpaInstantConverter.class)
-    protected Instant billDate;
+    protected String billDate;
 
     @Column(name = "total_amount")
     protected BigDecimal totalAmount;
 
     @Column(name = "amount_currency")
     protected String amountCurrency;
+
+    @Column(name = "sent_currency")
+    protected String sentCurrency;
 
     @Column(name = "rate_exchange")
     protected BigDecimal rateExchange;
@@ -90,32 +86,30 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
     protected Set<RevenueTransactionDetail> transactionDetails = new HashSet<>();
 
     public RevenueTransaction(String hubTransactionId,
-                              Long settlementId,
                               String tin,
                               String taxPayerName,
                               String billNumber,
-                              Instant billDate,
+                              String billDate,
                               BigDecimal totalAmount,
                               String amountCurrency,
+                              String sentCurrency,
                               BigDecimal rateExchange,
                               String senderDfspId,
                               TransactionState state) {
 
-        Validate.notBlank(hubTransactionId);
-        Validate.notBlank(billNumber);
         Validate.notNull(totalAmount);
         Validate.notBlank(amountCurrency);
         Validate.notNull(state);
 
         this.revenueTransactionId = new RevenueTransactionId(Snowflake.get().nextId());
         this.hubTransactionId = hubTransactionId;
-        this.settlementId = settlementId;
         this.tin = tin;
         this.taxPayerName = taxPayerName;
         this.billNumber = billNumber;
         this.billDate = billDate;
         this.totalAmount = totalAmount;
         this.amountCurrency = amountCurrency;
+        this.sentCurrency = sentCurrency;
         this.rateExchange = rateExchange;
         this.senderDfspId = senderDfspId;
         this.state = state;
@@ -131,6 +125,7 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
                                                    String taxDescription,
                                                    BigDecimal taxAmount,
                                                    BigDecimal taxAmountCh,
+                                                   BigDecimal calculatedAmount,
                                                    String category,
                                                    String responsibleMinistryCode,
                                                    String thirdPartyCode,
@@ -148,6 +143,7 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
                                                                  taxDescription,
                                                                  taxAmount,
                                                                  taxAmountCh,
+                                                                 calculatedAmount,
                                                                  category,
                                                                  responsibleMinistryCode,
                                                                  thirdPartyCode,
@@ -178,13 +174,6 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
         return this;
     }
 
-    public RevenueTransaction settlementId(Long settlementId) {
-
-        this.settlementId = settlementId;
-
-        return this;
-    }
-
     public RevenueTransaction hubTransactionId(String hubTransactionId) {
 
         Validate.notBlank(hubTransactionId);
@@ -209,13 +198,12 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
 
     public RevenueTransaction billNumber(String billNumber) {
 
-        Validate.notBlank(billNumber);
         this.billNumber = billNumber;
 
         return this;
     }
 
-    public RevenueTransaction billDate(Instant billDate) {
+    public RevenueTransaction billDate(String billDate) {
 
         this.billDate = billDate;
 
@@ -234,6 +222,13 @@ public class RevenueTransaction extends JpaEntity<RevenueTransactionId> {
 
         Validate.notBlank(amountCurrency);
         this.amountCurrency = amountCurrency;
+
+        return this;
+    }
+
+    public RevenueTransaction sentCurrency(String sentCurrency) {
+
+        this.sentCurrency = sentCurrency;
 
         return this;
     }

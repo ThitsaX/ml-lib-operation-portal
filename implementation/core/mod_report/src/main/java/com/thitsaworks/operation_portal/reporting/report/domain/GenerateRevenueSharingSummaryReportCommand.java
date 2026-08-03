@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.thitsaworks.operation_portal.component.common.type;
+package com.thitsaworks.operation_portal.reporting.report.domain;
 
-public enum ReportType {
+import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 
-    SETTLEMENT_DETAIL,
-    TransactionDetail,
-    AUDIT,
-    MANAGEMENT_SUMMARY,
-    SETTLEMENT_BANK,
-    SETTLEMENT_BANK_USECASE,
-    SETTLEMENT_BANK_OVERVIEW,
-    SETTLEMENT_AUDIT,
-    SETTLEMENT_STATEMENT,
-    SETTLEMENT_SUMMARY,
-    FEE_SUMMARY,
-    FEE_SETTLEMENT_SUMMARY,
-    REVENUE_SHARING_DETAIL,
-    REVENUE_SHARING_SUMMARY;
+public interface GenerateRevenueSharingSummaryReportCommand {
 
+    record Input(String date,
+                 String settlementId,
+                 String timezone,
+                 String fileType,
+                 Integer offset,
+                 Integer limit) { }
+
+    record Output(byte[] revenueSharingSummaryRptByte) { }
+
+    Output execute(Input input) throws ReportException;
+
+    int countRows();
 }

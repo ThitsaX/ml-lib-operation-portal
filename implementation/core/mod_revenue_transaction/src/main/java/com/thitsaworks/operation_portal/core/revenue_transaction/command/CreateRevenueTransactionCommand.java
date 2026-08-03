@@ -21,19 +21,18 @@ import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTra
 import com.thitsaworks.operation_portal.core.revenue_transaction.exception.RevenueTransactionException;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 public interface CreateRevenueTransactionCommand {
 
     record Input(String hubTransactionId,
-                 Long settlementId,
                  String tin,
                  String taxPayerName,
                  String billNumber,
-                 Instant billDate,
+                 String billDate,
                  BigDecimal totalAmount,
                  String amountCurrency,
+                 String sentCurrency,
                  BigDecimal rateExchange,
                  String senderDfspId,
                  TransactionState state,

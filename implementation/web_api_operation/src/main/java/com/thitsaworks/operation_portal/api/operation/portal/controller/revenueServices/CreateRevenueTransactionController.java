@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -60,10 +59,10 @@ public class CreateRevenueTransactionController {
                                               .toList();
 
         var output = this.createRevenueTransaction.execute(new CreateRevenueTransaction.Input(
-                request.hubTransactionId(), request.settlementId(), request.tin(),
+                request.hubTransactionId(), request.tin(),
                 request.taxPayerName(), request.billNumber(),
-                request.billDate() == null ? null : Instant.ofEpochSecond(request.billDate()),
-                request.totalAmount(), request.amountCurrency(), request.rateExchange(),
+                request.billDate(),
+                request.totalAmount(), request.amountCurrency(), request.sentCurrency(), request.rateExchange(),
                 request.senderDfspId(), TransactionState.valueOf(request.state().toUpperCase()),
                 transactionDetails));
 
@@ -76,14 +75,14 @@ public class CreateRevenueTransactionController {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Request(@NotBlank @JsonProperty("hubTransactionId") String hubTransactionId,
-                          @JsonProperty("settlementId") Long settlementId,
+    public record Request(@JsonProperty("hubTransactionId") String hubTransactionId,
                           @JsonProperty("tin") String tin,
                           @JsonProperty("taxPayerName") String taxPayerName,
-                          @NotBlank @JsonProperty("billNumber") String billNumber,
-                          @JsonProperty("billDate") Long billDate,
+                          @JsonProperty("billNumber") String billNumber,
+                          @JsonProperty("billDate") String billDate,
                           @NotNull @JsonProperty("totalAmount") BigDecimal totalAmount,
                           @NotBlank @JsonProperty("amountCurrency") String amountCurrency,
+                          @JsonProperty("sentCurrency") String sentCurrency,
                           @JsonProperty("rateExchange") BigDecimal rateExchange,
                           @JsonProperty("senderDfspId") String senderDfspId,
                           @NotBlank @JsonProperty("state") String state,
@@ -114,6 +113,7 @@ public class CreateRevenueTransactionController {
 
             return new RevenueTransactionDetailInput(
                     this.taxCode, this.taxDescription, this.taxAmount, this.taxAmountCh,
+                    null,
                     this.category, this.responsibleMinistryCode, this.thirdPartyCode,
                     this.golPercentage, this.golAmount, this.ministryPercent, this.ministryAmount,
                     this.thirdPartyPercent, this.thirdPartyAmount,
