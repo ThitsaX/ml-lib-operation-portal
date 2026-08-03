@@ -465,6 +465,7 @@ public class ReportGeneratorHandler implements ReportGenerator {
 
             case FEE_SUMMARY -> "FeeSummaryReport-" + timestamp + "." + extension;
             case FEE_SETTLEMENT_SUMMARY -> "FeeSettlementSummaryReport-" + timestamp + "." + extension;
+            case REVENUE_SHARING_DETAIL -> "RevenueSharingDetailReport-" + timestamp + "." + extension;
             case REVENUE_SHARING_SUMMARY ->
                 "RevenueSharingSummaryReport-" + timestamp + "." + extension;
         };

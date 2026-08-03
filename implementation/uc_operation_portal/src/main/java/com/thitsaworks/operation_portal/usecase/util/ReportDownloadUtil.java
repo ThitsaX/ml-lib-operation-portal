@@ -74,6 +74,8 @@ public final class ReportDownloadUtil {
                 ReportErrors.SETTLEMENT_AUDIT_REPORT_FAILURE_EXCEPTION, errorDefaultMessage);
             case "FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION" -> withDefaultMessage(
                 ReportErrors.FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION, errorDefaultMessage);
+            case "REVENUE_SHARING_DETAIL_REPORT_FAILURE_EXCEPTION" -> withDefaultMessage(
+                ReportErrors.REVENUE_SHARING_DETAIL_REPORT_FAILURE_EXCEPTION, errorDefaultMessage);
             case "FEE_SUMMARY_REPORT_FAILURE_EXCEPTION" -> withDefaultMessage(
                 ReportErrors.FEE_SUMMARY_REPORT_FAILURE_EXCEPTION, errorDefaultMessage);
             default -> defaultFailureError.defaultMessage(storedError);

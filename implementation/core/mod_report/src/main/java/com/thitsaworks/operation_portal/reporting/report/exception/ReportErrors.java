@@ -30,6 +30,10 @@ public class ReportErrors {
         new ErrorMessage(
             "FEE_SETTLEMENT_SUMMARY_REPORT_FAILURE_EXCEPTION",
             "Failed to extract fee settlement summary report.");
+    public static final ErrorMessage REVENUE_SHARING_DETAIL_REPORT_FAILURE_EXCEPTION =
+        new ErrorMessage(
+            "REVENUE_SHARING_DETAIL_REPORT_FAILURE_EXCEPTION",
+            "Failed to extract revenue sharing detail report.");
     public static final ErrorMessage FEE_SUMMARY_REPORT_FAILURE_EXCEPTION = new ErrorMessage("FEE_SUMMARY_REPORT_FAILURE_EXCEPTION", "Failed to extract fee summary report.");
     public static final ErrorMessage REVENUE_SHARING_SUMMARY_REPORT_FAILURE_EXCEPTION =
         new ErrorMessage(
