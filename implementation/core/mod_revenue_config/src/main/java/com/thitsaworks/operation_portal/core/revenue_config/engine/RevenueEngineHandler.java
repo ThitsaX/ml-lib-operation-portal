@@ -89,7 +89,6 @@ public class RevenueEngineHandler implements RevenueEngine {
         }
 
         if (archiveCandidates.isEmpty()) {
-            LOGGER.debug("No revenue configurations found to archive.");
             return;
         }
 
@@ -115,8 +114,6 @@ public class RevenueEngineHandler implements RevenueEngine {
     public void runStatusLifecycleJob() {
 
         try {
-            LOGGER.debug("Start refreshing revenue engine data for calculation");
-
             Instant now = Instant.now();
             List<RevenueConfig> revenueConfigs = this.revenueConfigRepository.findByStatusIn(
                 List.of(RevenueConfigStatus.ACTIVE), Sort.by(Sort.Direction.ASC, "taxCodeId"));
@@ -142,12 +139,8 @@ public class RevenueEngineHandler implements RevenueEngine {
 
             this.snapshotRef.set(new Snapshot(withTaxCodeId, withPartyCode, roundingPolicy));
 
-            LOGGER.debug(
-                "Revenue engine data refresh completed. revenueConfigs=[{}], revenueParties=[{}]",
-                withTaxCodeId.size(), withPartyCode.size());
-
         } catch (Exception e) {
-            LOGGER.info("Revenue engine refresh failed", e);
+            LOGGER.error("Revenue engine refresh failed", e);
             throw new IllegalStateException("Revenue engine refresh failed", e);
         }
     }
