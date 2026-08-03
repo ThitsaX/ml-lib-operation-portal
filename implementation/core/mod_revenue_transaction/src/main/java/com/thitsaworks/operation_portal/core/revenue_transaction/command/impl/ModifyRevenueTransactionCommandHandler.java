@@ -45,7 +45,14 @@ public class ModifyRevenueTransactionCommandHandler implements ModifyRevenueTran
                         RevenueTransactionErrors.REVENUE_TRANSACTION_NOT_FOUND.format(
                                 input.revenueTransactionId().toString())));
 
-        revenueTransaction.state(input.state());
+        if (!input.hubTransactionId().equals(revenueTransaction.getHubTransactionId()) &&
+                this.revenueTransactionRepository.findByHubTransactionId(input.hubTransactionId()).isPresent()) {
+            throw new RevenueTransactionException(
+                    RevenueTransactionErrors.REVENUE_TRANSACTION_ALREADY_REGISTERED.format(input.hubTransactionId()));
+        }
+
+        revenueTransaction.hubTransactionId(input.hubTransactionId())
+                          .state(input.state());
 
         var updatedDetails = new ArrayList<RevenueTransactionDetail>();
         if (input.transactionDetails() != null) {
@@ -65,6 +72,7 @@ public class ModifyRevenueTransactionCommandHandler implements ModifyRevenueTran
                             "Revenue transaction detail not found: " + update.revenueTransactionDetailId()));
 
                 updatedDetails.add(details.revenueSplit(
+                        update.calculatedAmount(),
                         update.category(),
                         update.responsibleMinistryCode(),
                         update.thirdPartyCode(),

@@ -53,6 +53,7 @@ public class ModifyRevenueTransactionController {
 
         var output = this.modifyRevenueTransaction.execute(new ModifyRevenueTransaction.Input(
                 new RevenueTransactionId(request.revenueTransactionId()),
+                request.hubTransactionId(),
                 TransactionState.valueOf(request.state().toUpperCase())));
 
         var response = new Response(output.modified(),
@@ -67,6 +68,7 @@ public class ModifyRevenueTransactionController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @JsonProperty("revenueTransactionId") Long revenueTransactionId,
+                          @NotBlank @JsonProperty("hubTransactionId") String hubTransactionId,
                           @NotBlank @JsonProperty("state") String state) implements Serializable {
     }
 

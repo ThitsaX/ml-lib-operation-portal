@@ -25,11 +25,13 @@ import java.util.List;
 public interface ModifyRevenueTransactionCommand {
 
     record Input(RevenueTransactionId revenueTransactionId,
+                 String hubTransactionId,
                  TransactionState state,
                  List<TransactionDetail> transactionDetails) {
     }
 
     record TransactionDetail(String revenueTransactionDetailId,
+                             BigDecimal calculatedAmount,
                              String category,
                              String responsibleMinistryCode,
                              String thirdPartyCode,
