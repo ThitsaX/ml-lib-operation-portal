@@ -99,6 +99,25 @@ S3_SETTINGS_DATA='{
   "presignedUrlLifetime": "PT15M"
 }'
 
+# Revenue Engine Settings
+REVENUE_ENGINE_SETTINGS_PATH="operation_portal/revenue_engine/settings"
+REVENUE_ENGINE_SETTINGS_DATA='{
+  "runStatusSchedule": {
+    "mode": "FIXED_RATE",
+    "delay": 3000,
+    "period": 5000,
+    "zoneId": "+06:30",
+    "time": "08:00"
+  },
+  "archiveSchedule": {
+    "mode": "FIXED_TIME",
+    "delay": 3000,
+    "period": 5000,
+    "zoneId": "+06:30",
+    "time": "00:00"
+  }
+}'
+
 
 echo "Adding Redis Settings to Vault at path '$REDIS_SETTINGS_PATH'..."
 vault kv put $REDIS_SETTINGS_PATH @<(echo "$REDIS_SETTINGS_DATA")
@@ -132,6 +151,8 @@ vault kv put $MONGO_DB_HUB_DATA_READ_SETTINGS_PATH @<(echo "$MONGO_DB_HUB_DATA_R
 echo "Adding S3 Settings to Vault at path '$S3_SETTINGS_PATH'..."
 vault kv put $S3_SETTINGS_PATH @<(echo "$S3_SETTINGS_DATA")
 
+echo "Adding Revenue Engine Settings to Vault at path '$REVENUE_ENGINE_SETTINGS_PATH'..."
+vault kv put $REVENUE_ENGINE_SETTINGS_PATH @<(echo "$REVENUE_ENGINE_SETTINGS_DATA")
 
 
 # Verify all secrets
@@ -145,6 +166,7 @@ vault kv get $MYSQL_HUB_DATA_READ_SETTINGS_PATH
 vault kv get $MONGO_DB_HUB_DATA_WRITE_SETTINGS_PATH
 vault kv get $MONGO_DB_HUB_DATA_READ_SETTINGS_PATH
 vault kv get $S3_SETTINGS_PATH
+vault kv get $REVENUE_ENGINE_SETTINGS_PATH
 
 
 echo "Vault initialization and secret creation complete."

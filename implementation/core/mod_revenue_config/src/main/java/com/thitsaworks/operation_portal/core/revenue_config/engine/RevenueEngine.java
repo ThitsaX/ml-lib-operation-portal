@@ -10,6 +10,8 @@ import java.time.ZoneId;
 
 public interface RevenueEngine {
 
+    String SETTINGS_PATH = "revenue_engine/settings";
+
     RevenueSplit calculateRevenue(String taxCodeId, BigDecimal amount)
         throws RevenueConfigException;
 

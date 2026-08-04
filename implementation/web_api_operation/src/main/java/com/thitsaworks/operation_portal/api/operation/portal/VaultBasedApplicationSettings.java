@@ -22,17 +22,15 @@ import com.thitsaworks.operation_portal.component.infra.redis.RedisConfiguration
 import com.thitsaworks.operation_portal.component.infra.vault.Vault;
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
 import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Locale;
+
 public class VaultBasedApplicationSettings {
-
-    private static final Logger LOG = LoggerFactory.getLogger(VaultBasedApplicationSettings.class);
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-        VaultBasedApplicationSettings.class);
 
     @Bean
     public RedisConfiguration.Settings redisConfigurationSettings(Vault vault) {
@@ -99,5 +97,35 @@ public class VaultBasedApplicationSettings {
 
         return vault.get(S3FileStorage.S3_SETTINGS_PATH, S3FileStorage.Settings.class);
     }
+
+    @Bean
+    public RevenueEngine.Settings revenueEngineSettings(Vault vault) {
+
+        RevenueEngineVaultSettings settings =
+            vault.get(RevenueEngine.SETTINGS_PATH, RevenueEngineVaultSettings.class);
+
+        return new RevenueEngine.Settings(
+            this.jobSchedule(settings.runStatusSchedule()),
+            this.jobSchedule(settings.archiveSchedule()));
+    }
+
+    private RevenueEngine.JobSchedule jobSchedule(RevenueEngineVaultJobSchedule schedule) {
+
+        return new RevenueEngine.JobSchedule(
+            RevenueEngine.ScheduleMode.valueOf(schedule.mode().toUpperCase(Locale.ROOT)),
+            schedule.delay(),
+            schedule.period(),
+            ZoneId.of(schedule.zoneId()),
+            LocalTime.parse(schedule.time()));
+    }
+
+    public record RevenueEngineVaultSettings(RevenueEngineVaultJobSchedule runStatusSchedule,
+                                             RevenueEngineVaultJobSchedule archiveSchedule) { }
+
+    public record RevenueEngineVaultJobSchedule(String mode,
+                                                long delay,
+                                                long period,
+                                                String zoneId,
+                                                String time) { }
 
 }
