@@ -56,9 +56,6 @@ public class CreateRevenuePartyCommandHandler implements CreateRevenuePartyComma
 
         revenueParty = this.revenuePartyRepository.saveAndFlush(revenueParty);
 
-//        this.revenuePartyHistoryRepository.save(
-//                new RevenuePartyHistory(revenueParty, RevenuePartyActionType.CREATE, input.createdBy()));
-
         return new Output(true, revenueParty.getRevenuePartyId());
     }
 

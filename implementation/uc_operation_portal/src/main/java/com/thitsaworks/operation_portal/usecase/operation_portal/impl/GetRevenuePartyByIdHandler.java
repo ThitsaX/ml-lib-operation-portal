@@ -24,6 +24,7 @@ import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationM
 import org.springframework.stereotype.Service;
 import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenuePartyById;
+import com.thitsaworks.operation_portal.usecase.util.RevenuePartyDataMapper;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_PARTY)
@@ -32,20 +33,24 @@ public class GetRevenuePartyByIdHandler
     implements GetRevenuePartyById {
 
     private final RevenuePartyQuery revenuePartyQuery;
+    private final RevenuePartyDataMapper revenuePartyDataMapper;
 
     public GetRevenuePartyByIdHandler(PrincipalCache principalCache,
                                       ActionAuthorizationManager actionAuthorizationManager,
-                                      RevenuePartyQuery revenuePartyQuery) {
+                                      RevenuePartyQuery revenuePartyQuery,
+                                      RevenuePartyDataMapper revenuePartyDataMapper) {
 
         super(principalCache, actionAuthorizationManager);
 
         this.revenuePartyQuery = revenuePartyQuery;
+        this.revenuePartyDataMapper = revenuePartyDataMapper;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        return new Output(this.revenuePartyQuery.get(input.revenuePartyId()));
+        return new Output(this.revenuePartyDataMapper.withUserEmails(
+            this.revenuePartyQuery.get(input.revenuePartyId())));
     }
 
 }

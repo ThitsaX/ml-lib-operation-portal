@@ -24,6 +24,7 @@ import com.thitsaworks.operation_portal.component.misc.exception.DomainException
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyRevenuePartyStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public class ModifyRevenuePartyStatusController {
         LOG.info("Modify Revenue Party Status Request : [{}]", this.objectMapper.writeValueAsString(request));
 
         var output = this.modifyRevenuePartyStatus.execute(new ModifyRevenuePartyStatus.Input(
-            new RevenuePartyId(request.revenuePartyId()), request.isActive()));
+            new RevenuePartyId(request.revenuePartyId()), request.status()));
         var response = new Response(output.modified(), output.revenuePartyId().getId().toString());
 
         LOG.info("Modify Revenue Party Status Response : [{}]", this.objectMapper.writeValueAsString(response));
@@ -61,7 +62,7 @@ public class ModifyRevenuePartyStatusController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @JsonProperty("revenuePartyId") Long revenuePartyId,
-                          @NotNull @JsonProperty("isActive") Boolean isActive)
+                          @NotNull @Pattern(regexp = "(?i)ACTIVE|INACTIVE") @JsonProperty("status") String status)
         implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

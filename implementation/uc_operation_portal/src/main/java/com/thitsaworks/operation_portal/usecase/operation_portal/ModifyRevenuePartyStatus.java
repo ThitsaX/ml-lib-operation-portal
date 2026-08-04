@@ -23,7 +23,7 @@ public interface ModifyRevenuePartyStatus
     extends UseCase<ModifyRevenuePartyStatus.Input, ModifyRevenuePartyStatus.Output> {
 
     record Input(RevenuePartyId revenuePartyId,
-                 boolean isActive) { }
+                 String status) { }
 
     record Output(boolean modified,
                   RevenuePartyId revenuePartyId,

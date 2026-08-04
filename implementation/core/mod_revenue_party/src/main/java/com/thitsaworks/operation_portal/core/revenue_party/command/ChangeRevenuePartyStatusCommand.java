@@ -20,7 +20,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.UserId;
 import com.thitsaworks.operation_portal.core.revenue_party.exception.RevenuePartyException;
 
 public interface ChangeRevenuePartyStatusCommand {
-    record Input(RevenuePartyId revenuePartyId, boolean isActive, UserId updatedBy) {}
+    record Input(RevenuePartyId revenuePartyId, String status, UserId updatedBy) {}
     record Output(boolean modified, RevenuePartyId revenuePartyId) {}
     Output execute(Input input) throws RevenuePartyException;
 }
