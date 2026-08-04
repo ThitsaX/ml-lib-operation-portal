@@ -31,6 +31,7 @@ import com.thitsaworks.operation_portal.core.revenue_party.command.ModifyRevenue
 import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyRevenueParty;
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
+import com.thitsaworks.operation_portal.usecase.util.RevenuePartyDataMapper;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_PARTY)
@@ -41,6 +42,7 @@ public class ModifyRevenuePartyHandler
     private final ModifyRevenuePartyCommand modifyRevenuePartyCommand;
     private final RevenuePartyQuery revenuePartyQuery;
     private final UserPermissionManager userPermissionManager;
+    private final RevenuePartyDataMapper revenuePartyDataMapper;
 
     public ModifyRevenuePartyHandler(CreateInputAuditCommand createInputAuditCommand,
                                      CreateOutputAuditCommand createOutputAuditCommand,
@@ -50,7 +52,8 @@ public class ModifyRevenuePartyHandler
                                      ActionAuthorizationManager actionAuthorizationManager,
                                      ModifyRevenuePartyCommand modifyRevenuePartyCommand,
                                      RevenuePartyQuery revenuePartyQuery,
-                                     UserPermissionManager userPermissionManager) {
+                                     UserPermissionManager userPermissionManager,
+                                     RevenuePartyDataMapper revenuePartyDataMapper) {
 
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
               objectMapper, principalCache, actionAuthorizationManager);
@@ -58,19 +61,22 @@ public class ModifyRevenuePartyHandler
         this.modifyRevenuePartyCommand = modifyRevenuePartyCommand;
         this.revenuePartyQuery = revenuePartyQuery;
         this.userPermissionManager = userPermissionManager;
+        this.revenuePartyDataMapper = revenuePartyDataMapper;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        var beforeValue = this.revenuePartyQuery.get(input.revenuePartyId());
+        var beforeValue = this.revenuePartyDataMapper.withUserEmails(
+            this.revenuePartyQuery.get(input.revenuePartyId()));
         var currentUser = this.userPermissionManager.getCurrentUser();
         var output = this.modifyRevenuePartyCommand.execute(new ModifyRevenuePartyCommand.Input(
             input.revenuePartyId(), input.partyCode(), input.partyName(), input.partyType(),
             input.description(), new UserId(currentUser.principalId().getId())));
 
         return new Output(output.modified(), output.revenuePartyId(), beforeValue,
-                          this.revenuePartyQuery.get(output.revenuePartyId()));
+                          this.revenuePartyDataMapper.withUserEmails(
+                              this.revenuePartyQuery.get(output.revenuePartyId())));
     }
 
 }

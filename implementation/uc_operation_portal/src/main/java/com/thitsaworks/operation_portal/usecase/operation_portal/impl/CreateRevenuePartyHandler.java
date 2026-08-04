@@ -31,6 +31,7 @@ import com.thitsaworks.operation_portal.core.revenue_party.command.CreateRevenue
 import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueParty;
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
+import com.thitsaworks.operation_portal.usecase.util.RevenuePartyDataMapper;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_PARTY)
@@ -41,6 +42,7 @@ public class CreateRevenuePartyHandler
     private final CreateRevenuePartyCommand createRevenuePartyCommand;
     private final RevenuePartyQuery revenuePartyQuery;
     private final UserPermissionManager userPermissionManager;
+    private final RevenuePartyDataMapper revenuePartyDataMapper;
 
     public CreateRevenuePartyHandler(CreateInputAuditCommand createInputAuditCommand,
                                      CreateOutputAuditCommand createOutputAuditCommand,
@@ -50,7 +52,8 @@ public class CreateRevenuePartyHandler
                                      ActionAuthorizationManager actionAuthorizationManager,
                                      CreateRevenuePartyCommand createRevenuePartyCommand,
                                      RevenuePartyQuery revenuePartyQuery,
-                                     UserPermissionManager userPermissionManager) {
+                                     UserPermissionManager userPermissionManager,
+                                     RevenuePartyDataMapper revenuePartyDataMapper) {
 
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
               objectMapper, principalCache, actionAuthorizationManager);
@@ -58,6 +61,7 @@ public class CreateRevenuePartyHandler
         this.createRevenuePartyCommand = createRevenuePartyCommand;
         this.revenuePartyQuery = revenuePartyQuery;
         this.userPermissionManager = userPermissionManager;
+        this.revenuePartyDataMapper = revenuePartyDataMapper;
     }
 
     @Override
@@ -69,7 +73,8 @@ public class CreateRevenuePartyHandler
             input.status(), new UserId(currentUser.principalId().getId())));
 
         return new Output(output.created(), output.revenuePartyId(), null,
-                          this.revenuePartyQuery.get(output.revenuePartyId()));
+                          this.revenuePartyDataMapper.withUserEmails(
+                              this.revenuePartyQuery.get(output.revenuePartyId())));
     }
 
 }

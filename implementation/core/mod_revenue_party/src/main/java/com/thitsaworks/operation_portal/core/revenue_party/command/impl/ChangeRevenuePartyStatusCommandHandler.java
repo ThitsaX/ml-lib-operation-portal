@@ -16,6 +16,7 @@
 package com.thitsaworks.operation_portal.core.revenue_party.command.impl;
 
 import com.thitsaworks.operation_portal.component.common.type.RevenuePartyActionType;
+import com.thitsaworks.operation_portal.component.common.type.RevenuePartyStatus;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.revenue_party.command.ChangeRevenuePartyStatusCommand;
 import com.thitsaworks.operation_portal.core.revenue_party.exception.RevenuePartyErrors;
@@ -26,6 +27,8 @@ import com.thitsaworks.operation_portal.core.revenue_party.repository.RevenuePar
 import com.thitsaworks.operation_portal.core.revenue_party.repository.RevenuePartyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -38,9 +41,10 @@ public class ChangeRevenuePartyStatusCommandHandler implements ChangeRevenuePart
     public Output execute(Input input) throws RevenuePartyException {
         RevenueParty party = this.revenuePartyRepository.findById(input.revenuePartyId())
                 .orElseThrow(() -> new RevenuePartyException(RevenuePartyErrors.REVENUE_PARTY_NOT_FOUND.format(input.revenuePartyId().toString())));
-        RevenuePartyActionType actionType = input.isActive() ? RevenuePartyActionType.ACTIVATE : RevenuePartyActionType.DEACTIVATE;
+        boolean isActive = RevenuePartyStatus.valueOf(input.status().toUpperCase(Locale.ROOT)) == RevenuePartyStatus.ACTIVE;
+        RevenuePartyActionType actionType = isActive ? RevenuePartyActionType.ACTIVATE : RevenuePartyActionType.DEACTIVATE;
         this.revenuePartyHistoryRepository.save(new RevenuePartyHistory(party, actionType, input.updatedBy()));
-        party.isActive(input.isActive()).updatedBy(input.updatedBy());
+        party.isActive(isActive).updatedBy(input.updatedBy());
         this.revenuePartyRepository.save(party);
         return new Output(true, party.getRevenuePartyId());
     }

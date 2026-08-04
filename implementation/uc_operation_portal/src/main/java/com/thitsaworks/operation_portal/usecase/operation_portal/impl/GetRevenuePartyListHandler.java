@@ -23,6 +23,7 @@ import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData
 import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRevenuePartyList;
+import com.thitsaworks.operation_portal.usecase.util.RevenuePartyDataMapper;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
 
@@ -35,20 +36,26 @@ public class GetRevenuePartyListHandler
     implements GetRevenuePartyList {
 
     private final RevenuePartyQuery revenuePartyQuery;
+    private final RevenuePartyDataMapper revenuePartyDataMapper;
 
     public GetRevenuePartyListHandler(PrincipalCache principalCache,
                                       ActionAuthorizationManager actionAuthorizationManager,
-                                      RevenuePartyQuery revenuePartyQuery) {
+                                      RevenuePartyQuery revenuePartyQuery,
+                                      RevenuePartyDataMapper revenuePartyDataMapper) {
 
         super(principalCache, actionAuthorizationManager);
 
         this.revenuePartyQuery = revenuePartyQuery;
+        this.revenuePartyDataMapper = revenuePartyDataMapper;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
-        List<RevenuePartyData> revenueParties = this.revenuePartyQuery.getRevenueParties();
+        List<RevenuePartyData> revenueParties = this.revenuePartyQuery.getRevenueParties()
+                                                                .stream()
+                                                                .map(this.revenuePartyDataMapper::withUserEmails)
+                                                                .toList();
 
         return new Output(revenueParties);
     }
