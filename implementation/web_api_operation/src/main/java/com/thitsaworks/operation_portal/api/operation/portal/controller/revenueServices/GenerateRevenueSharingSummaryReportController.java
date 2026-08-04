@@ -57,7 +57,7 @@ public class GenerateRevenueSharingSummaryReportController {
             "Generate Revenue Sharing Summary Report : date = [{}], settlementId = [{}], timezoneOffset = [{}]",
             date, settlementId, timezoneOffset);
 
-        String timezone = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
+        String normalizedTimezoneOffset = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
         UserContext userContext = (UserContext) SecurityContextHolder
                                                     .getContext()
                                                     .getAuthentication()
@@ -66,7 +66,7 @@ public class GenerateRevenueSharingSummaryReportController {
         GenerateRevenueSharingSummaryReport.Output output =
             this.generateRevenueSharingSummaryReport.execute(
                 new GenerateRevenueSharingSummaryReport.Input(
-                    date, settlementId, timezone, userContext.userId().getId()));
+                    date, settlementId, normalizedTimezoneOffset, userContext.userId().getId()));
 
         var response = new Response(
             output.requestId().getEntityId().toString(),

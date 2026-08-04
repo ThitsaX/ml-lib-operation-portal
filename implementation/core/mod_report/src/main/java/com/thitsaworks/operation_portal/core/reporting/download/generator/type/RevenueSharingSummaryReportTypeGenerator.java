@@ -54,15 +54,23 @@ class RevenueSharingSummaryReportTypeGenerator implements ReportTypeGenerator {
             throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
         }
 
+        String settlementId = params.getOrDefault("settlementId", "");
+        String timezoneOffset = params.getOrDefault("timezoneOffset", "+0000");
+        int totalRowCount = this.generateRevenueSharingSummaryReportCommand.countRows(
+            new GenerateRevenueSharingSummaryReportCommand.CountInput(settlementId, timezoneOffset));
+        if (totalRowCount <= 0) {
+            throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+        }
+
         GenerateRevenueSharingSummaryReportCommand.Output output =
             this.generateRevenueSharingSummaryReportCommand.execute(
                 new GenerateRevenueSharingSummaryReportCommand.Input(
                     params.getOrDefault("date", ""),
-                    params.getOrDefault("settlementId", ""),
-                    params.getOrDefault("timezoneOffset", "+0000"),
+                    settlementId,
+                    timezoneOffset,
                     fileType,
                     0,
-                    Integer.MAX_VALUE));
+                    totalRowCount));
 
         return new ReportGeneratedFile(output.revenueSharingSummaryRptByte(), FILE_TYPE_XLSX);
     }
