@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
+import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.iam.data.RoleData;
+import com.thitsaworks.operation_portal.core.iam.exception.IAMErrors;
+import com.thitsaworks.operation_portal.core.iam.exception.IAMException;
 import com.thitsaworks.operation_portal.core.iam.query.RoleQuery;
+import com.thitsaworks.operation_portal.core.participant.exception.ParticipantErrors;
+import com.thitsaworks.operation_portal.core.participant.exception.ParticipantException;
+import com.thitsaworks.operation_portal.core.participant.query.ParticipantQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetRoleListByParticipant;
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
@@ -40,18 +47,32 @@ public class GetRoleListByParticipantHandler
     private static final Logger LOG = LoggerFactory.getLogger(
         GetRoleListByParticipantHandler.class);
 
+    private static final String HUB_PARTICIPANT_TYPE = "HUB";
+
+    private static final String HUB_ROLE_TYPE = "HUB";
+
+    private static final String INDIRECT_PARTICIPANT_TYPE = "INDIRECT";
+
+    private static final String DFSP_ROLE_TYPE = "DFSP";
+
+    private static final String INDIRECT_DFSP_ROLE_TYPE = "INDIRECT_DFSP";
+
     private final RoleQuery roleQuery;
+
+    private final ParticipantQuery participantQuery;
 
     private final UserPermissionManager userPermissionManager;
 
     public GetRoleListByParticipantHandler(PrincipalCache principalCache,
                                            ActionAuthorizationManager actionAuthorizationManager,
                                            RoleQuery roleQuery,
+                                           ParticipantQuery participantQuery,
                                            UserPermissionManager userPermissionManager) {
 
         super(principalCache, actionAuthorizationManager);
 
         this.roleQuery = roleQuery;
+        this.participantQuery = participantQuery;
         this.userPermissionManager = userPermissionManager;
     }
 
@@ -60,24 +81,85 @@ public class GetRoleListByParticipantHandler
 
         var currentUser = this.userPermissionManager.getCurrentUser();
 
+        var participantData = this.participantQuery.get(input.participantName());
+
+        if (participantData.isEmpty()) {
+            throw new ParticipantException(ParticipantErrors.PARTICIPANT_NOT_FOUND);
+        }
+
+        var participantType = participantData.get().participantType();
+        var participantId = participantData.get().participantId();
+
+        if (this.userPermissionManager.isIndirectParticipant(participantId)) {
+            participantType = "INDIRECT";
+        }
+
         List<RoleData> roleList = this.roleQuery.getAll();
 
         boolean isDfspUser = this.userPermissionManager.isDfsp(currentUser.principalId());
 
-        if (isDfspUser || !input.participantName().equalsIgnoreCase("hub")) {
-
-            roleList = roleList.stream().filter(RoleData::isDfsp).toList();
-
-        } else {
-
-            roleList = roleList
-                           .stream()
-                           .filter(role -> !role.isDfsp() &&
-                                               !role.name().equalsIgnoreCase("SYSTEM-Admin"))
-                           .toList();
+        if (isDfspUser) {
+            ParticipantId currentUserParticipantId = new ParticipantId(
+                currentUser.realmId().getId());
+            if (!currentUserParticipantId.equals(participantId)) {
+                throw new IAMException(IAMErrors.UNAUTHORIZED_ROLE_LIST_ACCESS);
+            }
         }
 
+        roleList = isDfspUser ? this.filterRolesForDfspUser(roleList, participantType) :
+                       this.filterRolesForHubUser(roleList, participantType);
+
         return new Output(roleList);
+    }
+
+    private List<RoleData> filterRolesForDfspUser(List<RoleData> roleList, String participantType) {
+
+        return switch (this.normalizedParticipantType(participantType)) {
+            case INDIRECT_PARTICIPANT_TYPE ->
+                roleList.stream().filter(this::isDfspOrIndirectRole).toList();
+            default -> roleList.stream().filter(this::isDfspRole).toList();
+        };
+    }
+
+    private List<RoleData> filterRolesForHubUser(List<RoleData> roleList, String participantType) {
+
+        return switch (this.normalizedParticipantType(participantType)) {
+            case HUB_PARTICIPANT_TYPE ->
+                roleList.stream().filter(this::isAssignableHubRole).toList();
+            case INDIRECT_PARTICIPANT_TYPE ->
+                roleList.stream().filter(this::isDfspOrIndirectRole).toList();
+            default -> roleList.stream().filter(this::isDfspRole).toList();
+        };
+    }
+
+    private boolean isDfspRole(RoleData role) {
+
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(DFSP_ROLE_TYPE);
+    }
+
+    private boolean isIndirectRole(RoleData role) {
+
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(INDIRECT_DFSP_ROLE_TYPE);
+    }
+
+    private boolean isDfspOrIndirectRole(RoleData role) {
+
+        return this.isDfspRole(role) || this.isIndirectRole(role);
+    }
+
+    private boolean isAssignableHubRole(RoleData role) {
+
+        return this.isRoleType(role, HUB_ROLE_TYPE);
+    }
+
+    private boolean isRoleType(RoleData role, String roleType) {
+
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(roleType);
+    }
+
+    private String normalizedParticipantType(String participantType) {
+
+        return participantType == null ? "" : participantType.trim().toUpperCase();
     }
 
 }

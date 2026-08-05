@@ -20,7 +20,7 @@ import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
 public interface CreateRole extends UseCase<CreateRole.Input, CreateRole.Output> {
 
-    record Input(String name, boolean isDfsp) { }
+    record Input(String name, String roleType) { }
 
     record Output(RoleId roleId) { }
 
