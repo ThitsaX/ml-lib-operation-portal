@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.api.operation.portal;
 
 import com.thitsaworks.operation_portal.component.infra.mongo.ReportingMongoConfiguration;
@@ -22,10 +23,8 @@ import com.thitsaworks.operation_portal.component.infra.redis.RedisConfiguration
 import com.thitsaworks.operation_portal.component.infra.vault.Vault;
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
 import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
-import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
 import com.thitsaworks.operation_portal.core.email.EmailConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 
@@ -104,8 +103,8 @@ public class VaultBasedApplicationSettings {
     @Bean
     public RevenueEngine.Settings revenueEngineSettings(Vault vault) {
 
-        RevenueEngineVaultSettings settings =
-            vault.get(RevenueEngine.SETTINGS_PATH, RevenueEngineVaultSettings.class);
+        RevenueEngineVaultSettings settings = vault.get(
+            RevenueEngine.SETTINGS_PATH, RevenueEngineVaultSettings.class);
 
         return new RevenueEngine.Settings(
             this.jobSchedule(settings.runStatusSchedule()),
@@ -116,9 +115,7 @@ public class VaultBasedApplicationSettings {
 
         return new RevenueEngine.JobSchedule(
             RevenueEngine.ScheduleMode.valueOf(schedule.mode().toUpperCase(Locale.ROOT)),
-            schedule.delay(),
-            schedule.period(),
-            ZoneId.of(schedule.zoneId()),
+            schedule.delay(), schedule.period(), ZoneId.of(schedule.zoneId()),
             LocalTime.parse(schedule.time()));
     }
 
@@ -131,9 +128,11 @@ public class VaultBasedApplicationSettings {
                                                 String zoneId,
                                                 String time) { }
 
+    @Bean
     public EmailConfiguration.EmailSettings emailSettings(Vault vault) {
 
-        return vault.get(EmailConfiguration.EMAIL_SETTINGS_PATH, EmailConfiguration.EmailSettings.class);
+        return vault.get(
+            EmailConfiguration.EMAIL_SETTINGS_PATH, EmailConfiguration.EmailSettings.class);
     }
 
 }
