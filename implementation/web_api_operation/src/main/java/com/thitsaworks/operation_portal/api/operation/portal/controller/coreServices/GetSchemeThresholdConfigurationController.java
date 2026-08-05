@@ -41,7 +41,7 @@ public class GetSchemeThresholdConfigurationController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations/scheme")
+    @GetMapping("/secured/ndc/getSchemeThresholdConfiguration")
     public ResponseEntity<Response> execute()
         throws DomainException, JsonProcessingException {
 

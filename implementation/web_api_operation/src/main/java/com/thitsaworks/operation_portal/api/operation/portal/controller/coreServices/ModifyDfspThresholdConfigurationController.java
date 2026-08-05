@@ -17,18 +17,13 @@ package com.thitsaworks.operation_portal.api.operation.portal.controller.coreSer
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
 import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
-import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyThresholdConfiguration;
+import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyDfspThresholdConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -36,54 +31,42 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.Serializable;
-
 @RestController
 @RequiredArgsConstructor
-public class ModifyThresholdConfigurationController {
+public class ModifyDfspThresholdConfigurationController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ModifyThresholdConfigurationController.class);
+    private final ModifyDfspThresholdConfiguration modifyDfspThresholdConfiguration;
 
-    private final ModifyThresholdConfiguration modifyThresholdConfiguration;
-
-    private final ObjectMapper objectMapper;
-
-    @PutMapping("/secured/ndc/modifyThresholdConfiguration")
+    @PutMapping("/secured/ndc/modifyDfspThresholdConfiguration")
     public ResponseEntity<Response> execute(@RequestParam("id") String id,
                                             @Valid @RequestBody Request request)
-        throws DomainException, JsonProcessingException {
-
-        LOG.info("Modify NDC Threshold Configuration Request : id=[{}], request=[{}]",
-                 id, this.objectMapper.writeValueAsString(request));
+        throws DomainException {
 
         UserContext userContext =
-                (UserContext) SecurityContextHolder.getContext()
-                        .getAuthentication()
-                        .getDetails();
+            (UserContext) SecurityContextHolder.getContext()
+                                         .getAuthentication()
+                                         .getDetails();
 
-        ModifyThresholdConfiguration.Output output = this.modifyThresholdConfiguration.execute(
-            new ModifyThresholdConfiguration.Input(
-                Long.parseLong(id),
-                request.thresholdEnabled(),
-                request.status(),
-                userContext.userId().toString()));
+        ModifyDfspThresholdConfiguration.Output output =
+            this.modifyDfspThresholdConfiguration.execute(
+                new ModifyDfspThresholdConfiguration.Input(
+                    Long.parseLong(id),
+                    request.thresholdEnabled(),
+                    request.status(),
+                    userContext.userId().toString()));
 
-        var response = new Response(String.valueOf(output.thresholdConfigurationId().getEntityId()), output.modified());
-
-        LOG.info("Modify NDC Threshold Configuration Response : [{}]", this.objectMapper.writeValueAsString(response));
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(new Response(
+            String.valueOf(output.thresholdConfigurationId().getEntityId()),
+            output.modified()));
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
         @NotNull @JsonProperty("thresholdEnabled") Boolean thresholdEnabled,
-        @NotNull @JsonProperty("status") NdcConfigurationStatus status
-    ) { }
+        @NotNull @JsonProperty("status") NdcConfigurationStatus status) { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(
-            @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
-            @JsonProperty("modified") boolean modified) implements Serializable { }
-
+        @JsonProperty("thresholdConfigurationId") String thresholdConfigurationId,
+        @JsonProperty("modified") Boolean modified) { }
 }

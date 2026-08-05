@@ -44,7 +44,7 @@ public class GetThresholdDetailListController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping(value = "/secured/ndc/thresholdDetails", params = "!id")
+    @GetMapping(value = "/secured/ndc/getThresholdDetailList", params = "!id")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "thresholdConfigurationId", required = false) String thresholdConfigurationId,
         @RequestParam(value = "status", required = false) Boolean status)

@@ -37,7 +37,7 @@ public class CreateNdcWorkerConfigController {
 
     private final CreateSchedulerConfig createSchedulerConfig;
 
-    @PostMapping("/secured/ndc/worker-config")
+    @PostMapping("/secured/ndc/createWorkerConfig")
     public ResponseEntity<Response> execute(@Valid @RequestBody Request request) throws DomainException {
 
         NdcWorkerConfigRequestValidator.Values values = NdcWorkerConfigRequestValidator.validate(request.runEvery());
