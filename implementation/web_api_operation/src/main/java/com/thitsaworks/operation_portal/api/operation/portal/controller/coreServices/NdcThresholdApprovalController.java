@@ -66,7 +66,7 @@ public class NdcThresholdApprovalController {
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/secured/ndc/threshold-approvals")
+    @PostMapping("/secured/ndc/submitNdcThresholdApproval")
     public ResponseEntity<SubmitResponse> submit(
         @Valid @RequestBody SubmitRequest request)
         throws DomainException, JsonProcessingException {
@@ -93,7 +93,7 @@ public class NdcThresholdApprovalController {
             HttpStatus.CREATED);
     }
 
-    @GetMapping("/secured/ndc/threshold-approvals")
+    @GetMapping("/secured/ndc/getNdcThresholdApprovalList")
     public ResponseEntity<ListResponse> get(
         @RequestParam(value = "status", defaultValue = "PENDING")
         ApprovalActionType status) throws DomainException {
@@ -109,7 +109,7 @@ public class NdcThresholdApprovalController {
         return ResponseEntity.ok(new ListResponse(approvals));
     }
 
-    @PutMapping("/secured/ndc/threshold-approvals/{approvalRequestId}/decision")
+    @PutMapping("/secured/ndc/modifyNdcThresholdApprovalAction/{approvalRequestId}")
     public ResponseEntity<DecisionResponse> decide(
         @PathVariable("approvalRequestId") String approvalRequestId,
         @Valid @RequestBody DecisionRequest request)

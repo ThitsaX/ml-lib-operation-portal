@@ -36,7 +36,7 @@ public class GetNdcWorkerConfigController {
 
     private final GetSchedulerConfigList getSchedulerConfigList;
 
-    @GetMapping("/secured/ndc/worker-config")
+    @GetMapping("/secured/ndc/getWorkerConfig")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "active", required = false) Boolean active,
         @RequestParam(value = "sortBy", required = false) String sortBy,

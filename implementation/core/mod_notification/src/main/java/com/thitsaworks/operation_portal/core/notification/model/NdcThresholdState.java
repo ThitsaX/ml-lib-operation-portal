@@ -60,7 +60,7 @@ public class NdcThresholdState extends JpaEntity<NdcThresholdStateId> {
     @Column(name = "last_evaluated_balance", precision = 18, scale = 4)
     private BigDecimal lastEvaluatedBalance;
 
-    @Column(name = "last_evaluated_ndc_used", precision = 7, scale = 4)
+    @Column(name = "last_evaluated_ndc_used", precision = 18, scale = 4)
     private BigDecimal lastEvaluatedNdcUsed;
 
     @Column(name = "last_breached_at")

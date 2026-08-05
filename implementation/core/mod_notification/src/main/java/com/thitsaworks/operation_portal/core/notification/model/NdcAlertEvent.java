@@ -61,7 +61,7 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
     @Enumerated(EnumType.STRING)
     private NdcThresholdStateType currentState;
 
-    @Column(name = "threshold_percent", nullable = false, precision = 7, scale = 4)
+    @Column(name = "threshold_percent", nullable = false, precision = 18, scale = 4)
     private BigDecimal thresholdPercent;
 
     @Column(name = "current_position", nullable = false, precision = 18, scale = 4)
@@ -70,7 +70,7 @@ public class NdcAlertEvent extends JpaEntity<NdcAlertEventId> {
     @Column(name = "ndc_limit", nullable = false, precision = 18, scale = 4)
     private BigDecimal ndcLimit;
 
-    @Column(name = "current_ndc_used", nullable = false, precision = 7, scale = 4)
+    @Column(name = "current_ndc_used", nullable = false, precision = 18, scale = 4)
     private BigDecimal currentNdcUsed;
 
     @Column(name = "event_message")
