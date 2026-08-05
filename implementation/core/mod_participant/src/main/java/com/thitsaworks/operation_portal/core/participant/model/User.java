@@ -63,11 +63,29 @@ public class User extends JpaEntity<UserId> {
     @Column(name = "job_title")
     protected String jobTitle;
 
+    @Column(name = "allow_notification")
+    protected boolean allowNotification;
+
     @Column(name = "is_deleted")
     protected boolean isDeleted;
 
+    @Column(name = "is_visible", nullable = false)
+    protected boolean isVisible;
+
     public User(String name, Email email, Participant participant, String firstName, String lastName,
                 String jobTitle) {
+
+        this(name, email, participant, firstName, lastName, jobTitle, false, true);
+    }
+
+    public User(String name, Email email, Participant participant, String firstName, String lastName,
+                String jobTitle, boolean allowNotification) {
+
+        this(name, email, participant, firstName, lastName, jobTitle, allowNotification, true);
+    }
+
+    public User(String name, Email email, Participant participant, String firstName, String lastName,
+                String jobTitle, boolean allowNotification, boolean isVisible) {
 
         Validate.notNull(participant);
 
@@ -78,6 +96,8 @@ public class User extends JpaEntity<UserId> {
         this.firstName = firstName;
         this.lastName = lastName;
         this.jobTitle = jobTitle;
+        this.allowNotification = allowNotification;
+        this.isVisible = isVisible;
     }
 
     @Override
@@ -89,6 +109,13 @@ public class User extends JpaEntity<UserId> {
     public User name(String name) {
 
         this.name = name;
+        return this;
+
+    }
+
+    public User email(Email email) {
+
+        this.email = email;
         return this;
 
     }
@@ -120,9 +147,23 @@ public class User extends JpaEntity<UserId> {
 
     }
 
+    public User allowNotification(boolean allowNotification) {
+
+        this.allowNotification = allowNotification;
+        return this;
+
+    }
+
     public User isDeleted(boolean isDeleted) {
 
         this.isDeleted = isDeleted;
+        return this;
+
+    }
+
+    public User isVisible(boolean isVisible) {
+
+        this.isVisible = isVisible;
         return this;
 
     }

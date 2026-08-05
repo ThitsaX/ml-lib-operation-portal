@@ -38,8 +38,8 @@ public class MMDateTimeUtil {
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(("GMT+06:30")));
 
         return new MMLocalTime(zonedDateTime.getYear(), zonedDateTime.getMonth().getValue(),
-                zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
-                zonedDateTime.getSecond());
+            zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
+            zonedDateTime.getSecond());
     }
 
     public static  MMLocalTime toMyanmarTime(Instant instant){
@@ -47,8 +47,8 @@ public class MMDateTimeUtil {
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(instant, ZoneId.of(("GMT+06:30")));
 
         return new MMLocalTime(zonedDateTime.getYear(), zonedDateTime.getMonth().getValue(),
-                zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
-                zonedDateTime.getSecond());
+            zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), zonedDateTime.getMinute(),
+            zonedDateTime.getSecond());
     }
 
     @Value

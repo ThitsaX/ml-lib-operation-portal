@@ -27,6 +27,8 @@
         <module>mod_revenue_config</module>
         <module>mod_revenue_party</module>
         <module>mod_revenue_transaction</module>
+        <module>mod_notification</module>
+        <module>mod_email</module>
     </modules>
 
     <properties>

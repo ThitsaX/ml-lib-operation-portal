@@ -38,6 +38,7 @@ public interface GetUserListByParticipant extends
                     String firstName,
                     String lastName,
                     String jobTitle,
+                    boolean allowNotification,
                     List<String> roleList,
                     ParticipantId participantId,
 

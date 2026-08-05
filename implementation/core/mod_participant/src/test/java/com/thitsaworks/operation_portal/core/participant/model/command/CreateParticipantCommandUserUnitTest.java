@@ -48,7 +48,9 @@ public class CreateParticipantCommandUserUnitTest {
                                         new ParticipantId(486520066979930112L),
                                         "kim",
                                         "soohyun",
-                                        "actor"));
+                                        "actor",
+                                        false,
+                                        true));
 
     }
 

@@ -75,9 +75,24 @@ public class SchedulerConfigJpaQueryHandler implements SchedulerConfigQuery {
     }
 
     @Override
+    public SchedulerConfigData getByJobName(String jobName) throws DomainException {
+
+        return findByJobName(jobName)
+                .orElseThrow(() -> new SchedulerException(SchedulerErrors.SCHEDULER_CONFIG_JOB_NAME_NOT_FOUND.format(
+                        jobName)));
+    }
+
+    @Override
     public Optional<SchedulerConfigData> findById(SchedulerConfigId schedulerConfigId) {
 
         return schedulerConfigRepository.findById(schedulerConfigId)
+                .map(SchedulerConfigData::new);
+    }
+
+    @Override
+    public Optional<SchedulerConfigData> findByJobName(String jobName) {
+
+        return schedulerConfigRepository.findByJobName(jobName)
                 .map(SchedulerConfigData::new);
     }
 }

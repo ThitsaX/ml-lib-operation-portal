@@ -28,7 +28,9 @@ public interface ModifyUserCommand {
             String firstName,
             String lastName,
             String jobTitle,
-            ParticipantId participantId) {}
+            ParticipantId participantId,
+            Email email,
+            boolean allowNotification) {}
 
     record Output(UserId userId, boolean modified) {}
 

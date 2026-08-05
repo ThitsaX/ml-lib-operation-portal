@@ -86,4 +86,11 @@ public interface JobExecutionLogQuery {
      * @return an Optional containing the job execution log if found, empty otherwise
      */
     Optional<JobExecutionLogData> findJobExecutionLogById(JobExecutionLogId jobExecutionLogId);
+
+    List<JobExecutionLogData> searchJobExecutionLogs(String jobName,
+                                                     JobStatus jobStatus,
+                                                     String participantName,
+                                                     String currency,
+                                                     LocalDateTime from,
+                                                     LocalDateTime to);
 }

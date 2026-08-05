@@ -104,4 +104,18 @@ public class JobExecutionLogJpaQueryHandler implements JobExecutionLogQuery {
         return jobExecutionLogRepository.findById(jobExecutionLogId)
                 .map(JobExecutionLogData::new);
     }
+
+    @Override
+    public List<JobExecutionLogData> searchJobExecutionLogs(String jobName,
+                                                            JobStatus jobStatus,
+                                                            String participantName,
+                                                            String currency,
+                                                            LocalDateTime from,
+                                                            LocalDateTime to) {
+
+        return this.jobExecutionLogRepository.search(jobName, jobStatus, participantName, currency, from, to)
+                                             .stream()
+                                             .map(JobExecutionLogData::new)
+                                             .toList();
+    }
 }

@@ -148,6 +148,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <skip>true</skip>
                             <inputSpec>${project.basedir}/interface/fspiop_v2.0.draft.yaml</inputSpec>
                             <output>${project.basedir}</output>
 
@@ -157,6 +158,7 @@
 
                             <generatorName>jaxrs-spec</generatorName>
                             <strictSpec>false</strictSpec>
+                            <skipValidateSpec>true</skipValidateSpec>
 
                             <generateApis>false</generateApis>
                             <generateApiTests>false</generateApiTests>

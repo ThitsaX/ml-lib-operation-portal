@@ -55,10 +55,27 @@ public interface SchedulerConfigQuery {
     SchedulerConfigData get(SchedulerConfigId schedulerConfigId) throws DomainException;
 
     /**
+     * Get a specific scheduler configuration by job name.
+     *
+     * @param jobName the job name of the configuration to retrieve
+     * @return the scheduler configuration data
+     * @throws com.thitsaworks.operation_portal.component.misc.exception.ResourceNotFoundException if config not found
+     */
+    SchedulerConfigData getByJobName(String jobName) throws DomainException;
+
+    /**
      * Get a specific scheduler configuration by ID if it exists.
      *
      * @param schedulerConfigId the ID of the configuration to retrieve
      * @return an Optional containing the scheduler configuration if found, empty otherwise
      */
     Optional<SchedulerConfigData> findById(SchedulerConfigId schedulerConfigId);
+
+    /**
+     * Get a specific scheduler configuration by job name if it exists.
+     *
+     * @param jobName the job name of the configuration to retrieve
+     * @return an Optional containing the scheduler configuration if found, empty otherwise
+     */
+    Optional<SchedulerConfigData> findByJobName(String jobName);
 }

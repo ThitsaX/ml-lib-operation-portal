@@ -43,6 +43,14 @@ public interface SchedulerConfigRepository extends JpaRepository<SchedulerConfig
      * @return an Optional containing the found configuration or empty if not found
      */
     Optional<SchedulerConfig> findByName(String name);
+
+    /**
+     * Find a scheduler configuration by its job name.
+     *
+     * @param jobName the job name of the configuration to find
+     * @return an Optional containing the found configuration or empty if not found
+     */
+    Optional<SchedulerConfig> findByJobName(String jobName);
     
     /**
      * Find all active scheduler configurations.

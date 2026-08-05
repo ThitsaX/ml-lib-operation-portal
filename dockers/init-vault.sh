@@ -118,6 +118,19 @@ REVENUE_ENGINE_SETTINGS_DATA='{
   }
 }'
 
+# Email Settings
+EMAIL_SETTINGS_PATH="operation_portal/email/settings"
+EMAIL_SETTINGS_DATA='{
+  "host": "smtp.gmail.com",
+  "port": 587,
+  "senderEmail": "sender@example.com",
+  "password": "password",
+  "receiverEmail": "receiver@example.com",
+  "auth": true,
+  "startTlsEnable": true,
+  "sslEnable": false
+}'
+
 
 echo "Adding Redis Settings to Vault at path '$REDIS_SETTINGS_PATH'..."
 vault kv put $REDIS_SETTINGS_PATH @<(echo "$REDIS_SETTINGS_DATA")
@@ -154,6 +167,9 @@ vault kv put $S3_SETTINGS_PATH @<(echo "$S3_SETTINGS_DATA")
 echo "Adding Revenue Engine Settings to Vault at path '$REVENUE_ENGINE_SETTINGS_PATH'..."
 vault kv put $REVENUE_ENGINE_SETTINGS_PATH @<(echo "$REVENUE_ENGINE_SETTINGS_DATA")
 
+echo "Adding Email Settings to Vault at path '$EMAIL_SETTINGS_PATH'..."
+vault kv put $EMAIL_SETTINGS_PATH @<(echo "$EMAIL_SETTINGS_DATA")
+
 
 # Verify all secrets
 echo "Verifying all secrets..."
@@ -167,6 +183,7 @@ vault kv get $MONGO_DB_HUB_DATA_WRITE_SETTINGS_PATH
 vault kv get $MONGO_DB_HUB_DATA_READ_SETTINGS_PATH
 vault kv get $S3_SETTINGS_PATH
 vault kv get $REVENUE_ENGINE_SETTINGS_PATH
+vault kv get $EMAIL_SETTINGS_PATH
 
 
 echo "Vault initialization and secret creation complete."

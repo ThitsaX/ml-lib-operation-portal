@@ -49,6 +49,14 @@
         </dependency>
         <dependency>
             <groupId>com.thitsaworks.operation_portal.core</groupId>
+            <artifactId>mod_notification</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.thitsaworks.operation_portal.core</groupId>
+            <artifactId>mod_email</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.thitsaworks.operation_portal.core</groupId>
             <artifactId>mod_settlement</artifactId>
         </dependency>
         <dependency>

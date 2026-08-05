@@ -19,11 +19,26 @@ import com.thitsaworks.operation_portal.component.common.identifier.JobExecution
 import com.thitsaworks.operation_portal.component.common.type.JobStatus;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public interface CreateJobExecutionLogCommand {
 
-    record Input(String jobName, JobStatus jobStatus, LocalDateTime startTime) {}
+    record Input(
+        String jobName,
+        JobStatus jobStatus,
+        LocalDateTime startTime,
+        String participantName,
+        String currency,
+        BigDecimal ndcUsedPercent,
+        BigDecimal thresholdPercent
+    ) {
+        public Input(String jobName,
+                     JobStatus jobStatus,
+                     LocalDateTime startTime) {
+            this(jobName, jobStatus, startTime, null, null, null, null);
+        }
+    }
 
     record Output(boolean created, JobExecutionLogId jobExecutionLogId) {}
 

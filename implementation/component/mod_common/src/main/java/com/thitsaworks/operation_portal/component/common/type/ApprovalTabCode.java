@@ -3,5 +3,6 @@ package com.thitsaworks.operation_portal.component.common.type;
 public enum ApprovalTabCode {
 
     AMOUNT,
-    REVENUE
+    REVENUE,
+    NDC_ALERT
 }

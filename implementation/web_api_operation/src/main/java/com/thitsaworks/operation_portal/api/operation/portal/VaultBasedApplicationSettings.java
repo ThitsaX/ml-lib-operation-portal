@@ -23,6 +23,9 @@ import com.thitsaworks.operation_portal.component.infra.vault.Vault;
 import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQualifiers;
 import com.thitsaworks.operation_portal.component.misc.storage.S3FileStorage;
 import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
+import com.thitsaworks.operation_portal.core.email.EmailConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 
@@ -127,5 +130,10 @@ public class VaultBasedApplicationSettings {
                                                 long period,
                                                 String zoneId,
                                                 String time) { }
+
+    public EmailConfiguration.EmailSettings emailSettings(Vault vault) {
+
+        return vault.get(EmailConfiguration.EMAIL_SETTINGS_PATH, EmailConfiguration.EmailSettings.class);
+    }
 
 }

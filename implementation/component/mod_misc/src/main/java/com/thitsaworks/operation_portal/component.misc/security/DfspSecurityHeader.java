@@ -57,7 +57,7 @@ public class DfspSecurityHeader {
     }
 
     public boolean verify(String jwsToken, String uri, String payload, byte[] secretKey)
-            throws JOSEException, ParseException, JsonProcessingException {
+        throws JOSEException, ParseException, JsonProcessingException {
 
         if (secretKey.length > 32) {
             secretKey = DigestUtils.sha256(secretKey);

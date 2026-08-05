@@ -65,6 +65,7 @@ public class GetUserController {
                                     output.firstName(),
                                     output.lastName(),
                                     output.jobTitle(),
+                                    output.allowNotification(),
                                     output.roleList(),
                                     output.createdDate());
 
@@ -84,6 +85,7 @@ public class GetUserController {
                            @JsonProperty("firstName") String firstName,
                            @JsonProperty("lastName") String lastName,
                            @JsonProperty("jobTitle") String jobTitle,
+                           @JsonProperty("allowNotification") boolean allowNotification,
                            @JsonProperty("roleList") List<String> roleList,
                            @JsonProperty("createdDate") Long createdDate
     ) implements Serializable { }

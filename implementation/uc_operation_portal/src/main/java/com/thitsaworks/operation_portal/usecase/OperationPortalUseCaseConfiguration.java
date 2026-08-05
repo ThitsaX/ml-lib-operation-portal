@@ -17,8 +17,10 @@ package com.thitsaworks.operation_portal.usecase;
 
 import com.thitsaworks.operation_portal.core.approval.ApprovalConfiguration;
 import com.thitsaworks.operation_portal.core.audit.AuditConfiguration;
+import com.thitsaworks.operation_portal.core.email.EmailConfiguration;
 import com.thitsaworks.operation_portal.core.hub_services.HubServicesConfiguration;
 import com.thitsaworks.operation_portal.core.iam.IAMConfiguration;
+import com.thitsaworks.operation_portal.core.notification.NotificationConfiguration;
 import com.thitsaworks.operation_portal.core.participant.ParticipantConfiguration;
 import com.thitsaworks.operation_portal.core.revenue_config.RevenueConfigConfiguration;
 import com.thitsaworks.operation_portal.core.revenue_party.RevenuePartyConfiguration;
@@ -41,7 +43,8 @@ import org.springframework.context.annotation.Import;
         HubServicesConfiguration.class, ApprovalConfiguration.class,
         ReportConfiguration.class, SchedulerConfiguration.class, SettlementConfiguration.class,
         RevenuePartyConfiguration.class, RevenueTransactionConfiguration.class,
-        RevenueConfigConfiguration.class,RevenuePartyConfiguration.class
+        RevenueConfigConfiguration.class,RevenuePartyConfiguration.class,
+        NotificationConfiguration.class, EmailConfiguration.class
     })
 @RequiredArgsConstructor
 public class OperationPortalUseCaseConfiguration {

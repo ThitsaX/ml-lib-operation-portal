@@ -19,6 +19,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.ApprovalRequ
 import com.thitsaworks.operation_portal.component.common.type.ApprovalActionType;
 import com.thitsaworks.operation_portal.core.approval.model.ApprovalRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
 
 @Repository
 public interface ApprovalRequestRepository
@@ -80,4 +83,32 @@ public interface ApprovalRequestRepository
                                                         @Param("pendingAction") ApprovalActionType pendingAction,
                                                         @Param("tabCode") String tabCode,
                                                         @Param("amountTab") boolean amountTab);
+
+    boolean existsByRequestCategoryAndParticipantNameAndParticipantCurrencyAndAction(
+        String requestCategory,
+        String participantName,
+        String participantCurrency,
+        ApprovalActionType action);
+
+    List<ApprovalRequest> findAllByRequestCategoryAndActionOrderByRequestedDtmDesc(
+        String requestCategory,
+        ApprovalActionType action);
+
+    List<ApprovalRequest> findAllByRequestCategoryAndParticipantNameAndActionOrderByRequestedDtmDesc(
+        String requestCategory,
+        String participantName,
+        ApprovalActionType action);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        select request
+        from ApprovalRequest request
+        where request.approvalRequestId = :approvalRequestId
+          and request.requestCategory = :requestCategory
+          and request.action = :pendingAction
+        """)
+    Optional<ApprovalRequest> findPendingByIdAndCategoryForUpdate(
+        @Param("approvalRequestId") ApprovalRequestId approvalRequestId,
+        @Param("requestCategory") String requestCategory,
+        @Param("pendingAction") ApprovalActionType pendingAction);
 }

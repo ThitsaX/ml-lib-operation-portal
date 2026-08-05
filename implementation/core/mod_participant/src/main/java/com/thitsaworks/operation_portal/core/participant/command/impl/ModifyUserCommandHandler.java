@@ -54,10 +54,12 @@ public class ModifyUserCommandHandler implements ModifyUserCommand {
 
         this.userRepository.save(
                 user.name(input.name())
+                    .email(input.email())
                     .firstName(input.firstName())
                     .lastName(input.lastName())
                     .participant(participant)
-                    .jobTitle(input.jobTitle()));
+                    .jobTitle(input.jobTitle())
+                    .allowNotification(input.allowNotification()));
 
         return new ModifyUserCommand.Output(user.getUserId(), true);
     }

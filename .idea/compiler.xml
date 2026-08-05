@@ -7,100 +7,57 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="mod_audit" />
-        <module name="web_api_operation" />
-        <module name="mod_revenue_party" />
         <module name="app_scheduler" />
-        <module name="mod_iam" />
-        <module name="mod_approval" />
+      </profile>
+      <profile name="Annotation profile for Mojaloop-Operation-Portal - Parent" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/querydsl/querydsl-apt/5.1.0/querydsl-apt-5.1.0-jakarta.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/querydsl/querydsl-codegen/5.1.0/querydsl-codegen-5.1.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/querydsl/querydsl-core/5.1.0/querydsl-core-5.1.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/mysema/commons/mysema-commons-lang/0.2.4/mysema-commons-lang-0.2.4.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/querydsl/codegen-utils/5.1.0/codegen-utils-5.1.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/eclipse/jdt/ecj/3.26.0/ecj-3.26.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/javax/inject/javax.inject/1/javax.inject-1.jar" />
+          <entry name="$MAVEN_REPOSITORY$/io/github/classgraph/classgraph/4.8.146/classgraph-4.8.146.jar" />
+          <entry name="$MAVEN_REPOSITORY$/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar" />
+        </processorPath>
+        <module name="web_api_operation" />
+        <module name="uc_operation_portal" />
         <module name="app_report_downloader" />
         <module name="mod_fspiop" />
-        <module name="mod_pending_approval" />
-        <module name="mod_hub_services" />
-        <module name="mod_revenue_transaction" />
-        <module name="mod_scheduler" />
-        <module name="mod_settlement" />
-        <module name="mod_misc" />
-        <module name="mod_report" />
-        <module name="uc_operation_portal" />
-        <module name="mod_participant" />
-        <module name="mod_revenue_config" />
         <module name="mod_common" />
         <module name="mod_infra" />
+        <module name="mod_misc" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="dfsp_portal" target="21" />
-      <module name="mod_central_ledger" target="21" />
-      <module name="mod_datasource" target="21" />
-      <module name="mod_home_message" target="21" />
-      <module name="mod_hub_user" target="21" />
-      <module name="mod_hubuser" target="21" />
-      <module name="mod_querydsl" target="21" />
-      <module name="mod_report (1) (com.thitsaworks.operation_portal.reporting)" target="21" />
-      <module name="mod_report_querydsl" target="21" />
-      <module name="mod_test_iam" target="21" />
-      <module name="mod_vault" target="21" />
-      <module name="mojaloop_operation_portal" target="11" />
-      <module name="Report" target="21" />
-      <module name="reporting" target="21" />
-      <module name="reporting-pom" target="21" />
-      <module name="uc_central_ledger" target="21" />
-      <module name="uc_common" target="21" />
-      <module name="uc_core_services" target="21" />
-      <module name="uc_hub_operator" target="21" />
-      <module name="uc_hub_service" target="21" />
-      <module name="uc_hub_services" target="21" />
-      <module name="uc_participant" target="21" />
-      <module name="web_api_hub_operator" target="21" />
-      <module name="web_api_participant" target="21" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="Report" options="-parameters" />
       <module name="app_report_downloader" options="-parameters" />
       <module name="component" options="-parameters" />
       <module name="core" options="-parameters" />
-      <module name="dfsp_portal" options="-parameters" />
       <module name="mod_approval" options="-parameters" />
       <module name="mod_audit" options="-parameters" />
-      <module name="mod_central_ledger" options="-parameters" />
       <module name="mod_common" options="-parameters" />
-      <module name="mod_datasource" options="-parameters" />
       <module name="mod_fspiop" options="-parameters" />
-      <module name="mod_home_message" options="-parameters" />
       <module name="mod_hub_services" options="-parameters" />
-      <module name="mod_hub_user" options="-parameters" />
       <module name="mod_iam" options="-parameters" />
       <module name="mod_infra" options="-parameters" />
       <module name="mod_misc" options="-parameters" />
       <module name="mod_participant" options="-parameters" />
-      <module name="mod_pending_approval" options="-parameters" />
-      <module name="mod_querydsl" options="-parameters" />
       <module name="mod_report" options="-parameters" />
-      <module name="mod_report (1) (com.thitsaworks.operation_portal.reporting)" options="-parameters" />
-      <module name="mod_report_querydsl" options="-parameters" />
       <module name="mod_revenue_config" options="-parameters" />
       <module name="mod_revenue_party" options="-parameters" />
       <module name="mod_revenue_transaction" options="-parameters" />
       <module name="mod_scheduler" options="-parameters" />
       <module name="mod_settlement" options="-parameters" />
-      <module name="mod_test_iam" options="-parameters" />
-      <module name="mod_vault" options="-parameters" />
-      <module name="mojaloop-dfsp-portal" options="-parameters" />
       <module name="mojaloop-operation-portal" options="-parameters" />
-      <module name="operation_portal_component" options="-parameters" />
-      <module name="reporting" options="-parameters" />
-      <module name="reporting-pom" options="-parameters" />
-      <module name="uc_common" options="-parameters" />
-      <module name="uc_hub_operator" options="-parameters" />
-      <module name="uc_hub_service" options="-parameters" />
-      <module name="uc_hub_services" options="-parameters" />
       <module name="uc_operation_portal" options="-parameters" />
-      <module name="uc_participant" options="-parameters" />
       <module name="web_api_operation" options="-parameters" />
-      <module name="web_api_participant" options="-parameters" />
     </option>
   </component>
 </project>
