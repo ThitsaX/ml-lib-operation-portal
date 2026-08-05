@@ -30,3 +30,30 @@ ALTER TABLE tbl_threshold_detail
 
 ALTER TABLE tbl_threshold_detail
     MODIFY COLUMN ndc_config DECIMAL(18,4) NOT NULL;
+
+INSERT INTO tbl_threshold_configuration (
+    id,
+    scope_type,
+    dfsp_id,
+    threshold_enabled,
+    status,
+    created_by,
+    updated_by,
+    created_date,
+    updated_date
+)
+SELECT
+    1111111111111115,
+    'SCHEME',
+    NULL,
+    0,
+    'ACTIVE',
+    'system',
+    NULL,
+    UNIX_TIMESTAMP(),
+    NULL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM tbl_threshold_configuration
+    WHERE scope_type = 'SCHEME'
+);
