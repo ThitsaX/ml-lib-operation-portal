@@ -15,17 +15,13 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
-import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.query.ThresholdDetailQuery;
-import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
+import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetThresholdDetailList;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
@@ -33,22 +29,16 @@ import org.springframework.stereotype.Service;
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
 public class GetThresholdDetailListHandler
-    extends OperationPortalAuditableUseCase<GetThresholdDetailList.Input,
-        GetThresholdDetailList.Output>
+    extends OperationPortalUseCase<GetThresholdDetailList.Input, GetThresholdDetailList.Output>
     implements GetThresholdDetailList {
 
     private final ThresholdDetailQuery thresholdDetailQuery;
 
-    public GetThresholdDetailListHandler(CreateInputAuditCommand createInputAuditCommand,
-                                         CreateOutputAuditCommand createOutputAuditCommand,
-                                         CreateExceptionAuditCommand createExceptionAuditCommand,
-                                         ObjectMapper objectMapper,
-                                         PrincipalCache principalCache,
+    public GetThresholdDetailListHandler(PrincipalCache principalCache,
                                          ActionAuthorizationManager actionAuthorizationManager,
                                          ThresholdDetailQuery thresholdDetailQuery) {
 
-        super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
-              objectMapper, principalCache, actionAuthorizationManager);
+        super(principalCache, actionAuthorizationManager);
         this.thresholdDetailQuery = thresholdDetailQuery;
     }
 

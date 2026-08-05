@@ -37,7 +37,7 @@ public class GetNdcDeliveryLogListController {
 
     private final GetNdcDeliveryLogList getNdcDeliveryLogList;
 
-    @GetMapping("/secured/ndc/delivery-logs")
+    @GetMapping("/secured/ndc/getDeliveryLogs")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "deliveryStatus", required = false) NdcDeliveryStatus deliveryStatus,
         @RequestParam("page") Integer page,

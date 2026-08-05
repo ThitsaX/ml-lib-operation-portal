@@ -43,7 +43,7 @@ public class GetThresholdDetailController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping(value = "/secured/ndc/thresholdDetails", params = "id")
+    @GetMapping(value = "/secured/ndc/getThresholdDetail", params = "id")
     public ResponseEntity<Response> execute(@RequestParam("id") String id)
         throws DomainException, JsonProcessingException {
 

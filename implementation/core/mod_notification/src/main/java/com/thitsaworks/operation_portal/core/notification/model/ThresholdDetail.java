@@ -51,10 +51,10 @@ public class ThresholdDetail extends JpaEntity<ThresholdDetailId> {
     @Column(name = "currency", nullable = false, length = 100)
     private String currency;
 
-    @Column(name = "visual_config", nullable = false, precision = 7, scale = 4)
+    @Column(name = "visual_config", nullable = false, precision = 18, scale = 4)
     private BigDecimal visualConfig;
 
-    @Column(name = "ndc_config", nullable = false, precision = 7, scale = 4)
+    @Column(name = "ndc_config", nullable = false, precision = 18, scale = 4)
     private BigDecimal ndcConfig;
 
     @Column(name = "status", nullable = false)

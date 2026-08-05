@@ -45,6 +45,16 @@ public class CreateThresholdConfigurationCommandHandler implements CreateThresho
                     "Only one scheme configuration is allowed."));
         }
 
+        if (input.scopeType() == ThresholdScopeType.DFSP
+            && this.thresholdConfigurationRepository
+                   .existsByScopeTypeAndDfspId(ThresholdScopeType.DFSP, input.dfspId())) {
+
+            throw new InputException(
+                new ErrorMessage(
+                    "DFSP_THRESHOLD_CONFIGURATION_ALREADY_EXISTS",
+                    "A threshold configuration already exists for this DFSP."));
+        }
+
         ThresholdConfiguration configuration = new ThresholdConfiguration(
             input.scopeType(),
             input.dfspId(),

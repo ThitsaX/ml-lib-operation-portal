@@ -44,7 +44,7 @@ public class CreateRoleCommandHandler implements CreateRoleCommand {
             throw new IAMException(IAMErrors.DUPLICATE_ROLE_NAME.format(input.name()));
         }
 
-        var role = new Role(input.name(), input.isDfsp());
+        var role = new Role(input.name(), input.roleType());
 
         this.roleRepository.saveAndFlush(role);
 

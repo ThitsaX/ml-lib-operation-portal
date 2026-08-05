@@ -38,7 +38,7 @@ public class GetNdcAlertEventListController {
 
     private final GetNdcAlertEventList getNdcAlertEventList;
 
-    @GetMapping("/secured/ndc/alerts")
+    @GetMapping("/secured/ndc/getAlertEvents")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "participantName", required = false) String participantName,
         @RequestParam(value = "dfspId", required = false) String dfspId,

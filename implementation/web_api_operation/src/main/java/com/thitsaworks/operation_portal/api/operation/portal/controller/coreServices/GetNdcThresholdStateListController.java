@@ -36,7 +36,7 @@ public class GetNdcThresholdStateListController {
 
     private final GetNdcThresholdStateList getNdcThresholdStateList;
 
-    @GetMapping("/secured/ndc/states")
+    @GetMapping("/secured/ndc/getThresholdStates")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "participantName", required = false) String participantName,
         @RequestParam(value = "dfspId", required = false) String dfspId,

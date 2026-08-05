@@ -39,4 +39,6 @@ public interface ThresholdConfigurationRepository
                                                                                       NdcConfigurationStatus status);
 
     boolean existsByScopeTypeAndDfspIdIsNull(ThresholdScopeType scopeType);
+
+    boolean existsByScopeTypeAndDfspId(ThresholdScopeType scopeType, String dfspId);
 }
