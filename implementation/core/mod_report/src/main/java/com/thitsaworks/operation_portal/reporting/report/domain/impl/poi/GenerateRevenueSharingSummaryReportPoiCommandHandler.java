@@ -273,7 +273,6 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 cell.setCellStyle(columnHeaderStyle);
             }
 
-            int freezeRowIndex = rowIndex;
             for (RevenueSharingSummaryRow data : rows) {
                 Row row = sheet.createRow(rowIndex++);
                 this.writeTextCell(row, 0, data.responsibleMinistry(), textCellStyle);
@@ -285,8 +284,6 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
             for (int columnIndex = 0; columnIndex < COLUMN_WIDTHS.length; columnIndex++) {
                 sheet.setColumnWidth(columnIndex, COLUMN_WIDTHS[columnIndex] * 256);
             }
-            sheet.createFreezePane(0, freezeRowIndex);
-
             workbook.write(outputStream);
             workbook.dispose();
             return Files.readAllBytes(tempFile);
@@ -333,10 +330,10 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private CellStyle metaLabelStyle(SXSSFWorkbook workbook) {
 
         CellStyle style = workbook.createCellStyle();
-        style.setBorderTop(BorderStyle.MEDIUM);
+        style.setBorderTop(BorderStyle.THIN);
         style.setBorderRight(BorderStyle.THIN);
         style.setBorderBottom(BorderStyle.THIN);
-        style.setBorderLeft(BorderStyle.MEDIUM);
+        style.setBorderLeft(BorderStyle.THIN);
         style.setAlignment(HorizontalAlignment.LEFT);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
         style.setWrapText(true);
