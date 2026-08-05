@@ -51,7 +51,7 @@ public class CreateRoleController {
 
         LOG.info("Create Role Request : [{}]", this.objectMapper.writeValueAsString(request));
 
-        var output = this.createRole.execute(new CreateRole.Input(request.name(), request.isDfsp()));
+        var output = this.createRole.execute(new CreateRole.Input(request.name(), request.roleType()));
 
         var response = new Response(output.roleId().toString());
 
@@ -62,7 +62,7 @@ public class CreateRoleController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(@NotNull @NotBlank @JsonProperty("name") String name,
-                          @JsonProperty("isDfsp") boolean isDfsp) implements Serializable { }
+                          @NotNull @NotBlank @JsonProperty("roleType") String roleType) implements Serializable { }
 
     public record Response(@JsonProperty("roleId") String roleId) implements Serializable { }
 
