@@ -25,13 +25,26 @@
           <entry name="$MAVEN_REPOSITORY$/io/github/classgraph/classgraph/4.8.146/classgraph-4.8.146.jar" />
           <entry name="$MAVEN_REPOSITORY$/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar" />
         </processorPath>
+        <module name="mod_audit" />
         <module name="web_api_operation" />
-        <module name="uc_operation_portal" />
+        <module name="mod_revenue_party" />
+        <module name="mod_approval" />
+        <module name="mod_iam" />
         <module name="app_report_downloader" />
         <module name="mod_fspiop" />
+        <module name="mod_email" />
+        <module name="mod_hub_services" />
+        <module name="mod_revenue_transaction" />
+        <module name="mod_scheduler" />
+        <module name="mod_settlement" />
+        <module name="mod_misc" />
+        <module name="mod_report" />
+        <module name="uc_operation_portal" />
+        <module name="mod_notification" />
+        <module name="mod_participant" />
+        <module name="mod_revenue_config" />
         <module name="mod_common" />
         <module name="mod_infra" />
-        <module name="mod_misc" />
       </profile>
     </annotationProcessing>
   </component>
@@ -43,11 +56,13 @@
       <module name="mod_approval" options="-parameters" />
       <module name="mod_audit" options="-parameters" />
       <module name="mod_common" options="-parameters" />
+      <module name="mod_email" options="-parameters" />
       <module name="mod_fspiop" options="-parameters" />
       <module name="mod_hub_services" options="-parameters" />
       <module name="mod_iam" options="-parameters" />
       <module name="mod_infra" options="-parameters" />
       <module name="mod_misc" options="-parameters" />
+      <module name="mod_notification" options="-parameters" />
       <module name="mod_participant" options="-parameters" />
       <module name="mod_report" options="-parameters" />
       <module name="mod_revenue_config" options="-parameters" />
