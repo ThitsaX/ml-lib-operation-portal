@@ -40,6 +40,7 @@ import com.thitsaworks.operation_portal.core.scheduler.command.ModifyJobExecutio
 import com.thitsaworks.operation_portal.core.scheduler.data.SchedulerConfigData;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.ScheduledJob;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
+import org.jfree.util.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -185,6 +186,8 @@ public class NdcThresholdWorker
             String dfspId = entry.getKey();
             GetNdcUsedDataQuery.Output output = ndcUsedDataQuery.execute(
                 new GetNdcUsedDataQuery.Input(dfspId));
+            Log.info("Output result :" + output.getNdcUsedData()
+                                               .toString());
 
             if (output == null || output.getNdcUsedData() == null) {
                 LOG.warn("Skipping NDC evaluation because no NDC used data exists for DFSP [{}]", dfspId);
