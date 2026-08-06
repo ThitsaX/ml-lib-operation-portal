@@ -50,6 +50,7 @@ import com.thitsaworks.operation_portal.core.participant.model.ParticipantNDC;
 import com.thitsaworks.operation_portal.core.participant.query.ParticipantNDCQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifyApprovalAction;
+import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs.NdcThresholdWorker;
 import com.thitsaworks.operation_portal.usecase.util.HandleUpdateNdc;
 import com.thitsaworks.operation_portal.usecase.util.Utility;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
@@ -88,6 +89,8 @@ public class ModifyApprovalActionHandler
 
     private final HandleUpdateNdc handleUpdateNdc;
 
+    private final NdcThresholdWorker ndcThresholdWorker;
+
     public ModifyApprovalActionHandler(CreateInputAuditCommand createInputAuditCommand,
                                        CreateOutputAuditCommand createOutputAuditCommand,
                                        CreateExceptionAuditCommand createExceptionAuditCommand,
@@ -101,7 +104,8 @@ public class ModifyApprovalActionHandler
                                        ParticipantNDCQuery participantNDCQuery,
                                        GetParticipantBalanceByCurrencyIdQuery getParticipantValueByCurrencyIdQuery,
                                        GetParticipantLimitByCurrencyIdQuery getParticipantLimitByCurrencyIdQuery,
-                                       HandleUpdateNdc handleUpdateNdc) {
+                                       HandleUpdateNdc handleUpdateNdc,
+                                       NdcThresholdWorker ndcThresholdWorker) {
 
         super(
             createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
@@ -115,6 +119,7 @@ public class ModifyApprovalActionHandler
         this.getParticipantValueByCurrencyIdQuery = getParticipantValueByCurrencyIdQuery;
         this.getParticipantLimitByCurrencyIdQuery = getParticipantLimitByCurrencyIdQuery;
         this.handleUpdateNdc = handleUpdateNdc;
+        this.ndcThresholdWorker = ndcThresholdWorker;
         this.objectMapper = objectMapper;
     }
 
@@ -324,6 +329,8 @@ public class ModifyApprovalActionHandler
                     toRecalculateNDC, approvalRequestData, participantName, currency, actionType,
                     this.utility.getEmail(new UserId(input.responseUserId().getId())));
             }
+
+            this.ndcThresholdWorker.executeOnDemand();
 
         }
 
