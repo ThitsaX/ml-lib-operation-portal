@@ -16,9 +16,12 @@
 package com.thitsaworks.operation_portal.usecase.operation_portal.notification;
 
 import com.thitsaworks.operation_portal.component.common.identifier.NdcNotificationDispatchLogId;
+import com.thitsaworks.operation_portal.component.common.identifier.PrincipalId;
 import com.thitsaworks.operation_portal.component.common.type.NdcRecipientType;
+import com.thitsaworks.operation_portal.component.common.type.PrincipalStatus;
 import com.thitsaworks.operation_portal.component.misc.persistence.transactional.CoreWriteTransactional;
 import com.thitsaworks.operation_portal.core.email.EmailService;
+import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.model.NdcAlertEvent;
 import com.thitsaworks.operation_portal.core.notification.model.NdcNotificationDispatchLog;
 import com.thitsaworks.operation_portal.core.notification.model.repository.NdcAlertEventRepository;
@@ -51,6 +54,8 @@ public class NdcNotificationDispatchService {
     private final NdcNotificationDispatchLogRepository dispatchLogRepository;
 
     private final UserQuery userQuery;
+
+    private final PrincipalCache principalCache;
 
     private final EmailService emailService;
 
@@ -184,6 +189,10 @@ public class NdcNotificationDispatchService {
                 continue;
             }
 
+            if (!isActiveUser(user)) {
+                continue;
+            }
+
             String participantName = user.participantName().getValue();
 
             LOG.info("User participantName", user.participantName());
@@ -218,6 +227,27 @@ public class NdcNotificationDispatchService {
         return user.participantName().getValue()
                   .toUpperCase(Locale.ROOT)
                   .contains("HUB");
+    }
+
+    private boolean isActiveUser(UserData user) {
+
+        var principalId = new PrincipalId(user.userId().getId());
+        var principalData = principalCache.get(principalId);
+
+        if (principalData == null) {
+            LOG.warn("Skipping NDC notification recipient because principal was not found: userId={}",
+                     user.userId());
+            return false;
+        }
+
+        if (principalData.principalStatus() != PrincipalStatus.ACTIVE) {
+            LOG.info("Skipping NDC notification recipient because principal is not ACTIVE: "
+                         + "userId={}, status={}",
+                     user.userId(), principalData.principalStatus());
+            return false;
+        }
+
+        return true;
     }
 
     private AlertMessage parseAlertMessage(String eventMessage) {
