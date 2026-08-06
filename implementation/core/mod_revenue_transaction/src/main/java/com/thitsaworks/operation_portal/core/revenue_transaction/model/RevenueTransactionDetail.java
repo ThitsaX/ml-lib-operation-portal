@@ -65,8 +65,14 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
     @Column(name = "responsible_ministry_code")
     protected String responsibleMinistryCode;
 
+    @Column(name = "responsible_ministry_name")
+    protected String responsibleMinistryName;
+
     @Column(name = "third_party_code")
     protected String thirdPartyCode;
+
+    @Column(name = "third_party_name")
+    protected String thirdPartyName;
 
     @Column(name = "gol_percentage")
     protected BigDecimal golPercentage;
@@ -135,6 +141,7 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
     }
 
     public RevenueTransactionDetail revenueSplit(BigDecimal calculatedAmount,
+                                                 String taxCodeDescription,
                                                  String category,
                                                  String responsibleMinistryCode,
                                                  String thirdPartyCode,
@@ -148,6 +155,7 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
                                                  BigDecimal sendingDfspCommissionAmount) {
 
         this.calculatedAmount = calculatedAmount;
+        this.taxDescription = taxCodeDescription;
         this.category = category;
         this.responsibleMinistryCode = responsibleMinistryCode;
         this.thirdPartyCode = thirdPartyCode;

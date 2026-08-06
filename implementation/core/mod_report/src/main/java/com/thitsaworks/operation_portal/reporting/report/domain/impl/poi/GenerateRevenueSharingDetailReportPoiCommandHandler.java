@@ -347,14 +347,14 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
                   rd.tax_description AS taxDescription,
                   rd.category AS category,
                   CASE
-                    WHEN rd.responsible_ministry_code IS NULL OR TRIM(rd.responsible_ministry_code) = ''
+                    WHEN rd.responsible_ministry_name IS NULL OR TRIM(rd.responsible_ministry_name) = ''
                       THEN '-'
-                    ELSE IFNULL(responsibleMinistry.party_name, '-')
+                    ELSE rd.responsible_ministry_name
                   END AS responsibleMinistry,
                   CASE
-                    WHEN rd.third_party_code IS NULL OR TRIM(rd.third_party_code) = ''
+                    WHEN rd.third_party_name IS NULL OR TRIM(rd.third_party_name) = ''
                       THEN '-'
-                    ELSE IFNULL(thirdParty.party_name, '-')
+                    ELSE rd.third_party_name
                   END AS thirdPartyName,
                   rt.sender_dfsp_id AS senderDfspName,
                   rd.calculated_amount AS amount,
@@ -374,10 +374,6 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
                   ON rt.hub_transaction_id = tF.transferId
                 JOIN operation_portal.tbl_transaction_detail rd
                   ON rd.transaction_id = rt.id
-                LEFT JOIN operation_portal.tbl_revenue_party responsibleMinistry
-                  ON responsibleMinistry.party_code = rd.responsible_ministry_code
-                LEFT JOIN operation_portal.tbl_revenue_party thirdParty
-                  ON thirdParty.party_code = rd.third_party_code
                 WHERE tF.isValid
                   AND sSW.settlementId = ?
                   AND (? = 'ALL' OR rd.tax_code = ?)
