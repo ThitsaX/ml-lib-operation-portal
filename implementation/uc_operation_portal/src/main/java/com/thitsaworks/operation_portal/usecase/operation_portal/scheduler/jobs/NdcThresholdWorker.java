@@ -143,7 +143,7 @@ public class NdcThresholdWorker
             return List.of();
         }
 
-        LOG.info("Starting NDC threshold evaluation because the scheme gate is ON");
+        LOG.info("Starting NDC threshold evaluation because the scheme gate is ON :");
 
         Map<ThresholdConfigurationId, ThresholdConfigurationData> dfspConfigurationsById =
             thresholdConfigurationQuery.getAll()
