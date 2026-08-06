@@ -30,11 +30,12 @@ public class FlywayMigration {
                           settings.password())
               .locations(settings.locations())
               .baselineOnMigrate(true)
+              .outOfOrder(Boolean.TRUE.equals(settings.outOfOrder()))
               .load()
               .migrate();
 
     }
 
-    public record Settings(String url, String username, String password, String... locations) { }
+    public record Settings(String url, String username, String password, String[] locations, Boolean outOfOrder) { }
 
 }

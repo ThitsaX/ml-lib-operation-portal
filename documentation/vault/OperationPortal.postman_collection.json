@@ -106,7 +106,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/core\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/operation_portal?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\"\r\n    }\r\n}",
+                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/core\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/operation_portal?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\",\r\n        \"outOfOrder\": false\r\n    }\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -316,7 +316,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/report\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/central_ledger?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\"\r\n    }\r\n}",
+                  "raw": "{\r\n    \"data\": {\r\n        \"locations\": [\r\n            \"classpath:db/report\"\r\n        ],\r\n        \"password\": \"123\",\r\n        \"url\": \"jdbc:mysql://localhost:3306/central_ledger?createDatabaseIfNotExist=true\",\r\n        \"username\": \"root\",\r\n        \"outOfOrder\": false\r\n    }\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
