@@ -37,7 +37,7 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
 
     @Autowired
     public GetNdcDataJdbcQueryHandler(
-        @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
+        @Qualifier(PersistenceQualifiers.Hub.WRITE_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
 
         this.jdbcTemplate = jdbcTemplate;
     }

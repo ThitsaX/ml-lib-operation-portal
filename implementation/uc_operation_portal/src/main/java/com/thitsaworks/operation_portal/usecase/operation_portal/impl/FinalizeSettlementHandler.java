@@ -454,14 +454,6 @@ public class FinalizeSettlementHandler
             return new Output(true);
         } finally {
             this.isSettlementFinalized.set(false);
-
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOG.warn("Interrupted while waiting before executing NDC threshold worker.", e);
-            }
-
             this.ndcThresholdWorker.executeOnDemand();
         }
     }
