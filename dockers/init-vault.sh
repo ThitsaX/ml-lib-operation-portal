@@ -19,7 +19,8 @@ MYSQL_PORTAL_DATA_FLYWAY_SETTINGS_DATA='{
    ],
    "url": "jdbc:mysql://mysql-operation-portal:3306/operation_portal?createDatabaseIfNotExist=true",
    "username": "root",
-   "password": "admin"
+   "password": "admin",
+   "outOfOrder": false
 }'
 
 MYSQL_PORTAL_DATA_WRITE_SETTINGS_PATH="operation_portal/mysql/portal_data/write_db/settings"
