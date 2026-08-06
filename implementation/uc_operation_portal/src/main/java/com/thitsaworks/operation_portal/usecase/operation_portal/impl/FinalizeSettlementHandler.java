@@ -444,7 +444,7 @@ public class FinalizeSettlementHandler
 
                 }
 
-                this.ndcThresholdWorker.executeOnDemand();
+
 
                 LOG.info(
                     "Successfully settled net amounts to participants for settlementId: [{}].",
@@ -454,6 +454,7 @@ public class FinalizeSettlementHandler
             return new Output(true);
         } finally {
             this.isSettlementFinalized.set(false);
+            this.ndcThresholdWorker.executeOnDemand();
         }
     }
 
