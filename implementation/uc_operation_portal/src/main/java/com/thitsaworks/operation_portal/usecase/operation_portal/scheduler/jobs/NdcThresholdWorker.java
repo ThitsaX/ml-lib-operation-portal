@@ -68,6 +68,7 @@ public class NdcThresholdWorker
         return false;
     }
 
+
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
     private final EvaluateNdcThresholdCommand evaluateNdcThresholdCommand;
@@ -112,6 +113,19 @@ public class NdcThresholdWorker
 
     @Override
     protected List<NdcEvaluation> onExecute(SchedulerConfigData schedulerConfigData)
+        throws DomainException {
+
+        return this.evaluateThresholds(schedulerConfigData, schedulerConfigData.zoneId(), true);
+    }
+
+    public List<NdcEvaluation> executeOnDemand() throws DomainException {
+
+        return this.evaluateThresholds(null, ZoneId.systemDefault().getId(), false);
+    }
+
+    private List<NdcEvaluation> evaluateThresholds(SchedulerConfigData schedulerConfigData,
+                                                   String zoneId,
+                                                   boolean persistExecutionLog)
         throws DomainException {
 
         var schemeConfiguration = thresholdConfigurationQuery.getSchemeConfiguration();
@@ -192,9 +206,8 @@ public class NdcThresholdWorker
                 }
 
                 Instant evaluatedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-                LocalDateTime evaluationLogTime =
-                    LocalDateTime.now(ZoneId.of(schedulerConfigData.zoneId()))
-                                 .withNano(0);
+                LocalDateTime evaluationLogTime = LocalDateTime.now(ZoneId.of(zoneId))
+                                                               .withNano(0);
                 LOG.info("NDC evaluated at: {}", evaluatedAt);
 
                 BigDecimal ndcUsedPercent = ndcUsedData.ndcUsed();
@@ -251,7 +264,12 @@ public class NdcThresholdWorker
                          evaluation.currentState(), evaluation.breachCycleNo(), decision,
                          evaluation.alertEventId());
 
-                persistEvaluationLog(schedulerConfigData, evaluation, evaluationLogTime);
+                if (persistExecutionLog) {
+                    persistEvaluationLog(
+                        schedulerConfigData,
+                        evaluation,
+                        evaluationLogTime);
+                }
                 evaluations.add(evaluation);
             }
         }

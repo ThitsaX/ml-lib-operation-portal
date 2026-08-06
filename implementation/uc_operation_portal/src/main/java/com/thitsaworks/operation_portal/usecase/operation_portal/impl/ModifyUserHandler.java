@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -110,7 +111,8 @@ public class ModifyUserHandler
                 throw new IAMException(IAMErrors.UNAUTHORIZED_CREATION);
             }
 
-            if (!this.userPermissionManager.areRolesAllowed(true, roleIdList)) {
+            if (!this.userPermissionManager.areRolesAllowed(
+                true, input.participantId(), roleIdList)) {
                 throw new IAMException(IAMErrors.UNAUTHORIZED_ROLE_CREATION);
             }
         }
