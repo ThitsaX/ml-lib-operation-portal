@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,7 +69,6 @@ public class NdcThresholdWorker
         return false;
     }
 
-
     private final ThresholdConfigurationQuery thresholdConfigurationQuery;
 
     private final EvaluateNdcThresholdCommand evaluateNdcThresholdCommand;
@@ -93,6 +93,7 @@ public class NdcThresholdWorker
         EvaluateNdcThresholdCommand evaluateNdcThresholdCommand,
         GetNdcUsedDataQuery getNdcUsedDataQuery,
         ThresholdDetailRepository thresholdDetailRepository) {
+
         super(
             createJobExecutionLogCommand,
             modifyJobExecutionLogCommand,
@@ -101,7 +102,7 @@ public class NdcThresholdWorker
             createExceptionAuditCommand,
             actionAuthorizationManager,
             objectMapper
-        );
+             );
 
         this.thresholdConfigurationQuery = thresholdConfigurationQuery;
         this.evaluateNdcThresholdCommand = evaluateNdcThresholdCommand;
@@ -115,22 +116,28 @@ public class NdcThresholdWorker
     protected List<NdcEvaluation> onExecute(SchedulerConfigData schedulerConfigData)
         throws DomainException {
 
-        return this.evaluateThresholds(schedulerConfigData, schedulerConfigData.zoneId(), true);
+        return this.evaluateThresholds(schedulerConfigData, schedulerConfigData.zoneId(), true, "schedule");
     }
 
     public List<NdcEvaluation> executeOnDemand() throws DomainException {
 
-        return this.evaluateThresholds(null, ZoneId.systemDefault().getId(), false);
+        return this.evaluateThresholds(null,
+                                       ZoneId.systemDefault()
+                                             .getId(),
+                                       false,
+                                       "balanceUpdate");
     }
 
     private List<NdcEvaluation> evaluateThresholds(SchedulerConfigData schedulerConfigData,
                                                    String zoneId,
-                                                   boolean persistExecutionLog)
+                                                   boolean persistExecutionLog,
+                                                   String actor)
         throws DomainException {
 
         var schemeConfiguration = thresholdConfigurationQuery.getSchemeConfiguration();
 
-        if (schemeConfiguration.isEmpty() || !schemeConfiguration.get().thresholdEnabled()) {
+        if (schemeConfiguration.isEmpty() || !schemeConfiguration.get()
+                                                                 .thresholdEnabled()) {
             LOG.info("Skipping NDC evaluation because the scheme gate is OFF or unavailable");
             return List.of();
         }
@@ -139,18 +146,19 @@ public class NdcThresholdWorker
 
         Map<ThresholdConfigurationId, ThresholdConfigurationData> dfspConfigurationsById =
             thresholdConfigurationQuery.getAll()
-                .stream()
-                .filter(configuration -> configuration.scopeType() == ThresholdScopeType.DFSP)
-                .collect(Collectors.toMap(
-                    ThresholdConfigurationData::thresholdConfigurationId,
-                    Function.identity()
-                ));
+                                       .stream()
+                                       .filter(configuration -> configuration.scopeType() == ThresholdScopeType.DFSP)
+                                       .collect(Collectors.toMap(
+                                           ThresholdConfigurationData::thresholdConfigurationId,
+                                           Function.identity()
+                                                                ));
 
         List<ThresholdDetail> enabledDetails = thresholdDetailRepository
-            .findAllByStatusTrueOrderByCurrencyAsc()
-            .stream()
-            .filter(detail -> isDetailGateAllowed(detail, dfspConfigurationsById))
-            .toList();
+                                                   .findAllByStatusTrueOrderByCurrencyAsc()
+                                                   .stream()
+                                                   .filter(detail -> isDetailGateAllowed(detail,
+                                                                                         dfspConfigurationsById))
+                                                   .toList();
 
         if (enabledDetails.isEmpty()) {
             LOG.info("Skipping NDC evaluation because no active DFSP/currency threshold details are enabled");
@@ -158,11 +166,12 @@ public class NdcThresholdWorker
         }
 
         Map<String, List<ThresholdDetail>> detailsByDfsp = enabledDetails.stream()
-            .collect(Collectors.groupingBy(
-                detail -> dfspConfigurationsById.get(detail.getThresholdConfigurationId()).dfspId(),
-                LinkedHashMap::new,
-                Collectors.toList()
-            ));
+                                                                         .collect(Collectors.groupingBy(
+                                                                             detail -> dfspConfigurationsById.get(detail.getThresholdConfigurationId())
+                                                                                                             .dfspId(),
+                                                                             LinkedHashMap::new,
+                                                                             Collectors.toList()
+                                                                                                       ));
 
         LOG.info("NDC threshold details resolved: dfspCount={}, currencyConfigCount={}",
                  detailsByDfsp.size(), enabledDetails.size());
@@ -179,19 +188,21 @@ public class NdcThresholdWorker
 
             if (output == null || output.getNdcUsedData() == null) {
                 LOG.warn("Skipping NDC evaluation because no NDC used data exists for DFSP [{}]", dfspId);
-                skippedEvaluations += entry.getValue().size();
+                skippedEvaluations +=
+                    entry.getValue()
+                         .size();
                 continue;
             }
 
             Map<String, NdcUsedData> ndcUsedByCurrency = output.getNdcUsedData()
-                .stream()
-                .filter(NdcUsedData::isActive)
-                .collect(Collectors.toMap(
-                    NdcUsedData::currency,
-                    Function.identity(),
-                    (first, ignored) -> first,
-                    LinkedHashMap::new
-                ));
+                                                               .stream()
+                                                               .filter(NdcUsedData::isActive)
+                                                               .collect(Collectors.toMap(
+                                                                   NdcUsedData::currency,
+                                                                   Function.identity(),
+                                                                   (first, ignored) -> first,
+                                                                   LinkedHashMap::new
+                                                                                        ));
 
             ndcUsedRecords += ndcUsedByCurrency.size();
 
@@ -205,15 +216,18 @@ public class NdcThresholdWorker
                     continue;
                 }
 
-                Instant evaluatedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+                Instant
+                    evaluatedAt =
+                    Instant.now()
+                           .truncatedTo(ChronoUnit.SECONDS);
                 LocalDateTime evaluationLogTime = LocalDateTime.now(ZoneId.of(zoneId))
                                                                .withNano(0);
                 LOG.info("NDC evaluated at: {}", evaluatedAt);
 
                 BigDecimal ndcUsedPercent = ndcUsedData.ndcUsed();
                 String comparison = ndcUsedPercent.compareTo(detail.getNdcConfig()) >= 0
-                    ? "AT_OR_ABOVE_THRESHOLD"
-                    : "BELOW_THRESHOLD";
+                                        ? "AT_OR_ABOVE_THRESHOLD"
+                                        : "BELOW_THRESHOLD";
 
                 LOG.info("NDC calculation result: participant={}, currency={}, currentPosition={}, "
                              + "ndcLimit={}, ndcUsedPercent={}, thresholdPercent={}, comparison={}, "
@@ -230,9 +244,9 @@ public class NdcThresholdWorker
                         ndcUsedPercent,
                         detail.getNdcConfig(),
                         evaluatedAt,
-                        "system"
+                        actor
                     )
-                );
+                                                                                                        );
 
                 NdcEvaluation evaluation = new NdcEvaluation(
                     dfspId,
@@ -274,8 +288,16 @@ public class NdcThresholdWorker
             }
         }
 
-        long alertsCreated = evaluations.stream().filter(NdcEvaluation::alertCreated).count();
-        long recoveries = evaluations.stream().filter(NdcEvaluation::recovered).count();
+        long
+            alertsCreated =
+            evaluations.stream()
+                       .filter(NdcEvaluation::alertCreated)
+                       .count();
+        long
+            recoveries =
+            evaluations.stream()
+                       .filter(NdcEvaluation::recovered)
+                       .count();
 
         LOG.info("NDC worker completed: ndcUsedRecords={}, evaluated={}, skipped={}, "
                      + "alertsCreated={}, recovered={}",
@@ -321,7 +343,7 @@ public class NdcThresholdWorker
                 evaluation.ndcUsedPercent(),
                 evaluation.thresholdPercent()
             )
-        );
+                                                        );
 
         String message = String.format(
             "NDC evaluated: used=%s%%, threshold=%s%%, state=%s -> %s, alertCreated=%s, recovered=%s",
@@ -331,7 +353,7 @@ public class NdcThresholdWorker
             evaluation.currentState(),
             evaluation.alertCreated(),
             evaluation.recovered()
-        );
+                                      );
 
         evaluationLogModifyCommand.execute(
             new ModifyJobExecutionLogCommand.Input(
@@ -344,7 +366,7 @@ public class NdcThresholdWorker
                 evaluation.ndcUsedPercent(),
                 evaluation.thresholdPercent()
             )
-        );
+                                          );
     }
 
     public record NdcEvaluation(
@@ -360,4 +382,5 @@ public class NdcThresholdWorker
         com.thitsaworks.operation_portal.component.common.identifier.NdcAlertEventId alertEventId
     ) {
     }
+
 }
