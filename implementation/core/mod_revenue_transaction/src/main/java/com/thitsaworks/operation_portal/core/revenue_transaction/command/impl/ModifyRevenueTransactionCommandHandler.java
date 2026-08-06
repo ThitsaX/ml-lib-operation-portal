@@ -73,6 +73,7 @@ public class ModifyRevenueTransactionCommandHandler implements ModifyRevenueTran
 
                 updatedDetails.add(details.revenueSplit(
                         update.calculatedAmount(),
+                        update.taxCodeDescription(),
                         update.category(),
                         update.responsibleMinistryCode(),
                         update.thirdPartyCode(),

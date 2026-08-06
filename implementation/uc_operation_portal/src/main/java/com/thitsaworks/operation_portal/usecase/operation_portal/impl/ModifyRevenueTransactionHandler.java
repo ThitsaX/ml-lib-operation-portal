@@ -74,6 +74,7 @@ public class ModifyRevenueTransactionHandler
                     return new ModifyRevenueTransactionCommand.TransactionDetail(
                             calculated.revenueTransactionDetailId(),
                             calculated.calculatedAmount(),
+                            detail.taxCodeDescription(),
                             detail.category(),
                             detail.responsibleMinistryCode(),
                             detail.thirdPartyCode(),
@@ -111,6 +112,7 @@ public class ModifyRevenueTransactionHandler
                     amount,
                     new ModifyRevenueTransaction.TransactionDetail(
                         amount,
+                            revenueSplit.taxCodeDescription(),
                             revenueSplit.revenueConfigCategory().name(),
                             revenueSplit.responsibleMinistryCode(),
                             revenueSplit.thirdPartyProviderCode(),

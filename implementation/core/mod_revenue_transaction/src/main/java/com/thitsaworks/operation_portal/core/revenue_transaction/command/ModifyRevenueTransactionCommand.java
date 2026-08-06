@@ -32,6 +32,7 @@ public interface ModifyRevenueTransactionCommand {
 
     record TransactionDetail(String revenueTransactionDetailId,
                              BigDecimal calculatedAmount,
+                             String taxCodeDescription,
                              String category,
                              String responsibleMinistryCode,
                              String thirdPartyCode,

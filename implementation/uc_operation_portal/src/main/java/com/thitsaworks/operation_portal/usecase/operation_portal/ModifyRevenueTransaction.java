@@ -37,6 +37,7 @@ public interface ModifyRevenueTransaction
     }
 
     record TransactionDetail(BigDecimal calculatedAmount,
+                             String taxCodeDescription,
                              String category,
                              String responsibleMinistryCode,
                              String thirdPartyCode,
