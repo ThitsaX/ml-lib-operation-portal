@@ -45,7 +45,7 @@ public class CreateThresholdConfigurationController {
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping("/secured/ndc/configurations")
+    @PostMapping("/secured/ndc/createThresholdConfiguration")
     public ResponseEntity<Response> execute(@Valid @RequestBody Request request)
         throws DomainException, JsonProcessingException {
 

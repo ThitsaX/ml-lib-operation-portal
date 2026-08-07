@@ -50,7 +50,7 @@ public class CreateRoleHandler extends OperationPortalUseCase<CreateRole.Input, 
     @Override
     protected Output onExecute(Input input) throws DomainException, ConnectException {
 
-        var output = this.createRoleCommand.execute(new CreateRoleCommand.Input(input.name(), input.isDfsp()));
+        var output = this.createRoleCommand.execute(new CreateRoleCommand.Input(input.name(), input.roleType()));
 
         return new Output(output.roleId());
     }

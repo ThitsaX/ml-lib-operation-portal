@@ -15,16 +15,13 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
-import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
-import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
+import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.notification.data.DfspThresholdDetailData;
 import com.thitsaworks.operation_portal.core.notification.query.DfspThresholdDetailQuery;
-import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
+import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetDfspVisualConfig;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
@@ -35,14 +32,15 @@ import java.util.stream.Collectors;
 @Service
 @ActionMetadata(category = ActionCategory.PARTICIPANT_PROFILE_AND_FINANCIAL_CONFIGURATION)
 public class GetDfspVisualConfigHandler
-    extends OperationPortalAuditableUseCase<GetDfspVisualConfig.Input,
-        GetDfspVisualConfig.Output>
+    extends OperationPortalUseCase<GetDfspVisualConfig.Input, GetDfspVisualConfig.Output>
     implements GetDfspVisualConfig {
 
     private final DfspThresholdDetailQuery dfspThresholdDetailQuery;
 
-    public GetDfspVisualConfigHandler(CreateInputAuditCommand createInputAuditCommand, CreateOutputAuditCommand createOutputAuditCommand, CreateExceptionAuditCommand createExceptionAuditCommand, ObjectMapper objectMapper, com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache principalCache, ActionAuthorizationManager actionAuthorizationManager, DfspThresholdDetailQuery dfspThresholdDetailQuery) {
-        super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
+    public GetDfspVisualConfigHandler(PrincipalCache principalCache,
+                                      ActionAuthorizationManager actionAuthorizationManager,
+                                      DfspThresholdDetailQuery dfspThresholdDetailQuery) {
+        super(principalCache, actionAuthorizationManager);
         this.dfspThresholdDetailQuery = dfspThresholdDetailQuery;
     }
 

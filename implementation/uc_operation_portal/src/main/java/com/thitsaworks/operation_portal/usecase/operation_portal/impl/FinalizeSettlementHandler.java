@@ -53,6 +53,7 @@ import com.thitsaworks.operation_portal.core.participant.query.ParticipantNDCQue
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.FinalizeSettlement;
 import com.thitsaworks.operation_portal.usecase.operation_portal.GetNetTransferAmountBySettlementId;
+import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.jobs.NdcThresholdWorker;
 import com.thitsaworks.operation_portal.usecase.util.HandleUpdateNdc;
 import com.thitsaworks.operation_portal.usecase.util.UserPermissionManager;
 import com.thitsaworks.operation_portal.usecase.util.Utility;
@@ -93,6 +94,8 @@ public class FinalizeSettlementHandler
 
     private final HandleUpdateNdc handleUpdateNdc;
 
+    private final NdcThresholdWorker ndcThresholdWorker;
+
     private final GetParticipantPositionsDataByParticipantNameAndCurrencyQuery participantPositionsDataByParticipantNameAndCurrencyQuery;
 
     private final UserPermissionManager userPermissionManager;
@@ -112,6 +115,7 @@ public class FinalizeSettlementHandler
                                      GetNetTransferAmountBySettlementIdQuery getNetTransferAmountBySettlementIdQuery,
                                      ParticipantNDCQuery participantNDCQuery,
                                      HandleUpdateNdc handleUpdateNdc,
+                                     NdcThresholdWorker ndcThresholdWorker,
                                      GetParticipantPositionsDataByParticipantNameAndCurrencyQuery participantPositionsDataByParticipantNameAndCurrencyQuery,
                                      UserPermissionManager userPermissionManager,
                                      Utility utility) {
@@ -126,6 +130,7 @@ public class FinalizeSettlementHandler
         this.getNetTransferAmountBySettlementIdQuery = getNetTransferAmountBySettlementIdQuery;
         this.participantNDCQuery = participantNDCQuery;
         this.handleUpdateNdc = handleUpdateNdc;
+        this.ndcThresholdWorker = ndcThresholdWorker;
         this.participantPositionsDataByParticipantNameAndCurrencyQuery = participantPositionsDataByParticipantNameAndCurrencyQuery;
         this.userPermissionManager = userPermissionManager;
         this.utility = utility;
@@ -439,6 +444,8 @@ public class FinalizeSettlementHandler
 
                 }
 
+
+
                 LOG.info(
                     "Successfully settled net amounts to participants for settlementId: [{}].",
                     settlement.getId());
@@ -447,6 +454,7 @@ public class FinalizeSettlementHandler
             return new Output(true);
         } finally {
             this.isSettlementFinalized.set(false);
+            this.ndcThresholdWorker.executeOnDemand();
         }
     }
 

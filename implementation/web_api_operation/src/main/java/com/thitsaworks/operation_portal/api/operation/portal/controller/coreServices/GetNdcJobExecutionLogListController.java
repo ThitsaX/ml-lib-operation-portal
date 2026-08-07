@@ -38,12 +38,11 @@ public class GetNdcJobExecutionLogListController {
 
     private final GetNdcJobExecutionLogList getNdcJobExecutionLogList;
 
-    @GetMapping("/secured/ndc/job-executions")
+    @GetMapping("/secured/ndc/getJobExecutions")
     public ResponseEntity<Response> execute(
         @RequestParam(value = "jobName", required = false) String jobName,
         @RequestParam(value = "jobStatus", required = false) JobStatus jobStatus,
         @RequestParam(value = "participantName", required = false) String participantName,
-        @RequestParam(value = "dfspId", required = false) String dfspId,
         @RequestParam(value = "currency", required = false) String currency,
         @RequestParam(value = "from", required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,

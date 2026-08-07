@@ -20,6 +20,7 @@ import com.thitsaworks.operation_portal.component.common.identifier.AccessKey;
 import com.thitsaworks.operation_portal.component.common.identifier.ParticipantId;
 import com.thitsaworks.operation_portal.component.common.identifier.PrincipalId;
 import com.thitsaworks.operation_portal.component.common.identifier.RoleId;
+import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.security.SecurityContext;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCaseContext;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
@@ -36,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,27 +56,27 @@ public class UserPermissionManager {
 
     private final IAMQuery iamQuery;
 
+    private static final String HUB_PARTICIPANT_TYPE = "HUB";
+
+    private static final String INDIRECT_DFSP_ROLE_TYPE = "INDIRECT_DFSP";
+
     private final RoleQuery roleQuery;
 
     private final ParticipantQuery participantQuery;
 
     private final PrincipalCache principalCache;
 
-    public boolean isDfsp(PrincipalId principalId) throws IAMException {
+    public boolean isDfsp(PrincipalId principalId) throws DomainException {
 
-        var roleList = this.iamQuery.getRoleListByPrincipal(principalId);
+        PrincipalData principal = this.principalCache.get(principalId);
 
-        var isDfsp = true;
-
-        for (var role : roleList) {
-
-            if (!this.isRoleType(role, DFSP_ROLE_TYPE)) {
-                isDfsp = false;
-                break;
-            }
+        if (principal == null) {
+            throw new IAMException(IAMErrors.PRINCIPAL_NOT_FOUND.format(principalId.toString()));
         }
 
-        return isDfsp;
+        var participant = this.participantQuery.get(new ParticipantId(principal.realmId().getId()));
+
+        return !this.isHubParticipant(participant.participantType());
 
     }
 
@@ -92,8 +94,17 @@ public class UserPermissionManager {
             boolean isLraParticipant =
                 participantType != null && participantType.equalsIgnoreCase(LRA_PARTICIPANT_TYPE);
 
-            Set<String> allowedRoleTypes =
-                isLraParticipant ? Set.of(DFSP_ROLE_TYPE, LRA_ROLE_TYPE) : Set.of(DFSP_ROLE_TYPE);
+            boolean isIndirectParticipant =
+                participantType != null && this.isIndirectParticipant(participantId);
+
+            Set<String> allowedRoleTypes = new HashSet<>();
+            allowedRoleTypes.add(DFSP_ROLE_TYPE);
+            if (isLraParticipant) {
+                allowedRoleTypes.add(LRA_ROLE_TYPE);
+            }
+            if (isIndirectParticipant) {
+                allowedRoleTypes.add(INDIRECT_DFSP_ROLE_TYPE);
+            }
 
             roleList = roleList
                            .stream()
@@ -140,9 +151,17 @@ public class UserPermissionManager {
         return loggedInUserParticipantId.equals(requestParticipantId);
     }
 
-    private boolean isRoleType(RoleData role, String roleType) {
 
-        return role.roleType() != null && role.roleType().equalsIgnoreCase(roleType);
+    private boolean isHubParticipant(String participantType) {
+        return participantType != null && participantType.equalsIgnoreCase(HUB_PARTICIPANT_TYPE);
+    }
+
+    private boolean isDfspRole(RoleData role) {
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(DFSP_ROLE_TYPE);
+    }
+
+    public boolean isIndirectParticipant(ParticipantId participantId) throws ParticipantException {
+        return !this.participantQuery.isDirectParticipant(participantId);
     }
 
 }

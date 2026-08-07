@@ -40,7 +40,7 @@ public class ModifyNdcWorkerConfigController {
 
     private final ModifySchedulerConfig modifySchedulerConfig;
 
-    @PutMapping("/secured/ndc/worker-config")
+    @PutMapping("/secured/ndc/modifyWorkerConfig")
     public ResponseEntity<Response> execute(@RequestParam("schedulerConfigId") String id,
                                             @Valid @RequestBody Request request) throws DomainException {
 

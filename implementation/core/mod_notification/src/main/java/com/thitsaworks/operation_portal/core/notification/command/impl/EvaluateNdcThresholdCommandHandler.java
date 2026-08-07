@@ -12,7 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -27,6 +31,9 @@ public class EvaluateNdcThresholdCommandHandler
         LoggerFactory.getLogger(EvaluateNdcThresholdCommandHandler.class);
 
     private static final String NDC_THRESHOLD_FUNCTION = "NDC Threshold Triggered";
+
+    private static final String NDC_USAGE_ALERT_EVENT_TEMPLATE =
+        loadTemplate("templates/ndc-usage-alert-event-message.html");
 
     private static final DateTimeFormatter ALERT_EVENT_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("MMM d, yyyy h:mm:ss a 'UTC'", Locale.ENGLISH)
@@ -136,37 +143,12 @@ public class EvaluateNdcThresholdCommandHandler
 
     private String buildNdcUsageAlertEventMessage(Input input) {
 
-        return """
-            %s,
-            <html>
-            <body style="font-family: Arial, sans-serif; color: #30343b;">
-            <table style="border-collapse: collapse; width: 100%%; margin: 16px 0;">
-                <thead>
-                    <tr>
-                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Date/Time</th>
-                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Function</th>
-                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Threshold Value</th>
-                        <th style="background-color: #f2f3f5; border: 1px solid #d9dde3; padding: 12px; text-align: left;">Current Metric</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
-                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
-                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
-                        <td style="border: 1px solid #d9dde3; padding: 12px;">%s</td>
-                    </tr>
-                </tbody>
-            </table>
-            </body>
-            </html>
-            """.formatted(
-            buildSubject(input.participantName()),
-            ALERT_EVENT_TIME_FORMATTER.format(input.evaluatedAt()),
-            NDC_THRESHOLD_FUNCTION,
-            formatPercent(input.thresholdPercent()),
-            formatPercent(input.currentNdcUsed())
-        );
+        return NDC_USAGE_ALERT_EVENT_TEMPLATE
+            .replace("{{subject}}", buildSubject(input.participantName()))
+            .replace("{{eventTime}}", ALERT_EVENT_TIME_FORMATTER.format(input.evaluatedAt()))
+            .replace("{{function}}", NDC_THRESHOLD_FUNCTION)
+            .replace("{{thresholdValue}}", formatPercent(input.thresholdPercent()))
+            .replace("{{currentMetric}}", formatPercent(input.currentNdcUsed()));
     }
 
     private String buildSubject(String participantName) {
@@ -177,6 +159,22 @@ public class EvaluateNdcThresholdCommandHandler
     private String formatPercent(BigDecimal value) {
 
         return value.stripTrailingZeros().toPlainString() + "%";
+    }
+
+    private static String loadTemplate(String resourcePath) {
+
+        try (InputStream inputStream = EvaluateNdcThresholdCommandHandler.class
+            .getClassLoader()
+            .getResourceAsStream(resourcePath)) {
+
+            if (inputStream == null) {
+                throw new IllegalStateException("Template file not found: " + resourcePath);
+            }
+
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Unable to read template file: " + resourcePath, exception);
+        }
     }
 
 }

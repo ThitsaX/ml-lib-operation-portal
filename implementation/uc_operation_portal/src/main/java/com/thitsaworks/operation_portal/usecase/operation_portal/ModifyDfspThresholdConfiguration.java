@@ -15,13 +15,19 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal;
 
-import com.thitsaworks.operation_portal.component.common.identifier.RoleId;
+import com.thitsaworks.operation_portal.component.common.identifier.ThresholdConfigurationId;
+import com.thitsaworks.operation_portal.component.common.type.NdcConfigurationStatus;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 
-public interface CreateRole extends UseCase<CreateRole.Input, CreateRole.Output> {
+public interface ModifyDfspThresholdConfiguration
+    extends UseCase<ModifyDfspThresholdConfiguration.Input,
+                    ModifyDfspThresholdConfiguration.Output> {
 
-    record Input(String name, String roleType) { }
+    record Input(Long id,
+                 Boolean thresholdEnabled,
+                 NdcConfigurationStatus status,
+                 String updatedBy) { }
 
-    record Output(RoleId roleId) { }
-
+    record Output(ThresholdConfigurationId thresholdConfigurationId,
+                  Boolean modified) { }
 }

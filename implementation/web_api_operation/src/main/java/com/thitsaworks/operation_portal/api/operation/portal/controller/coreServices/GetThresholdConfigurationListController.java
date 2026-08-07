@@ -42,7 +42,7 @@ public class GetThresholdConfigurationListController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/ndc/configurations")
+    @GetMapping("/secured/ndc/getThresholdConfigurationList")
     public ResponseEntity<Response> execute() throws DomainException, JsonProcessingException {
 
         LOG.info("Get NDC Threshold Configuration List Request");

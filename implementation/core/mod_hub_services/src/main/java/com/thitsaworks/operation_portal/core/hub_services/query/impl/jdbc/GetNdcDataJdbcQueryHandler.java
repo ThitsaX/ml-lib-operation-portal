@@ -37,7 +37,7 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
 
     @Autowired
     public GetNdcDataJdbcQueryHandler(
-        @Qualifier(PersistenceQualifiers.Hub.READ_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
+        @Qualifier(PersistenceQualifiers.Hub.WRITE_JDBC_TEMPLATE) JdbcTemplate jdbcTemplate) {
 
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -46,8 +46,8 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
     public Output execute(Input input) throws HubServicesException {
 
         try {
-            LOG.debug("Executing Central Ledger NDC used calculation query for DFSP [{}]",
-                      input.getFspID());
+            LOG.info("Executing Central Ledger NDC used calculation query for DFSP [{}]",
+                     input.getFspID());
 
             String sql = """
                 SELECT
@@ -95,15 +95,19 @@ public class GetNdcDataJdbcQueryHandler implements GetNdcUsedDataQuery {
 
             if (result == null || result.isEmpty()) {
 
-                LOG.debug("Central Ledger NDC used calculation returned no data for DFSP [{}]",
-                          input.getFspID());
+                LOG.info("Central Ledger NDC used calculation returned no data for DFSP [{}]",
+                         input.getFspID());
 
                 return null;
             }
 
             result.forEach(data ->
-                LOG.debug("Central Ledger NDC used result: dfsp={}, currency={}, ndcUsedPercent={}, active={}",
-                          input.getFspID(), data.currency(), data.ndcUsed(), data.isActive()));
+                               LOG.info(
+                                   "Central Ledger NDC used result: dfsp={}, currency={}, ndcUsedPercent={}, active={}",
+                                   input.getFspID(),
+                                   data.currency(),
+                                   data.ndcUsed(),
+                                   data.isActive()));
 
             return new Output(result);
 

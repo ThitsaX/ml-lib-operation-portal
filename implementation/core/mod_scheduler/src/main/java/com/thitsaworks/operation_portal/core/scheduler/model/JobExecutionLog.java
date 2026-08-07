@@ -64,10 +64,10 @@ public class JobExecutionLog extends JpaEntity<JobExecutionLogId> {
     @Column(name = "currency")
     private String currency;
 
-    @Column(name = "ndc_used_percent", precision = 7, scale = 4)
+    @Column(name = "ndc_used_percent", precision = 18, scale = 4)
     private BigDecimal ndcUsedPercent;
 
-    @Column(name = "threshold_percent", precision = 7, scale = 4)
+    @Column(name = "threshold_percent", precision = 18, scale = 4)
     private BigDecimal thresholdPercent;
 
     public JobExecutionLog(String jobName, JobStatus jobStatus, LocalDateTime startTime) {

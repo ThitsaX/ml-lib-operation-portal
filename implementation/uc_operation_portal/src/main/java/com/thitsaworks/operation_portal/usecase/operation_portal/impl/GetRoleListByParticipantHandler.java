@@ -52,6 +52,10 @@ public class GetRoleListByParticipantHandler
 
     private static final String LRA_ROLE_TYPE = "LRA";
 
+    private static final String INDIRECT_PARTICIPANT_TYPE = "INDIRECT";
+
+    private static final String INDIRECT_DFSP_ROLE_TYPE = "INDIRECT_DFSP";
+
     private final RoleQuery roleQuery;
 
     private final ParticipantQuery participantQuery;
@@ -85,12 +89,17 @@ public class GetRoleListByParticipantHandler
         var participantType = participantData.get().participantType();
         var participantId = participantData.get().participantId();
 
+        if (this.userPermissionManager.isIndirectParticipant(participantId)) {
+            participantType = "INDIRECT";
+        }
+
         List<RoleData> roleList = this.roleQuery.getAll();
 
         boolean isDfspUser = this.userPermissionManager.isDfsp(currentUser.principalId());
 
         if (isDfspUser) {
-            ParticipantId currentUserParticipantId = new ParticipantId(currentUser.realmId().getId());
+            ParticipantId currentUserParticipantId = new ParticipantId(
+                currentUser.realmId().getId());
             if (!currentUserParticipantId.equals(participantId)) {
                 throw new IAMException(IAMErrors.UNAUTHORIZED_ROLE_LIST_ACCESS);
             }
@@ -106,6 +115,8 @@ public class GetRoleListByParticipantHandler
 
         return switch (this.normalizedParticipantType(participantType)) {
             case LRA_PARTICIPANT_TYPE -> roleList.stream().filter(this::isDfspOrLraRole).toList();
+            case INDIRECT_PARTICIPANT_TYPE ->
+                roleList.stream().filter(this::isDfspOrIndirectRole).toList();
             default -> roleList.stream().filter(this::isDfspRole).toList();
         };
     }
@@ -116,32 +127,37 @@ public class GetRoleListByParticipantHandler
             case LRA_PARTICIPANT_TYPE -> roleList.stream().filter(this::isDfspOrLraRole).toList();
             case HUB_PARTICIPANT_TYPE ->
                 roleList.stream().filter(this::isAssignableHubRole).toList();
+            case INDIRECT_PARTICIPANT_TYPE ->
+                roleList.stream().filter(this::isDfspOrIndirectRole).toList();
             default -> roleList.stream().filter(this::isDfspRole).toList();
         };
     }
 
     private boolean isDfspOrLraRole(RoleData role) {
-
         return this.isDfspRole(role) || this.isLraRole(role);
     }
 
     private boolean isDfspRole(RoleData role) {
-
         return this.isRoleType(role, DFSP_ROLE_TYPE);
     }
 
     private boolean isLraRole(RoleData role) {
-
         return this.isRoleType(role, LRA_ROLE_TYPE);
     }
 
-    private boolean isAssignableHubRole(RoleData role) {
+    private boolean isIndirectRole(RoleData role) {
+        return role.roleType() != null && role.roleType().equalsIgnoreCase(INDIRECT_DFSP_ROLE_TYPE);
+    }
 
+    private boolean isDfspOrIndirectRole(RoleData role) {
+        return this.isDfspRole(role) || this.isIndirectRole(role);
+    }
+
+    private boolean isAssignableHubRole(RoleData role) {
         return this.isRoleType(role, HUB_ROLE_TYPE) || this.isRoleType(role, LRA_ROLE_TYPE);
     }
 
     private boolean isRoleType(RoleData role, String roleType) {
-
         return role.roleType() != null && role.roleType().equalsIgnoreCase(roleType);
     }
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.thitsaworks.operation_portal.core.iam.model;
 
 import com.thitsaworks.operation_portal.component.common.identifier.RoleId;
@@ -57,9 +58,6 @@ public class Role extends JpaEntity<RoleId> {
     @Column(name = "active")
     protected Boolean active = true;
 
-    @Column(name = "is_dfsp")
-    protected Boolean isDfsp = true;
-
     @Column(name = "role_type")
     protected String roleType;
 
@@ -71,13 +69,13 @@ public class Role extends JpaEntity<RoleId> {
         fetch = FetchType.EAGER)
     protected Set<RoleGrant> grants = new HashSet<>();
 
-    public Role(String name, boolean isDfsp) {
+    public Role(String name, String roleType) {
 
         assert name != null : "name is required!";
 
         this.roleId = new RoleId(Snowflake.get().nextId());
         this.name(name);
-        this.isDfsp = isDfsp;
+        this.roleType = roleType;
     }
 
     @Override
@@ -100,16 +98,16 @@ public class Role extends JpaEntity<RoleId> {
 
     public boolean isGranted(Action Action) {
 
-        return this.grants.stream()
-                          .anyMatch(granted -> granted.Action.equals(Action));
+        return this.grants.stream().anyMatch(granted -> granted.Action.equals(Action));
     }
 
     public void grantAction(Action granting) {
 
-        Optional<RoleGrant> optRoleGrant =
-            this.grants.stream()
-                       .filter(roleGrant -> roleGrant.Action.equals(granting))
-                       .findFirst();
+        Optional<RoleGrant> optRoleGrant = this.grants
+                                               .stream()
+                                               .filter(
+                                                   roleGrant -> roleGrant.Action.equals(granting))
+                                               .findFirst();
 
         if (optRoleGrant.isEmpty()) {
 
@@ -119,29 +117,26 @@ public class Role extends JpaEntity<RoleId> {
 
     public void grantActions(List<Action> grantingActions) {
 
-        Set<Action> requestedActions = grantingActions == null
-            ? Set.of()
-            : new LinkedHashSet<>(grantingActions);
+        Set<Action> requestedActions =
+            grantingActions == null ? Set.of() : new LinkedHashSet<>(grantingActions);
 
         this.grants.removeIf(existingGrant -> !requestedActions.contains(existingGrant.Action));
 
         requestedActions.forEach(this::grantAction);
     }
 
-
     public Set<Action> getGrantedActions() {
 
-        return this.grants.stream()
-                          .map(RoleGrant::getAction)
-                          .collect(Collectors.toSet());
+        return this.grants.stream().map(RoleGrant::getAction).collect(Collectors.toSet());
     }
 
     public boolean revokeAction(Action revoking) {
 
-        Optional<RoleGrant> optRoleGrant =
-            this.grants.stream()
-                       .filter(roleGrant -> roleGrant.Action.equals(revoking))
-                       .findFirst();
+        Optional<RoleGrant> optRoleGrant = this.grants
+                                               .stream()
+                                               .filter(
+                                                   roleGrant -> roleGrant.Action.equals(revoking))
+                                               .findFirst();
 
         if (optRoleGrant.isPresent()) {
 

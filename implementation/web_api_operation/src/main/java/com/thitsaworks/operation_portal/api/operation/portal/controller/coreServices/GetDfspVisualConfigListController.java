@@ -42,7 +42,7 @@ public class GetDfspVisualConfigListController {
 
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/secured/threshold/dfspList")
+    @GetMapping("/secured/ndc/getDfspVisualConfigList")
     public ResponseEntity<Response> execute()
         throws DomainException, JsonProcessingException {
 

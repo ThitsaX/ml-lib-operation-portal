@@ -22,9 +22,8 @@ public interface CreateRoleCommand {
 
     Output execute(Input input) throws IAMException;
 
-    record Input(String name, boolean isDfsp) { }
+    record Input(String name, String roleType) { }
 
     record Output(RoleId roleId) { }
 
 }
-
