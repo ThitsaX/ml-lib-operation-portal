@@ -31,8 +31,6 @@ The root Maven project is `implementation/pom.xml`. It aggregates:
 - `core/`
 - `uc_operation_portal/`
 - `web_api_operation/`
-- `app_scheduler/`
-- `app_report_downloader/`
 
 ### Module responsibilities
 
@@ -77,14 +75,6 @@ Spring Boot REST API entrypoint. It contains:
 - REST controllers
 - exception handling
 - environment-specific resources
-
-#### `implementation/app_scheduler`
-
-Standalone scheduler application. It boots a Spring context, loads Vault-backed settings, and runs the scheduler job flow.
-
-#### `implementation/app_report_downloader`
-
-Standalone report-downloader module used by report generation flows.
 
 ## 3. Runtime architecture
 
@@ -259,24 +249,11 @@ Useful path details:
 - public login endpoint: `/public/loginUserAccount`
 - secured endpoints generally live under `/secured/...`
 
-### 6.2 Scheduler app
+### 6.2 Scheduler runtime
 
-`implementation/app_scheduler` is a separate executable module. It:
-
-- loads Vault-backed settings
-- loads participant configuration
-- runs the announcement scheduler flow
-
-This module has its own resource profiles:
-
-- `local`
-- `dev`
-- `stg`
-- `prod`
-
-### 6.3 Report downloader
-
-`implementation/app_report_downloader` is a supporting report module that depends on `mod_report` and JasperReports.
+Scheduler jobs run inside the main web application. `implementation/web_api_operation`
+imports the use-case layer, and `OperationPortalUseCaseConfiguration` bootstraps
+`SchedulerEngine` during application startup.
 
 ## 7. First-time bootstrap API calls
 
@@ -362,16 +339,7 @@ If you change schema behavior, update the Flyway scripts first and then align th
 - `stg`
 - `live`
 
-### Scheduler profiles
-
-`app_scheduler` includes resource folders for:
-
-- `local`
-- `dev`
-- `stg`
-- `prod`
-
-This difference matters when you copy runtime configuration between modules.
+Scheduler runtime configuration follows the `web_api_operation` resource profiles.
 
 ## 10. Typical developer workflow
 
