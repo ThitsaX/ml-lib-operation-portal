@@ -111,14 +111,13 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                      
                        -- Ministry
                        SELECT
-                           rp.party_name,
+                           td.responsible_ministry_name,
                            'Ministry',
                            td.ministry_amount,
                            ts.sent_currency,
                            s.createdDate
                        FROM tbl_transaction ts
                        JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
-                       JOIN tbl_revenue_party rp ON rp.party_code = td.responsible_ministry_code
                        JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
                        JOIN central_ledger.transfer t ON t.transferId = tf.transferId
                        JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
@@ -129,14 +128,13 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                      
                        -- Third Party
                       SELECT
-                           rp.party_name,
+                           td.third_party_name,
                            '3rd Party',
                            td.third_party_amount,
                            ts.sent_currency,
                            s.createdDate
                        FROM tbl_transaction ts
                        JOIN tbl_transaction_detail td ON td.transaction_id = ts.id
-                       JOIN tbl_revenue_party rp ON rp.party_code = td.third_party_code
                        JOIN central_ledger.transferFulfilment tf ON tf.transferId = ts.hub_transaction_id
                        JOIN central_ledger.transfer t ON t.transferId = tf.transferId
                        JOIN central_ledger.settlementSettlementWindow sSW ON sSW.settlementWindowId = tf.settlementWindowId
@@ -170,10 +168,7 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
         """;
 
     private static final String[] COLUMN_HEADERS = {
-        "Responsible Ministry",
-        "Type",
-        "Balance",
-        "Currency"};
+        "Responsible Ministry", "Type", "Balance", "Currency"};
 
     private static final int[] COLUMN_WIDTHS = {
         40,
@@ -237,7 +232,8 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 resultSet.getString("responsibleMinistry"),
                 resultSet.getString("type"),
                 resultSet.getBigDecimal("balance"),
-                resultSet.getString("currency")),
+                resultSet.getString("currency"),
+                resultSet.getString("settlementCreatedDate")),
             parameters);
     }
 
@@ -257,13 +253,32 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
             CellStyle textCellStyle = this.textCellStyle(workbook);
             CellStyle amountCellStyle = this.amountCellStyle(workbook);
 
+            String settlementCreatedDate = "";
+            if (rows != null && !rows.isEmpty() && rows.get(0)
+                                                       .settlementCreatedDate() != null) {
+                settlementCreatedDate =
+                    rows.get(0)
+                        .settlementCreatedDate()
+                        .toString();
+            }
+
+
             int rowIndex = 0;
-            rowIndex = this.writeMeta(
-                sheet, rowIndex, "Settlement ID", input.settlementId(), metaLabelStyle,
+            rowIndex = this.writeMeta(sheet, rowIndex, "Settlement ID", input.settlementId(), metaLabelStyle,
                 metaValueStyle);
-            rowIndex = this.writeMeta(
-                sheet, rowIndex, "TimeZoneOffset", this.formattedTimezoneOffset(input), metaLabelStyle,
+            rowIndex = this.writeMeta(sheet,
+                                      rowIndex,
+                                      "Settlement Created Date",
+                                      settlementCreatedDate,
+                                      metaLabelStyle,
+                                      metaValueStyle);
+            rowIndex = this.writeMeta(sheet,
+                                      rowIndex,
+                                      "TimeZoneOffset",
+                                      this.formattedTimezoneOffset(input),
+                                      metaLabelStyle,
                 metaValueStyle);
+
             rowIndex++;
 
             Row headerRow = sheet.createRow(rowIndex++);
@@ -493,6 +508,5 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
     private record RevenueSharingSummaryRow(String responsibleMinistry,
                                             String type,
-                                            BigDecimal balance,
-                                            String currency) { }
+                                            BigDecimal balance, String currency, String settlementCreatedDate) { }
 }

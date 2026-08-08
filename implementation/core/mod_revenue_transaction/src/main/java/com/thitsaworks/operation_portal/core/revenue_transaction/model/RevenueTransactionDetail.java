@@ -106,7 +106,9 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
                                     BigDecimal calculatedAmount,
                                     String category,
                                     String responsibleMinistryCode,
+                                    String responsibleMinistryName,
                                     String thirdPartyCode,
+                                    String thirdPartyName,
                                     BigDecimal golPercentage,
                                     BigDecimal golAmount,
                                     BigDecimal ministryPercent,
@@ -129,7 +131,9 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
         this.calculatedAmount = calculatedAmount;
         this.category = category;
         this.responsibleMinistryCode = responsibleMinistryCode;
+        this.responsibleMinistryName = responsibleMinistryName;
         this.thirdPartyCode = thirdPartyCode;
+        this.thirdPartyName = thirdPartyName;
         this.golPercentage = golPercentage;
         this.golAmount = golAmount;
         this.ministryPercent = ministryPercent;
@@ -144,7 +148,9 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
                                                  String taxCodeDescription,
                                                  String category,
                                                  String responsibleMinistryCode,
+                                                 String responsibleMinistryName,
                                                  String thirdPartyCode,
+                                                 String thirdPartyName,
                                                  BigDecimal golPercentage,
                                                  BigDecimal golAmount,
                                                  BigDecimal ministryPercent,
@@ -158,7 +164,9 @@ public class RevenueTransactionDetail extends JpaEntity<RevenueTransactionDetail
         this.taxDescription = taxCodeDescription;
         this.category = category;
         this.responsibleMinistryCode = responsibleMinistryCode;
+        this.responsibleMinistryName = responsibleMinistryName;
         this.thirdPartyCode = thirdPartyCode;
+        this.thirdPartyName = thirdPartyName;
         this.golPercentage = golPercentage;
         this.golAmount = golAmount;
         this.ministryPercent = ministryPercent;

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.common.type.TransactionState;
-import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTransactionDetailInput;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueTransaction;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -53,7 +52,7 @@ public class CreateRevenueTransactionController {
                  this.objectMapper.writeValueAsString(request));
 
         var transactionDetails = request.transactionDetails() == null
-                                     ? List.<RevenueTransactionDetailInput>of()
+                                     ? List.<CreateRevenueTransaction.TransactionDetail>of()
                                      : request.transactionDetails().stream()
                                               .map(TransactionDetailRequest::toInput)
                                               .toList();
@@ -109,11 +108,10 @@ public class CreateRevenueTransactionController {
             @JsonProperty("sendingDfspCommissionAmount") BigDecimal sendingDfspCommissionAmount)
             implements Serializable {
 
-        public RevenueTransactionDetailInput toInput() {
+        public CreateRevenueTransaction.TransactionDetail toInput() {
 
-            return new RevenueTransactionDetailInput(
+            return new CreateRevenueTransaction.TransactionDetail(
                     this.taxCode, this.taxDescription, this.taxAmount, this.taxAmountCh,
-                    null,
                     this.category, this.responsibleMinistryCode, this.thirdPartyCode,
                     this.golPercentage, this.golAmount, this.ministryPercent, this.ministryAmount,
                     this.thirdPartyPercent, this.thirdPartyAmount,
