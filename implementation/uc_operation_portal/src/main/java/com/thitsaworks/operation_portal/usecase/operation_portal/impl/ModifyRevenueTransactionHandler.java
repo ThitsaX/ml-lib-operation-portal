@@ -25,6 +25,8 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditComma
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.revenue_config.engine.RevenueEngine;
+import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
+import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.core.revenue_transaction.command.ModifyRevenueTransactionCommand;
 import com.thitsaworks.operation_portal.core.revenue_transaction.query.RevenueTransactionQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
@@ -45,6 +47,7 @@ public class ModifyRevenueTransactionHandler
     private final ModifyRevenueTransactionCommand modifyRevenueTransactionCommand;
     private final RevenueTransactionQuery revenueTransactionQuery;
     private final RevenueEngine revenueEngine;
+    private final RevenuePartyQuery revenuePartyQuery;
 
     public ModifyRevenueTransactionHandler(CreateInputAuditCommand createInputAuditCommand,
                                            CreateOutputAuditCommand createOutputAuditCommand,
@@ -54,7 +57,8 @@ public class ModifyRevenueTransactionHandler
                                            ActionAuthorizationManager actionAuthorizationManager,
                                            ModifyRevenueTransactionCommand modifyRevenueTransactionCommand,
                                            RevenueTransactionQuery revenueTransactionQuery,
-                                           RevenueEngine revenueEngine) {
+                                           RevenueEngine revenueEngine,
+                                           RevenuePartyQuery revenuePartyQuery) {
 
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
               objectMapper, principalCache, actionAuthorizationManager);
@@ -62,6 +66,7 @@ public class ModifyRevenueTransactionHandler
         this.modifyRevenueTransactionCommand = modifyRevenueTransactionCommand;
         this.revenueTransactionQuery = revenueTransactionQuery;
         this.revenueEngine = revenueEngine;
+        this.revenuePartyQuery = revenuePartyQuery;
     }
 
     @Override
@@ -77,7 +82,9 @@ public class ModifyRevenueTransactionHandler
                             detail.taxCodeDescription(),
                             detail.category(),
                             detail.responsibleMinistryCode(),
+                            detail.responsibleMinistryName(),
                             detail.thirdPartyCode(),
+                            detail.thirdPartyName(),
                             detail.golPercent(),
                             detail.golAmount(),
                             detail.ministryPercent(),
@@ -103,19 +110,23 @@ public class ModifyRevenueTransactionHandler
 
         for (var detail : revenueTransaction.transactionDetails()) {
 
-            var amount = revenueTransaction.sentCurrency() == "USD" ? detail.taxAmount() : detail.taxAmountCh();
-            
+            var amount = "USD".equals(revenueTransaction.sentCurrency()) ? detail.taxAmount() : detail.taxAmountCh();
+
             var revenueSplit = this.revenueEngine.calculateRevenue(detail.taxCode(), amount);
+            var responsibleMinistryName = this.revenuePartyName(revenueSplit.responsibleMinistryCode());
+            var thirdPartyName = this.revenuePartyName(revenueSplit.thirdPartyProviderCode());
 
             transactionDetails.add(new CalculatedTransactionDetail(
                     detail.revenueTransactionDetailId(),
                     amount,
                     new ModifyRevenueTransaction.TransactionDetail(
-                        amount,
+                            amount,
                             revenueSplit.taxCodeDescription(),
                             revenueSplit.revenueConfigCategory().name(),
                             revenueSplit.responsibleMinistryCode(),
+                            responsibleMinistryName,
                             revenueSplit.thirdPartyProviderCode(),
+                            thirdPartyName,
                             revenueSplit.golPercentage(),
                             revenueSplit.golAmount(),
                             revenueSplit.ministryPercentage(),
@@ -127,6 +138,15 @@ public class ModifyRevenueTransactionHandler
         }
 
         return transactionDetails;
+    }
+
+    private String revenuePartyName(String partyCode) {
+
+        if (partyCode == null || partyCode.isBlank()) {
+            return null;
+        }
+
+        return this.revenuePartyQuery.get(partyCode).map(RevenuePartyData::partyName).orElse(null);
     }
 
     private record CalculatedTransactionDetail(

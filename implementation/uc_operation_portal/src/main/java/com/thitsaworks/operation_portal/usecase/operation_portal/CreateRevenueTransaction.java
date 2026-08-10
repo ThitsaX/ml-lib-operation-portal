@@ -19,7 +19,6 @@ import com.thitsaworks.operation_portal.component.common.identifier.RevenueTrans
 import com.thitsaworks.operation_portal.component.common.type.TransactionState;
 import com.thitsaworks.operation_portal.component.misc.usecase.UseCase;
 import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTransactionData;
-import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTransactionDetailInput;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -38,12 +37,29 @@ public interface CreateRevenueTransaction
                  BigDecimal rateExchange,
                  String senderDfspId,
                  TransactionState state,
-                 List<RevenueTransactionDetailInput> transactionDetails) {
+                 List<TransactionDetail> transactionDetails) {
     }
 
     record Output(boolean created,
                   RevenueTransactionId revenueTransactionId,
                   RevenueTransactionData beforeValue,
                   RevenueTransactionData afterValue) {
+    }
+
+    record TransactionDetail(String taxCode,
+                             String taxDescription,
+                             BigDecimal taxAmount,
+                             BigDecimal taxAmountCh,
+                             String category,
+                             String responsibleMinistryCode,
+                             String thirdPartyCode,
+                             BigDecimal golPercentage,
+                             BigDecimal golAmount,
+                             BigDecimal ministryPercent,
+                             BigDecimal ministryAmount,
+                             BigDecimal thirdPartyPercent,
+                             BigDecimal thirdPartyAmount,
+                             BigDecimal sendingDfspCommissionPercent,
+                             BigDecimal sendingDfspCommissionAmount) {
     }
 }

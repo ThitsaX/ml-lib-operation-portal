@@ -23,12 +23,17 @@ import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditC
 import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
 import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
+import com.thitsaworks.operation_portal.core.revenue_party.data.RevenuePartyData;
+import com.thitsaworks.operation_portal.core.revenue_party.query.RevenuePartyQuery;
 import com.thitsaworks.operation_portal.core.revenue_transaction.command.CreateRevenueTransactionCommand;
+import com.thitsaworks.operation_portal.core.revenue_transaction.data.RevenueTransactionDetailInput;
 import com.thitsaworks.operation_portal.core.revenue_transaction.query.RevenueTransactionQuery;
 import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.CreateRevenueTransaction;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @ActionMetadata(category = ActionCategory.REVENUE_TRANSACTION)
@@ -38,6 +43,7 @@ public class CreateRevenueTransactionHandler
 
     private final CreateRevenueTransactionCommand createRevenueTransactionCommand;
     private final RevenueTransactionQuery revenueTransactionQuery;
+    private final RevenuePartyQuery revenuePartyQuery;
 
     public CreateRevenueTransactionHandler(CreateInputAuditCommand createInputAuditCommand,
                                            CreateOutputAuditCommand createOutputAuditCommand,
@@ -46,25 +52,68 @@ public class CreateRevenueTransactionHandler
                                            PrincipalCache principalCache,
                                            ActionAuthorizationManager actionAuthorizationManager,
                                            CreateRevenueTransactionCommand createRevenueTransactionCommand,
-                                           RevenueTransactionQuery revenueTransactionQuery) {
+                                           RevenueTransactionQuery revenueTransactionQuery,
+                                           RevenuePartyQuery revenuePartyQuery) {
 
         super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand,
               objectMapper, principalCache, actionAuthorizationManager);
 
         this.createRevenueTransactionCommand = createRevenueTransactionCommand;
         this.revenueTransactionQuery = revenueTransactionQuery;
+        this.revenuePartyQuery = revenuePartyQuery;
     }
 
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        var transactionDetails = this.transactionDetails(input.transactionDetails());
+
         var output = this.createRevenueTransactionCommand.execute(new CreateRevenueTransactionCommand.Input(
                 input.hubTransactionId(), input.tin(), input.taxPayerName(),
                 input.billNumber(), input.billDate(), input.totalAmount(), input.amountCurrency(),
                 input.sentCurrency(), input.rateExchange(), input.senderDfspId(), input.state(),
-                input.transactionDetails()));
+                transactionDetails));
 
         return new Output(output.created(), output.revenueTransactionId(), null,
                           this.revenueTransactionQuery.get(output.revenueTransactionId()));
+    }
+
+    private List<RevenueTransactionDetailInput> transactionDetails(
+            List<CreateRevenueTransaction.TransactionDetail> transactionDetails) {
+
+        if (transactionDetails == null) {
+            return List.of();
+        }
+
+        return transactionDetails.stream()
+                .map(detail -> new RevenueTransactionDetailInput(
+                        detail.taxCode(),
+                        detail.taxDescription(),
+                        detail.taxAmount(),
+                        detail.taxAmountCh(),
+                        null,
+                        detail.category(),
+                        detail.responsibleMinistryCode(),
+                        this.revenuePartyName(detail.responsibleMinistryCode()),
+                        detail.thirdPartyCode(),
+                        this.revenuePartyName(detail.thirdPartyCode()),
+                        detail.golPercentage(),
+                        detail.golAmount(),
+                        detail.ministryPercent(),
+                        detail.ministryAmount(),
+                        detail.thirdPartyPercent(),
+                        detail.thirdPartyAmount(),
+                        detail.sendingDfspCommissionPercent(),
+                        detail.sendingDfspCommissionAmount()))
+                .toList();
+    }
+
+    private String revenuePartyName(String partyCode) {
+
+        if (partyCode == null || partyCode.isBlank()) {
+            return null;
+        }
+
+        return this.revenuePartyQuery.get(partyCode).map(RevenuePartyData::partyName).orElse(null);
     }
 }
