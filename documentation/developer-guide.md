@@ -272,6 +272,51 @@ The request payloads for the grant APIs are stored in:
 - `documentation/grants/GrantRoleActionList.txt`
 - `documentation/grants/GrantMenuActionList.txt`
 
+### 7.1 Adding new actions to role grants
+
+When a new secured action is added, make sure the action is mapped to the
+respective role. Apply the updated role/action mapping by running:
+
+1. `POST /secured/grantRoleActionList`
+
+For the RTGS <> Operation Portal integration spec for SISP, grant the
+`SubmitParticipantBalance` action to the `HUB-Admin` role:
+
+```json
+{
+  "roleGrantList": [
+    {
+      "roleName": "HUB-Admin",
+      "actionCodeList": [
+        "SubmitParticipantBalance"
+      ]
+    }
+  ]
+}
+```
+
+### 7.2 Adding new menus to action grants
+
+When a new menu is added, make sure the menu is mapped to the
+respective action. Apply the updated menu/action mapping by running:
+
+1. `POST /secured/grantMenuActionList`
+
+For a new menu, add the menu name and bind it with the related actions:
+
+```json
+{
+  "menuGrantList": [
+    {
+      "menuName": "New Menu",
+      "actionCodeList": [
+        "RelatedAction"
+      ]
+    }
+  ]
+}
+```
+
 ## 8. Code structure guide
 
 ### 8.1 Naming conventions
