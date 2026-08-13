@@ -75,7 +75,7 @@ public class GenerateRevenueSharingDetailReportHandler
     protected Output onExecute(Input input) throws DomainException {
 
         String normalizedFileType = ReportDownloadUtil.normalizeFileType(input.fileType());
-        if (!"xlsx".equals(normalizedFileType)) {
+        if (!"xlsx".equals(normalizedFileType) && !"csv".equals(normalizedFileType)) {
             throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
         }
 

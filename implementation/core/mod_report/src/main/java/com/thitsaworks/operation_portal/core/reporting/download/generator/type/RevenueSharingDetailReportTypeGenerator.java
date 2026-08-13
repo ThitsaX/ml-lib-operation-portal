@@ -22,7 +22,6 @@ import com.thitsaworks.operation_portal.core.reporting.download.generator.Report
 import com.thitsaworks.operation_portal.core.reporting.download.generator.support.ReportGeneratorSupport;
 import com.thitsaworks.operation_portal.core.reporting.download.model.ReportDownloadRequest;
 import com.thitsaworks.operation_portal.reporting.report.domain.GenerateRevenueSharingDetailReportCommand;
-import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -40,8 +39,6 @@ import java.util.zip.ZipOutputStream;
 class RevenueSharingDetailReportTypeGenerator implements ReportTypeGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RevenueSharingDetailReportTypeGenerator.class);
-
-    private static final String FILE_TYPE_XLSX = "xlsx";
 
     private static final int MAX_ROWS_PER_REPORT_FILE = 500_000;
 
@@ -62,9 +59,6 @@ class RevenueSharingDetailReportTypeGenerator implements ReportTypeGenerator {
         throws ReportException, IOException {
 
         String fileType = this.reportGeneratorSupport.fileType(request.getFileType());
-        if (!FILE_TYPE_XLSX.equals(fileType)) {
-            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
-        }
 
         String settlementId = this.reportGeneratorSupport.requireParam(params, "settlementId");
         String timezoneOffset = params.getOrDefault("timezoneOffset", "+0000");
@@ -82,7 +76,7 @@ class RevenueSharingDetailReportTypeGenerator implements ReportTypeGenerator {
             GenerateRevenueSharingDetailReportCommand.Output output =
                 this.generateRevenueSharingDetailReportCommand.execute(input);
 
-            return new ReportGeneratedFile(output.revenueSharingDetailRptByte(), FILE_TYPE_XLSX);
+            return new ReportGeneratedFile(output.revenueSharingDetailRptByte(), fileType);
         }
 
         if (totalRowCount > MAX_ROWS_PER_REPORT_FILE) {
@@ -93,7 +87,7 @@ class RevenueSharingDetailReportTypeGenerator implements ReportTypeGenerator {
         GenerateRevenueSharingDetailReportCommand.Output output =
             this.generateRevenueSharingDetailReportCommand.exportAll(input, totalRowCount, pageSize);
 
-        return new ReportGeneratedFile(output.revenueSharingDetailRptByte(), FILE_TYPE_XLSX);
+        return new ReportGeneratedFile(output.revenueSharingDetailRptByte(), fileType);
     }
 
     private ReportGeneratedFile generateSplitZip(String settlementId,
