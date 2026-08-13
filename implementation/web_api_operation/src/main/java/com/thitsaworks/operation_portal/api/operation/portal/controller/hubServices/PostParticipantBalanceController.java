@@ -20,33 +20,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
-import com.thitsaworks.operation_portal.component.common.type.PositionActionType;
-import com.thitsaworks.operation_portal.component.fspiop.model.Currency;
+import com.thitsaworks.operation_portal.api.operation.portal.validation.PostParticipantBalanceRequestValidator;
 import com.thitsaworks.operation_portal.component.fspiop.model.ExtensionList;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.usecase.operation_portal.SubmitParticipantBalance;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 @RestController
-@Validated
 @RequiredArgsConstructor
 public class PostParticipantBalanceController {
 
@@ -60,7 +50,7 @@ public class PostParticipantBalanceController {
         value = "/secured/postParticipantBalance",
         consumes = "application/json",
         produces = "application/json")
-    public ResponseEntity<Response> execute(@Valid @RequestBody Request request)
+    public ResponseEntity<Response> execute(@RequestBody Request request)
         throws DomainException, JsonProcessingException {
 
         LOG.info("Post Participant Balance Request : [{}]",
@@ -70,12 +60,18 @@ public class PostParticipantBalanceController {
                                                                        .getAuthentication()
                                                                        .getDetails();
 
+        PostParticipantBalanceRequestValidator.Values values =
+            PostParticipantBalanceRequestValidator.validate(request.participantId(),
+                                                              request.action(),
+                                                              request.amount(),
+                                                              request.currency());
+
         SubmitParticipantBalance.Output output = this.submitParticipantBalance.execute(
             new SubmitParticipantBalance.Input(
-                request.participantId(),
-                PositionActionType.valueOf(request.action()),
-                request.amount(),
-                request.currency(),
+                values.participantId(),
+                values.action(),
+                values.amount(),
+                values.currency(),
                 request.extensionList(),
                 userContext.userId()));
 
@@ -89,32 +85,17 @@ public class PostParticipantBalanceController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
-        @NotBlank(message = "participantId is required.")
         @JsonProperty("participantId")
         String participantId,
 
-        @NotBlank(message = "action is required.")
-        @Pattern(
-            regexp = "^(DEPOSIT|WITHDRAW)$",
-            message = "action must be DEPOSIT or WITHDRAW.")
         @JsonProperty("action")
         String action,
 
-        @NotNull(message = "amount is required.")
-        @DecimalMin(
-            value = "0",
-            inclusive = false,
-            message = "amount must be greater than zero.")
-        @Digits(
-            integer = 18,
-            fraction = 4,
-            message = "amount must contain at most 18 integer digits and 4 decimal digits.")
         @JsonProperty("amount")
-        BigDecimal amount,
+        String amount,
 
-        @NotNull(message = "currency is required.")
         @JsonProperty("currency")
-        Currency currency,
+        String currency,
 
         @JsonProperty("extensionList")
         ExtensionList extensionList) implements Serializable { }

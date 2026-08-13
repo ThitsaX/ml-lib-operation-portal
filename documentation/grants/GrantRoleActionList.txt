@@ -102,6 +102,7 @@
                 "SyncHubParticipantsToPortal",
                 "SyncHubSettlementModelsToPortal",
                 "SchedulingTester",
+                "SubmitParticipantBalance",
                 "UpdateGreeting",
                 "UpdateParticipantAmount",
                 "UpdateParticipantStatus"
@@ -455,6 +456,7 @@
                  "SyncHubParticipantsToPortal",
                  "SyncHubSettlementModelsToPortal",
                  "SchedulingTester",
+                 "SubmitParticipantBalance",
                  "UpdateGreeting",
                  "UpdateParticipantAmount",
                  "UpdateParticipantStatus"
