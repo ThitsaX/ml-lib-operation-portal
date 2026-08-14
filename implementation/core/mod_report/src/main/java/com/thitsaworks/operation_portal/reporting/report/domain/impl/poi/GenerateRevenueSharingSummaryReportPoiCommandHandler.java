@@ -277,7 +277,7 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 writer.write(this.csvLine(
                     row.responsibleMinistry(),
                     row.type(),
-                    this.numberText(row.balance()),
+                    this.numberText(this.settlementTransferAmount(row.balance())),
                     row.currency()));
             }
 
@@ -343,7 +343,7 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 Row row = sheet.createRow(rowIndex++);
                 this.writeTextCell(row, 0, data.responsibleMinistry(), textCellStyle);
                 this.writeTextCell(row, 1, data.type(), textCellStyle);
-                this.writeAmountCell(row, 2, data.balance(), amountCellStyle);
+                this.writeAmountCell(row, 2, this.settlementTransferAmount(data.balance()), amountCellStyle);
                 this.writeTextCell(row, 3, data.currency(), textCellStyle);
             }
 
@@ -481,6 +481,11 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private String numberText(BigDecimal value) {
 
         return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private BigDecimal settlementTransferAmount(BigDecimal value) {
+
+        return value == null ? null : value.abs().negate();
     }
 
     private String csvLine(String... values) {
