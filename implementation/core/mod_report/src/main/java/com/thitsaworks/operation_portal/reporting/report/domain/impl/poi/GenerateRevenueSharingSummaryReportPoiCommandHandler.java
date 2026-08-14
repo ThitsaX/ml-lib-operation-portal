@@ -171,7 +171,7 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
         """;
 
     private static final String[] COLUMN_HEADERS = {
-        "Responsible Ministry", "Type", "Balance", "Currency"};
+        "Registered Parties", "Type", "Settlement Transfer", "Currency"};
 
     private static final int[] COLUMN_WIDTHS = {
         40,
@@ -267,10 +267,10 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
 
         Path tempFile = Files.createTempFile("revenue-sharing-summary-", ".csv");
         try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
-            writer.write(this.csvLine("Settlement ID", input.settlementId()));
-            writer.write(this.csvLine("Settlement Created Date", this.settlementCreatedDate(rows)));
-            writer.write(this.csvLine("TimeZoneOffset", this.formattedTimezoneOffset(input)));
-            writer.newLine();
+            writer.write(this.csvLine("Settlement ID", input.settlementId(), "", ""));
+            writer.write(this.csvLine("Settlement Created Date", this.settlementCreatedDate(rows), "", ""));
+            writer.write(this.csvLine("TimeZoneOffset", this.formattedTimezoneOffset(input), "", ""));
+            writer.write(this.csvLine("", "", "", ""));
             writer.write(this.csvLine(COLUMN_HEADERS));
 
             for (RevenueSharingSummaryRow row : rows) {
