@@ -75,6 +75,11 @@ public class GenerateRevenueSharingSummaryReportHandler
     @Override
     protected Output onExecute(Input input) throws DomainException {
 
+        String normalizedFileType = ReportDownloadUtil.normalizeFileType(input.fileType());
+        if (!"xlsx".equals(normalizedFileType) && !"csv".equals(normalizedFileType)) {
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+        }
+
         Map<String, String> params = new HashMap<>();
         params.put("date", this.safe(input.date()));
         params.put("settlementId", this.safe(input.settlementId()));
@@ -82,7 +87,7 @@ public class GenerateRevenueSharingSummaryReportHandler
 
         ReportDownloadRequestManager.CreateOrReuseResult result =
             this.reportDownloadRequestManager.createPendingOrReuse(
-                ReportType.REVENUE_SHARING_SUMMARY, "xlsx", params);
+                ReportType.REVENUE_SHARING_SUMMARY, normalizedFileType, params);
 
         String fileKey = result.request().fileUrl();
         String fileUrl = null;

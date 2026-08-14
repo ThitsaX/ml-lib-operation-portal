@@ -38,9 +38,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
@@ -48,6 +50,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @NoLogging
@@ -124,13 +127,18 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
     @Override
     public Output execute(Input input) throws ReportException {
 
+        String fileType = this.normalizeFileType(input.fileType());
         try {
-            if (!"xlsx".equalsIgnoreCase(input.fileType())) {
-                throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+            if ("xlsx".equalsIgnoreCase(fileType)) {
+                return new Output(
+                    this.exportXlsx(input, 0, input.limit() == null ? DEFAULT_LIMIT : input.limit()));
+            }
+            if ("csv".equalsIgnoreCase(fileType)) {
+                return new Output(
+                    this.exportCsv(input, 0, input.limit() == null ? DEFAULT_LIMIT : input.limit()));
             }
 
-            return new Output(
-                this.exportXlsx(input, 0, input.limit() == null ? DEFAULT_LIMIT : input.limit()));
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
 
         } catch (ReportException exception) {
             throw exception;
@@ -147,12 +155,16 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
             throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
         }
 
+        String fileType = this.normalizeFileType(input.fileType());
         try {
-            if (!"xlsx".equalsIgnoreCase(input.fileType())) {
-                throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
+            if ("xlsx".equalsIgnoreCase(fileType)) {
+                return new Output(this.exportXlsx(input, totalRowCount, pageSize));
+            }
+            if ("csv".equalsIgnoreCase(fileType)) {
+                return new Output(this.exportCsv(input, totalRowCount, pageSize));
             }
 
-            return new Output(this.exportXlsx(input, totalRowCount, pageSize));
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
 
         } catch (ReportException exception) {
             throw exception;
@@ -190,6 +202,53 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
             Integer.class);
 
         return rowCount == null ? 0 : rowCount;
+    }
+
+    private byte[] exportCsv(Input input, int totalRowCount, int pageSize)
+        throws IOException, ReportException {
+
+        Path tempFile = Files.createTempFile("revenue-sharing-detail-", ".csv");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+            writer.write(this.csvLine("Settlement ID", this.displayValue(input.settlementId())));
+            writer.write(this.csvLine(
+                "Category", this.displayValue(this.normalizeFilter(input.category()))));
+            writer.write(this.csvLine(
+                "Tax Code", this.displayValue(this.normalizeFilter(input.taxCode()))));
+            writer.write(this.csvLine("TimeZoneOffSet", this.displayValue(input.timezoneOffset())));
+            writer.newLine();
+            writer.write(this.csvLine(COLUMN_HEADERS));
+
+            RowCounter rowCounter = new RowCounter();
+            int baseOffset = input.offset() == null ? 0 : input.offset();
+            int normalizedTotal = totalRowCount <= 0 ? DEFAULT_LIMIT : totalRowCount;
+            int normalizedPageSize = pageSize <= 0 ? normalizedTotal : pageSize;
+            for (int offset = 0; offset < normalizedTotal; offset += normalizedPageSize) {
+                int limit = Math.min(normalizedPageSize, normalizedTotal - offset);
+                Input chunkInput = new Input(
+                    input.settlementId(), input.fileType(), input.timezoneOffset(),
+                    input.taxCode(), input.category(),
+                    baseOffset + offset, limit);
+
+                this.streamRows(chunkInput, row -> {
+                    writer.write(this.csvLine(this.toCsvValues(row)));
+                    rowCounter.increment();
+                });
+
+                if (totalRowCount <= 0) {
+                    break;
+                }
+            }
+
+            if (rowCounter.value() == 0) {
+                throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+            }
+
+            writer.flush();
+            return Files.readAllBytes(tempFile);
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     private byte[] exportXlsx(Input input, int totalRowCount, int pageSize)
@@ -469,6 +528,65 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
         this.writeAmountCell(row, columnIndex, value, amountStyle);
     }
 
+    private String[] toCsvValues(RevenueSharingDetailRow row) {
+
+        return new String[]{
+            row.settlementId(),
+            row.hubTransactionId(),
+            row.receiptNumber(),
+            row.billNumber(),
+            row.taxCode(),
+            row.taxDescription(),
+            row.category(),
+            row.responsibleMinistry(),
+            row.thirdPartyName(),
+            row.senderDfspName(),
+            this.numberText(row.amount()),
+            row.currency(),
+            this.numberText(row.golPercentage()),
+            this.numberText(row.golAmount()),
+            this.numberText(row.ministryPercentage()),
+            this.numberText(row.ministryAmount()),
+            this.numberText(row.thirdPartyPercentage()),
+            this.numberOrDashText(row.thirdPartyAmount()),
+            this.numberText(row.sendingDfspCommissionPercentage()),
+            this.numberText(row.sendingDfspCommissionAmount())};
+    }
+
+    private String numberText(BigDecimal value) {
+
+        return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String numberOrDashText(BigDecimal value) {
+
+        return (value == null || BigDecimal.ZERO.compareTo(value) == 0) ? "-" : this.numberText(value);
+    }
+
+    private String csvLine(String... values) {
+
+        StringBuilder line = new StringBuilder();
+        for (int index = 0; index < values.length; index++) {
+            if (index > 0) {
+                line.append(',');
+            }
+            line.append(this.escapeCsv(values[index]));
+        }
+        line.append(System.lineSeparator());
+        return line.toString();
+    }
+
+    private String escapeCsv(String value) {
+
+        String safeValue = value == null ? "" : value;
+        if (!safeValue.contains(",") && !safeValue.contains("\"") &&
+                !safeValue.contains("\n") && !safeValue.contains("\r")) {
+            return safeValue;
+        }
+
+        return "\"" + safeValue.replace("\"", "\"\"") + "\"";
+    }
+
     private void flushSheet(Sheet sheet) throws IOException {
 
         if (sheet instanceof SXSSFSheet streamingSheet) {
@@ -561,6 +679,16 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
         return this.hasText(value) ? value.trim() : "-";
     }
 
+    private String normalizeFileType(String fileType) {
+
+        if (fileType == null) {
+            return "";
+        }
+
+        String normalized = fileType.trim().toLowerCase(Locale.ROOT);
+        return normalized.startsWith(".") ? normalized.substring(1) : normalized;
+    }
+
     private String normalizeFilter(String value) {
 
         if (value == null || value.isBlank() || ALL_FILTER.equalsIgnoreCase(value.trim())) {
@@ -629,6 +757,22 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
         }
 
         private int current() {
+
+            return this.value;
+        }
+
+    }
+
+    private static final class RowCounter {
+
+        private int value;
+
+        private void increment() {
+
+            this.value++;
+        }
+
+        private int value() {
 
             return this.value;
         }

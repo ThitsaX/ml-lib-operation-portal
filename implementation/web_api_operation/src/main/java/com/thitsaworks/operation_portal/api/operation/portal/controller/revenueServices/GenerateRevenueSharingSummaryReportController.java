@@ -50,12 +50,13 @@ public class GenerateRevenueSharingSummaryReportController {
         @RequestParam(value = "date", required = false, defaultValue = "") String date,
         @RequestParam(value = "settlementId", required = false, defaultValue = "")
         String settlementId,
+        @RequestParam("fileType") String fileType,
         @RequestParam("timezoneOffset") String timezoneOffset)
         throws DomainException, JsonProcessingException {
 
         LOG.info(
-            "Generate Revenue Sharing Summary Report : date = [{}], settlementId = [{}], timezoneOffset = [{}]",
-            date, settlementId, timezoneOffset);
+            "Generate Revenue Sharing Summary Report : date = [{}], settlementId = [{}], fileType = [{}], timezoneOffset = [{}]",
+            date, settlementId, fileType, timezoneOffset);
 
         String normalizedTimezoneOffset = TimeZoneOffsetFormater.normalizeOffsetFormat(timezoneOffset);
         UserContext userContext = (UserContext) SecurityContextHolder
@@ -66,7 +67,7 @@ public class GenerateRevenueSharingSummaryReportController {
         GenerateRevenueSharingSummaryReport.Output output =
             this.generateRevenueSharingSummaryReport.execute(
                 new GenerateRevenueSharingSummaryReport.Input(
-                    date, settlementId, normalizedTimezoneOffset, userContext.userId().getId()));
+                    date, settlementId, normalizedTimezoneOffset, fileType, userContext.userId().getId()));
 
         var response = new Response(
             output.requestId().getEntityId().toString(),

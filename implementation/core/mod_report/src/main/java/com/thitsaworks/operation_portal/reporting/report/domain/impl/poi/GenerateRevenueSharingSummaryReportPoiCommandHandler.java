@@ -36,13 +36,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @NoLogging
@@ -187,9 +190,7 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     @Override
     public Output execute(Input input) throws ReportException {
 
-        if (!"xlsx".equalsIgnoreCase(input.fileType())) {
-            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
-        }
+        String fileType = this.normalizeFileType(input.fileType());
 
         try {
             List<RevenueSharingSummaryRow> rows = this.fetchRows(input);
@@ -197,7 +198,14 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
             }
 
-            return new Output(this.exportXlsx(input, rows));
+            if ("xlsx".equalsIgnoreCase(fileType)) {
+                return new Output(this.exportXlsx(input, rows));
+            }
+            if ("csv".equalsIgnoreCase(fileType)) {
+                return new Output(this.exportCsv(input, rows));
+            }
+
+            throw new ReportException(ReportErrors.FILE_FORMAT_NOT_ALLOWED_EXCEPTION);
         } catch (ReportException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -205,6 +213,23 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
             throw new ReportException(
                 ReportErrors.REVENUE_SHARING_SUMMARY_REPORT_FAILURE_EXCEPTION);
         }
+    }
+
+    @Override
+    public Output exportAll(Input input, int totalRowCount, int pageSize) throws ReportException {
+
+        if (totalRowCount <= 0) {
+            throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
+        }
+
+        return this.execute(
+            new Input(
+                input.date(),
+                input.settlementId(),
+                input.timezone(),
+                input.fileType(),
+                input.offset(),
+                totalRowCount));
     }
 
     @Override
@@ -235,6 +260,32 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
                 resultSet.getString("currency"),
                 resultSet.getString("settlementCreatedDate")),
             parameters);
+    }
+
+    private byte[] exportCsv(Input input, List<RevenueSharingSummaryRow> rows)
+        throws IOException {
+
+        Path tempFile = Files.createTempFile("revenue-sharing-summary-", ".csv");
+        try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+            writer.write(this.csvLine("Settlement ID", input.settlementId()));
+            writer.write(this.csvLine("Settlement Created Date", this.settlementCreatedDate(rows)));
+            writer.write(this.csvLine("TimeZoneOffset", this.formattedTimezoneOffset(input)));
+            writer.newLine();
+            writer.write(this.csvLine(COLUMN_HEADERS));
+
+            for (RevenueSharingSummaryRow row : rows) {
+                writer.write(this.csvLine(
+                    row.responsibleMinistry(),
+                    row.type(),
+                    this.numberText(row.balance()),
+                    row.currency()));
+            }
+
+            writer.flush();
+            return Files.readAllBytes(tempFile);
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     private byte[] exportXlsx(Input input, List<RevenueSharingSummaryRow> rows)
@@ -416,6 +467,54 @@ public class GenerateRevenueSharingSummaryReportPoiCommandHandler
     private String safe(String value) {
 
         return value == null ? "" : value;
+    }
+
+    private String settlementCreatedDate(List<RevenueSharingSummaryRow> rows) {
+
+        if (rows == null || rows.isEmpty() || rows.get(0).settlementCreatedDate() == null) {
+            return "";
+        }
+
+        return rows.get(0).settlementCreatedDate();
+    }
+
+    private String numberText(BigDecimal value) {
+
+        return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String csvLine(String... values) {
+
+        StringBuilder line = new StringBuilder();
+        for (int index = 0; index < values.length; index++) {
+            if (index > 0) {
+                line.append(',');
+            }
+            line.append(this.escapeCsv(values[index]));
+        }
+        line.append(System.lineSeparator());
+        return line.toString();
+    }
+
+    private String escapeCsv(String value) {
+
+        String safeValue = value == null ? "" : value;
+        if (!safeValue.contains(",") && !safeValue.contains("\"") &&
+                !safeValue.contains("\n") && !safeValue.contains("\r")) {
+            return safeValue;
+        }
+
+        return "\"" + safeValue.replace("\"", "\"\"") + "\"";
+    }
+
+    private String normalizeFileType(String fileType) {
+
+        if (fileType == null) {
+            return "";
+        }
+
+        String normalized = fileType.trim().toLowerCase(Locale.ROOT);
+        return normalized.startsWith(".") ? normalized.substring(1) : normalized;
     }
 
     private Object[] reportParameters(Input input) {
