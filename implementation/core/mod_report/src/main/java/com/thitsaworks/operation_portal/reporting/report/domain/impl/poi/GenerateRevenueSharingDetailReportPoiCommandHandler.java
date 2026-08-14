@@ -543,19 +543,25 @@ public class GenerateRevenueSharingDetailReportPoiCommandHandler
             row.senderDfspName(),
             this.numberText(row.amount()),
             row.currency(),
-            this.numberText(row.golPercentage()),
+            this.percentText(row.golPercentage()),
             this.numberText(row.golAmount()),
-            this.numberText(row.ministryPercentage()),
+            this.percentText(row.ministryPercentage()),
             this.numberText(row.ministryAmount()),
-            this.numberText(row.thirdPartyPercentage()),
+            this.percentText(row.thirdPartyPercentage()),
             this.numberOrDashText(row.thirdPartyAmount()),
-            this.numberText(row.sendingDfspCommissionPercentage()),
+            this.percentText(row.sendingDfspCommissionPercentage()),
             this.numberText(row.sendingDfspCommissionAmount())};
     }
 
     private String numberText(BigDecimal value) {
 
         return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String percentText(BigDecimal value) {
+
+        String percentage = this.numberText(value);
+        return percentage.isEmpty() ? "" : percentage + "%";
     }
 
     private String numberOrDashText(BigDecimal value) {
