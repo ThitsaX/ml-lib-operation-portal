@@ -258,11 +258,16 @@ public class SubmitParticipantBalanceHandler
                                                           .value()
                                                           .abs();
         BigDecimal currentParticipantLimit = participantLimitInfo.getParticipantLimitData()
-                                                                    .value();
+                                                                    .value()
+                                                                    .abs();
+        BigDecimal participantPosition = participantPositionInfo.getParticipantBalanceData()
+                                                                  .value();
 
         if (withdrawalAmount.compareTo(currentBalance) > 0) {
             throw new ParticipantException(ParticipantErrors.INSUFFICIENT_BALANCE);
         }
+
+        BigDecimal remainingBalance = currentBalance.subtract(withdrawalAmount);
 
         LOG.info("Get ParticipantNDC Query Request : participantName : {}, currency : {}",
                  participantName, currency);
@@ -274,14 +279,48 @@ public class SubmitParticipantBalanceHandler
         BigDecimal ndcPercent = ndcData.map(ParticipantNDC::getNdcPercent)
                                        .orElse(BigDecimal.ZERO)
                                        .setScale(2, RoundingMode.DOWN);
-        BigDecimal participantPosition = participantPositionInfo.getParticipantBalanceData()
-                                                                  .value();
-        BigDecimal remainingBalance = currentBalance.subtract(withdrawalAmount);
 
-        if (ndcPercent.compareTo(BigDecimal.ZERO) == 0 &&
-                remainingBalance.compareTo(currentParticipantLimit) < 0) {
+        if (ndcPercent.compareTo(BigDecimal.ZERO) == 0) {
+            this.validateFixedNdc(remainingBalance, currentParticipantLimit);
+        } else {
+            this.validatePercentageNdc(remainingBalance, ndcPercent, participantPosition);
+        }
+
+        this.validateRemainingBalanceAgainstPosition(remainingBalance, participantPosition);
+    }
+
+    private void validateFixedNdc(BigDecimal remainingBalance,
+                                  BigDecimal currentParticipantLimit)
+        throws ParticipantException {
+
+        if (remainingBalance.compareTo(currentParticipantLimit) < 0) {
             throw new ParticipantException(ParticipantErrors.BALANCE_BELOW_NDC);
         }
+    }
+
+    private void validatePercentageNdc(BigDecimal remainingBalance,
+                                       BigDecimal ndcPercent,
+                                       BigDecimal participantPosition)
+        throws ParticipantException {
+
+        BigDecimal projectedNdcLimit = remainingBalance.multiply(ndcPercent)
+                                                       .divide(BigDecimal.valueOf(100))
+                                                       .abs()
+                                                       .setScale(2, RoundingMode.DOWN);
+
+        LOG.info(
+            "Validate projected percentage NDC : remainingBalance : {}, ndcPercent : {}, projectedNdcLimit : {}, participantPosition : {}",
+            remainingBalance, ndcPercent, projectedNdcLimit, participantPosition);
+
+        if (participantPosition.compareTo(BigDecimal.ZERO) > 0 &&
+                projectedNdcLimit.compareTo(participantPosition.abs()) < 0) {
+            throw new ParticipantException(ParticipantErrors.NDC_BELOW_CURRENT_POSITION);
+        }
+    }
+
+    private void validateRemainingBalanceAgainstPosition(BigDecimal remainingBalance,
+                                                         BigDecimal participantPosition)
+        throws ParticipantException {
 
         if (participantPosition.compareTo(BigDecimal.ZERO) > 0 &&
                 remainingBalance.compareTo(participantPosition.abs()) < 0) {
