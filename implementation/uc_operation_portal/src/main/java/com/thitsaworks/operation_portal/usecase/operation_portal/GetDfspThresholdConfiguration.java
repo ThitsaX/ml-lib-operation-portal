@@ -32,6 +32,7 @@ public interface GetDfspThresholdConfiguration
             ThresholdScopeType scopeType,
             String dfspId,
             boolean thresholdEnabled,
+            boolean schemeEnabled,
             NdcConfigurationStatus status,
             Instant createdAt,
             String createdBy,

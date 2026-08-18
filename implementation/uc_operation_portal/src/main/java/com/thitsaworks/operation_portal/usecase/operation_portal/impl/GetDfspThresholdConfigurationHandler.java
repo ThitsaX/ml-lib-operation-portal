@@ -49,13 +49,16 @@ public class GetDfspThresholdConfigurationHandler
     protected Output onExecute(Input input) throws DomainException {
 
         Optional<ThresholdConfigurationData> thresholdConfiguration = this.thresholdConfigurationQuery.getDfspConfiguration(input.dfspId());
+        Optional<ThresholdConfigurationData> schemeConfiguration = this.thresholdConfigurationQuery.getSchemeConfiguration();
 
+        boolean schemeEnabled = schemeConfiguration.map(ThresholdConfigurationData::thresholdEnabled).orElse(false);
 
         return new Output(
                 thresholdConfiguration.get().thresholdConfigurationId(),
                 thresholdConfiguration.get().scopeType(),
                 thresholdConfiguration.get().dfspId(),
                 thresholdConfiguration.get().thresholdEnabled(),
+                schemeEnabled,
                 thresholdConfiguration.get().status(),
                 thresholdConfiguration.get().createdAt(),
                 thresholdConfiguration.get().createdBy(),
