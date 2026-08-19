@@ -148,7 +148,8 @@ public class EvaluateNdcThresholdCommandHandler
             .replace("{{eventTime}}", ALERT_EVENT_TIME_FORMATTER.format(input.evaluatedAt()))
             .replace("{{function}}", NDC_THRESHOLD_FUNCTION)
             .replace("{{thresholdValue}}", formatPercent(input.thresholdPercent()))
-            .replace("{{currentMetric}}", formatPercent(input.currentNdcUsed()));
+            .replace("{{currentMetric}}", formatPercent(input.currentNdcUsed()))
+            .replace("{{currency}}", input.currency());
     }
 
     private String buildSubject(String participantName) {
