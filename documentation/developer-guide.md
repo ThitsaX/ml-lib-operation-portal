@@ -197,7 +197,18 @@ Before the application starts, create both databases:
 
 The Flyway migration runs against the portal database during startup.
 
-### Step 5: Configure environment variables
+### Step 5: Add initial participant types
+
+After the application setup creates the initial participants, manually set the required participant types in the `operation_portal` database:
+
+```sql
+UPDATE tbl_participant SET participant_type = 'HUB' WHERE participant_name = 'hub';
+UPDATE tbl_participant SET participant_type = 'DFSP' WHERE participant_name = '<dfsp_participant_name>';
+```
+
+These values are required initial data. Use `DFSP` for each DFSP participant, regardless of the participant name. The portal uses `participant_type` to distinguish Hub users from DFSP users when resolving permissions and participant-scoped data.
+
+### Step 6: Configure environment variables
 
 The main runtime expects Vault settings to be reachable through environment or JVM properties. The Docker compose file sets:
 
@@ -206,7 +217,7 @@ The main runtime expects Vault settings to be reachable through environment or J
 - `ENGINE_PATH=operation_portal`
 - `OPERATION_PORTAL_PORT_NO=8003`
 
-### Step 6: Build the project
+### Step 7: Build the project
 
 From `implementation/`, build with Maven:
 
