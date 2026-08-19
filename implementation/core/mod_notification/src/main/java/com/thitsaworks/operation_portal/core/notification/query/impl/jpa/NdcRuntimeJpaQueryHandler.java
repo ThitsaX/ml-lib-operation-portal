@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -92,7 +93,7 @@ public class NdcRuntimeJpaQueryHandler implements NdcRuntimeQuery {
                                              int pageSize) {
 
         int pageIndex = page > 0 ? page - 1 : 0;
-        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt"));
 
         Page<Object[]> results = this.ndcNotificationDispatchLogRepository.search(deliveryStatus, pageable);
 
