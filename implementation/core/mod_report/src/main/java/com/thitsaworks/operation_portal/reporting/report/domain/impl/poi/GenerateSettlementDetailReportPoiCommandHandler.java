@@ -20,7 +20,15 @@ import com.thitsaworks.operation_portal.component.misc.persistence.PersistenceQu
 import com.thitsaworks.operation_portal.reporting.report.domain.GenerateSettlementDetailReportCommand;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportErrors;
 import com.thitsaworks.operation_portal.reporting.report.exception.ReportException;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
@@ -58,7 +66,7 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
 
     private static final int MYSQL_STREAM_FETCH_SIZE = Integer.MIN_VALUE;
     private static final int[] MAX_COLUMN_WIDTHS = {
-        (int) 29.36,
+        (int) 35.36,
         (int) 49.36,
         (int) 29.36,
         (int) 49.36,
@@ -72,8 +80,10 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
         16,
         16,
         16,
+        16,
         (int) 29.36,
         16,
+        45,
         16
     };
 
@@ -91,9 +101,11 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
             "Receiver ID",
             "Received Amount",
             "Sent Amount",
+            "Payer DFSP Fee",
             "Payee DFSP Fee",
             "Payee DFSP Commission",
             "HUB Fee",
+            "Use Case",
             "Currency"};
 
     private final JdbcTemplate jdbcTemplate;
@@ -232,8 +244,10 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
             MetadataCapture metadataCapture = new MetadataCapture();
             RowCounter counter = new RowCounter();
             RowCursor cursor = new RowCursor(rowIndex);
+            SettlementTotals totals = new SettlementTotals();
             streamRows(input, row -> {
                 metadataCapture.capture(row);
+                totals.add(row);
                 if (settlementCreatedCell != null && !metadataCapture.isWritten()) {
                     settlementCreatedCell.setCellValue(metadataCapture.settlementCreatedDate());
                     settlementCreatedCell.setCellStyle(headerValueStyle);
@@ -247,6 +261,12 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
             if (counter.value() == 0) {
                 throw new ReportException(ReportErrors.RESULT_NOT_FOUND_EXCEPTION);
             }
+
+            writeTotals(sheet.createRow(cursor.next()), totals, columnHeaderStyle, amountCellStyle);
+            cursor.next();
+            cursor.next();
+            writeAggregate(sheet.createRow(cursor.next()), "Aggregated Net Transfer Amount", totals.netTransferAmount(),
+                           headerValueStyle, amountCellStyle);
 
             for (int i = 0; i < COLUMN_HEADERS.length; i++) {
 
@@ -284,7 +304,9 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
             writer.newLine();
             writer.write(csvLine(COLUMN_HEADERS));
 
+            SettlementTotals totals = new SettlementTotals();
             for (SettlementDetailRow row : rows) {
+                totals.add(row);
                 writer.write(csvLine(row.payerFspId(),
                                      row.payerFspName(),
                                      row.payeeFspId(),
@@ -298,11 +320,33 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                                      preserveAsText(row.payeeIdentifierValue()),
                                      numberText(row.receivedAmount()),
                                      numberText(row.sentAmount()),
-                                     numberOrDashText(row.payeeDfspFeeAmount()),
+                                     numberText(row.payerDfspFeeAmount()),
+                                     numberText(row.payeeDfspFeeAmount()),
                                      numberOrDashText(row.payeeDfspCommissionAmount()),
-                                     "-",
+                                     numberText(row.hubFeeAmount()),
+                                     row.useCase(),
                                      row.currencyId()));
             }
+            writer.write(csvLine("",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "Total",
+                                 numberText(totals.receivedAmount()),
+                                 numberText(totals.sentAmount()),
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 ""));
+            writer.newLine();
+            writer.write(csvLine("Aggregated Net Transfer Amount", numberText(totals.netTransferAmount())));
             writer.flush();
             return Files.readAllBytes(tempFile);
         } finally {
@@ -329,10 +373,12 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
         writeTextCell(row, 10, data.payeeIdentifierValue(), textCellStyle);
         writeAmountCell(row, 11, data.receivedAmount(), amountCellStyle);
         writeAmountCell(row, 12, data.sentAmount(), amountCellStyle);
-        writeAmountOrDashCell(row, 13, data.payeeDfspFeeAmount(), rightTextCellStyle, amountCellStyle);
-        writeAmountOrDashCell(row, 14, data.payeeDfspCommissionAmount(), rightTextCellStyle, amountCellStyle);
-        writeTextCell(row, 15, "-", rightTextCellStyle);
-        writeTextCell(row, 16, data.currencyId(), textCellStyle);
+        writeAmountCell(row, 13, data.payerDfspFeeAmount(), amountCellStyle);
+        writeAmountCell(row, 14, data.payeeDfspFeeAmount(), amountCellStyle);
+        writeAmountOrDashCell(row, 15, data.payeeDfspCommissionAmount(), rightTextCellStyle, amountCellStyle);
+        writeAmountCell(row, 16, data.hubFeeAmount(), amountCellStyle);
+        writeTextCell(row, 17, data.useCase(), textCellStyle);
+        writeTextCell(row, 18, data.currencyId(), textCellStyle);
     }
 
     private void streamRows(Input input, SettlementDetailRowConsumer consumer) {
@@ -391,10 +437,13 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                                        rs.getString("payeeIdentifierType"),
                                        rs.getString("payeeIdentifierValue"),
                                        rs.getString("transactionType"),
+                                       rs.getString("useCase"),
                                        rs.getBigDecimal("receivedAmount"),
                                        rs.getBigDecimal("sentAmount"),
+                                       rs.getBigDecimal("payerDfspFeeAmount"),
                                        rs.getBigDecimal("payeeDfspFeeAmount"),
                                        rs.getBigDecimal("payeeDfspCommissionAmount"),
+                                       rs.getBigDecimal("hubFeeAmount"),
                                        rs.getString("currencyId"));
     }
 
@@ -409,7 +458,7 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                   IFNULL(pPayee.description,pPayee.name) AS payeeFspName,
                   tF.transferId,
                   tS.name AS transactionType,
-                  tSS.name AS transactionNature,
+              IFNULL(tSS.name, '') AS useCase,
                   CONCAT(
                     DATE_FORMAT(CASE WHEN SUBSTRING(?,1,1) = '-' THEN
                     CONVERT_TZ(latestState.CreatedDate, '+00:00', CONCAT('-', SUBSTRING(?,2,2), ':', SUBSTRING(?,4,2)))
@@ -435,8 +484,10 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                     ELSE CONCAT('+', SUBSTRING(?,1,2), ':', SUBSTRING(?,3,2)) END
                     ) AS settlementCreatedDate, sSW.settlementWindowId,
                   CASE WHEN SUBSTRING(?,1,1) = '-' THEN CONCAT('-', SUBSTRING(?,2,2), ':', SUBSTRING(?,4,2)) ELSE CONCAT('+', SUBSTRING(?,1,2), ':', SUBSTRING(?,3,2)) END AS timezoneoffset ,
-                  IF(qR.payeeFspFeeAmount IS NOT NULL, ROUND(qR.payeeFspFeeAmount, 2), NULL) AS payeeDfspFeeAmount,
-                  IF(qR.payeeFspCommissionAmount IS NOT NULL, ROUND(qR.payeeFspCommissionAmount, 2), NULL) AS payeeDfspCommissionAmount
+              ROUND(COALESCE(f.payerFee, 0), 2) AS payerDfspFeeAmount,
+              ROUND(COALESCE(f.payeeFee, 0), 2) AS payeeDfspFeeAmount,
+              IF(qR.payeeFspCommissionAmount IS NOT NULL, ROUND(qR.payeeFspCommissionAmount, 2), NULL) AS payeeDfspCommissionAmount,
+              ROUND(COALESCE(f.schemeFee, 0), 2) AS hubFeeAmount
                 FROM transferFulfilment tF
                 INNER JOIN transfer t ON t.transferId = tF.transferId
                 LEFT JOIN (
@@ -469,6 +520,14 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                 INNER JOIN currency c ON c.currencyId = pCPayer.currencyId
                 INNER JOIN quote q on q.transactionReferenceId = tF.transferId
                 LEFT JOIN quoteResponse qR ON qR.quoteId = q.quoteId
+            LEFT JOIN (
+                SELECT quoteId,
+                       MAX(CASE WHEN `key` = 'payerFee' THEN CAST(value AS DECIMAL(18,4)) END) AS payerFee,
+                       MAX(CASE WHEN `key` = 'payeeFee' THEN CAST(value AS DECIMAL(18,4)) END) AS payeeFee,
+                       MAX(CASE WHEN `key` = 'schemeFee' THEN CAST(value AS DECIMAL(18,4)) END) AS schemeFee
+                FROM quoteExtension
+                GROUP BY quoteId
+            ) f ON f.quoteId = q.quoteId
                 INNER JOIN quoteParty qpPayer on qpPayer.quoteId = q.quoteId AND qpPayer.partyTypeId = (SELECT partyTypeId FROM partyType WHERE name = 'PAYER')
                 INNER JOIN partyIdentifierType pITPayer ON pITPayer.partyIdentifierTypeId = qpPayer.partyIdentifierTypeId
                 INNER JOIN quoteParty qpPayee on qpPayee.quoteId = q.quoteId AND qpPayee.partyTypeId = (SELECT partyTypeId FROM partyType WHERE name = 'PAYEE')
@@ -523,6 +582,23 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
         } else {
             writeAmountCell(row, col, val, amountStyle);
         }
+    }
+
+    private void writeTotals(Row row, SettlementTotals totals, CellStyle labelStyle, CellStyle amountStyle) {
+
+        writeTextCell(row, 10, "Total", labelStyle);
+        writeAmountCell(row, 11, totals.receivedAmount(), amountStyle);
+        writeAmountCell(row, 12, totals.sentAmount(), amountStyle);
+    }
+
+    private void writeAggregate(Row row,
+                                String label,
+                                BigDecimal value,
+                                CellStyle labelStyle,
+                                CellStyle amountStyle) {
+
+        writeTextCell(row, 0, label, labelStyle);
+        writeAmountCell(row, 1, value, amountStyle);
     }
 
     private CellStyle headerLabelStyle(SXSSFWorkbook wb) {
@@ -673,11 +749,36 @@ public class GenerateSettlementDetailReportPoiCommandHandler implements Generate
                                        String payeeIdentifierType,
                                        String payeeIdentifierValue,
                                        String transactionType,
+                                       String useCase,
                                        BigDecimal receivedAmount,
                                        BigDecimal sentAmount,
+                                       BigDecimal payerDfspFeeAmount,
                                        BigDecimal payeeDfspFeeAmount,
                                        BigDecimal payeeDfspCommissionAmount,
+                                       BigDecimal hubFeeAmount,
                                        String currencyId) {}
+
+    private static final class SettlementTotals {
+
+        private BigDecimal receivedAmount = BigDecimal.ZERO;
+
+        private BigDecimal sentAmount = BigDecimal.ZERO;
+
+        private void add(SettlementDetailRow row) {
+
+            this.receivedAmount = this.receivedAmount.add(valueOrZero(row.receivedAmount()));
+            this.sentAmount = this.sentAmount.add(valueOrZero(row.sentAmount()));
+        }
+
+        private static BigDecimal valueOrZero(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
+
+        private BigDecimal receivedAmount() { return this.receivedAmount; }
+
+        private BigDecimal sentAmount() { return this.sentAmount; }
+
+        private BigDecimal netTransferAmount() { return this.receivedAmount.subtract(this.sentAmount); }
+
+    }
 
     private static final class MetadataCapture {
 

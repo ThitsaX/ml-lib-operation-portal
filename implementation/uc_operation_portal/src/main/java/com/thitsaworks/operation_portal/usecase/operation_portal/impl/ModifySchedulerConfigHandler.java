@@ -15,13 +15,17 @@
  */
 package com.thitsaworks.operation_portal.usecase.operation_portal.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thitsaworks.operation_portal.component.misc.annotation.ActionMetadata;
 import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
 import com.thitsaworks.operation_portal.component.misc.util.ActionCategory;
+import com.thitsaworks.operation_portal.core.audit.command.CreateExceptionAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateInputAuditCommand;
+import com.thitsaworks.operation_portal.core.audit.command.CreateOutputAuditCommand;
 import com.thitsaworks.operation_portal.core.iam.cache.PrincipalCache;
 import com.thitsaworks.operation_portal.core.scheduler.command.ModifySchedulerConfigCommand;
 import com.thitsaworks.operation_portal.core.scheduler.command.impl.ModifySchedulerConfigCommandHandler;
-import com.thitsaworks.operation_portal.usecase.OperationPortalUseCase;
+import com.thitsaworks.operation_portal.usecase.OperationPortalAuditableUseCase;
 import com.thitsaworks.operation_portal.usecase.operation_portal.ModifySchedulerConfig;
 import com.thitsaworks.operation_portal.usecase.operation_portal.scheduler.SchedulerEngine;
 import com.thitsaworks.operation_portal.usecase.util.action.ActionAuthorizationManager;
@@ -32,7 +36,7 @@ import org.springframework.stereotype.Service;
 @Service
 @ActionMetadata(category = ActionCategory.SCHEDULER_AND_JOB_CONFIGURATION)
 public class ModifySchedulerConfigHandler
-    extends OperationPortalUseCase<ModifySchedulerConfig.Input, ModifySchedulerConfig.Output>
+    extends OperationPortalAuditableUseCase<ModifySchedulerConfig.Input, ModifySchedulerConfig.Output>
     implements ModifySchedulerConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(ModifySchedulerConfigHandler.class);
@@ -41,13 +45,14 @@ public class ModifySchedulerConfigHandler
 
     private final SchedulerEngine schedulerEngine;
 
-    public ModifySchedulerConfigHandler(SchedulerEngine schedulerEngine,
-                                        PrincipalCache principalCache,
+    public ModifySchedulerConfigHandler(CreateInputAuditCommand createInputAuditCommand,
+                                        CreateOutputAuditCommand createOutputAuditCommand,
+                                        CreateExceptionAuditCommand createExceptionAuditCommand,
+                                        ObjectMapper objectMapper, PrincipalCache principalCache,
+                                        ActionAuthorizationManager actionAuthorizationManager,
                                         ModifySchedulerConfigCommand modifySchedulerConfigCommand,
-                                        ActionAuthorizationManager actionAuthorizationManager) {
-
-        super(principalCache, actionAuthorizationManager);
-
+                                        SchedulerEngine schedulerEngine) {
+        super(createInputAuditCommand, createOutputAuditCommand, createExceptionAuditCommand, objectMapper, principalCache, actionAuthorizationManager);
         this.modifySchedulerConfigCommand = modifySchedulerConfigCommand;
         this.schedulerEngine = schedulerEngine;
     }

@@ -60,6 +60,11 @@ public final class NdcWorkerConfigRequestValidator {
             throw invalid("runEvery must be greater than 00:00:00.");
         }
 
+        int totalSeconds = (hour * 3600) + (minute * 60) + second;
+        if (totalSeconds > 3600) {
+            throw invalid("runEvery cannot exceed 1 hour (60 minute).");
+        }
+
         String cronExpression;
 
         if (hour > 0 && minute == 0 && second == 0) {
@@ -69,7 +74,7 @@ public final class NdcWorkerConfigRequestValidator {
         } else if (hour == 0 && minute == 0) {
             cronExpression = "*/" + second + " * * * * ?";
         } else {
-            throw invalid("runEvery supports one interval unit only: HH:00:00, 00:mm:00, or 00:00:ss.");
+            throw invalid("Invalid runEvery format and value.");
         }
 
         validateCronExpression(cronExpression);

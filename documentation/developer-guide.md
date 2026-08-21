@@ -31,8 +31,6 @@ The root Maven project is `implementation/pom.xml`. It aggregates:
 - `core/`
 - `uc_operation_portal/`
 - `web_api_operation/`
-- `app_scheduler/`
-- `app_report_downloader/`
 
 ### Module responsibilities
 
@@ -77,14 +75,6 @@ Spring Boot REST API entrypoint. It contains:
 - REST controllers
 - exception handling
 - environment-specific resources
-
-#### `implementation/app_scheduler`
-
-Standalone scheduler application. It boots a Spring context, loads Vault-backed settings, and runs the scheduler job flow.
-
-#### `implementation/app_report_downloader`
-
-Standalone report-downloader module used by report generation flows.
 
 ## 3. Runtime architecture
 
@@ -207,7 +197,18 @@ Before the application starts, create both databases:
 
 The Flyway migration runs against the portal database during startup.
 
-### Step 5: Configure environment variables
+### Step 5: Add initial participant types
+
+After the application setup creates the initial participants, manually set the required participant types in the `operation_portal` database:
+
+```sql
+UPDATE tbl_participant SET participant_type = 'HUB' WHERE participant_name = 'hub';
+UPDATE tbl_participant SET participant_type = 'DFSP' WHERE participant_name = '<dfsp_participant_name>';
+```
+
+These values are required initial data. Use `DFSP` for each DFSP participant, regardless of the participant name. The portal uses `participant_type` to distinguish Hub users from DFSP users when resolving permissions and participant-scoped data.
+
+### Step 6: Configure environment variables
 
 The main runtime expects Vault settings to be reachable through environment or JVM properties. The Docker compose file sets:
 
@@ -216,7 +217,7 @@ The main runtime expects Vault settings to be reachable through environment or J
 - `ENGINE_PATH=operation_portal`
 - `OPERATION_PORTAL_PORT_NO=8003`
 
-### Step 6: Build the project
+### Step 7: Build the project
 
 From `implementation/`, build with Maven:
 
@@ -259,24 +260,11 @@ Useful path details:
 - public login endpoint: `/public/loginUserAccount`
 - secured endpoints generally live under `/secured/...`
 
-### 6.2 Scheduler app
+### 6.2 Scheduler runtime
 
-`implementation/app_scheduler` is a separate executable module. It:
-
-- loads Vault-backed settings
-- loads participant configuration
-- runs the announcement scheduler flow
-
-This module has its own resource profiles:
-
-- `local`
-- `dev`
-- `stg`
-- `prod`
-
-### 6.3 Report downloader
-
-`implementation/app_report_downloader` is a supporting report module that depends on `mod_report` and JasperReports.
+Scheduler jobs run inside the main web application. `implementation/web_api_operation`
+imports the use-case layer, and `OperationPortalUseCaseConfiguration` bootstraps
+`SchedulerEngine` during application startup.
 
 ## 7. First-time bootstrap API calls
 
@@ -294,6 +282,51 @@ The request payloads for the grant APIs are stored in:
 
 - `documentation/grants/GrantRoleActionList.txt`
 - `documentation/grants/GrantMenuActionList.txt`
+
+### 7.1 Adding new actions to role grants
+
+When a new secured action is added, make sure the action is mapped to the
+respective role. Apply the updated role/action mapping by running:
+
+1. `POST /secured/grantRoleActionList`
+
+For the RTGS <> Operation Portal integration spec for SISP, grant the
+`SubmitParticipantBalance` action to the `HUB-Admin` role:
+
+```json
+{
+  "roleGrantList": [
+    {
+      "roleName": "HUB-Admin",
+      "actionCodeList": [
+        "SubmitParticipantBalance"
+      ]
+    }
+  ]
+}
+```
+
+### 7.2 Adding new menus to action grants
+
+When a new menu is added, make sure the menu is mapped to the
+respective action. Apply the updated menu/action mapping by running:
+
+1. `POST /secured/grantMenuActionList`
+
+For a new menu, add the menu name and bind it with the related actions:
+
+```json
+{
+  "menuGrantList": [
+    {
+      "menuName": "New Menu",
+      "actionCodeList": [
+        "RelatedAction"
+      ]
+    }
+  ]
+}
+```
 
 ## 8. Code structure guide
 
@@ -362,16 +395,7 @@ If you change schema behavior, update the Flyway scripts first and then align th
 - `stg`
 - `live`
 
-### Scheduler profiles
-
-`app_scheduler` includes resource folders for:
-
-- `local`
-- `dev`
-- `stg`
-- `prod`
-
-This difference matters when you copy runtime configuration between modules.
+Scheduler runtime configuration follows the `web_api_operation` resource profiles.
 
 ## 10. Typical developer workflow
 

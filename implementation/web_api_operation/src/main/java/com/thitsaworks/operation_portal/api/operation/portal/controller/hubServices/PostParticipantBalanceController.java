@@ -19,26 +19,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thitsaworks.operation_portal.component.fspiop.model.Currency;
+import com.thitsaworks.operation_portal.api.operation.portal.security.UserContext;
+import com.thitsaworks.operation_portal.api.operation.portal.validation.PostParticipantBalanceRequestValidator;
 import com.thitsaworks.operation_portal.component.fspiop.model.ExtensionList;
-import com.thitsaworks.operation_portal.component.fspiop.model.Money;
-import com.thitsaworks.operation_portal.component.misc.util.TransferIdGenerator;
-import com.thitsaworks.operation_portal.core.hub_services.ParticipantHubClient;
-import com.thitsaworks.operation_portal.core.hub_services.api.PostParticipantBalance;
-import com.thitsaworks.operation_portal.core.hub_services.exception.HubServicesException;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
+import com.thitsaworks.operation_portal.component.misc.exception.DomainException;
+import com.thitsaworks.operation_portal.usecase.operation_portal.SubmitParticipantBalance;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,95 +37,72 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.Serializable;
 
 @RestController
-@Validated
 @RequiredArgsConstructor
 public class PostParticipantBalanceController {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostParticipantBalanceController.class);
 
-    private static final String MOJALOOP_AMOUNT_FORMAT =
-        "^([0]|([1-9][0-9]{0,17}))([.][0-9]{0,3}[1-9])?$";
-
-    private final ParticipantHubClient participantHubClient;
+    private final SubmitParticipantBalance submitParticipantBalance;
 
     private final ObjectMapper objectMapper;
 
     @PostMapping(
-        value = "/secured/postParticipantBalance/{participantId}/accounts/{accountId}",
+        value = "/secured/postParticipantBalance",
         consumes = "application/json",
         produces = "application/json")
-    public ResponseEntity<Response> execute(
-        @NotBlank @PathVariable("participantId") String participantId,
-        @Positive @PathVariable("accountId") Long accountId,
-        @Valid @RequestBody Request request)
-        throws JsonProcessingException, HubServicesException {
+    public ResponseEntity<Response> execute(@RequestBody Request request)
+        throws DomainException, JsonProcessingException {
 
-        String transferId = TransferIdGenerator.generateTransferId();
+        LOG.info("Post Participant Balance Request : [{}]",
+                 this.objectMapper.writeValueAsString(request));
 
-        Money money = new Money()
-                          .currency(request.currency())
-                          .amount(request.amount());
+        UserContext userContext = (UserContext) SecurityContextHolder.getContext()
+                                                                       .getAuthentication()
+                                                                       .getDetails();
 
-        PostParticipantBalance.Request hubRequest = new PostParticipantBalance.Request(
-            transferId,
-            request.externalReference(),
-            request.action(),
-            request.reason(),
-            money,
-            request.extensionList());
+        PostParticipantBalanceRequestValidator.Values values =
+            PostParticipantBalanceRequestValidator.validate(request.participantId(),
+                                                              request.action(),
+                                                              request.amount(),
+                                                              request.currency());
 
-        LOG.info(
-            "Post Participant Balance Request : participantId : [{}], accountId : [{}], request : [{}]",
-            participantId, accountId, this.objectMapper.writeValueAsString(hubRequest));
+        SubmitParticipantBalance.Output output = this.submitParticipantBalance.execute(
+            new SubmitParticipantBalance.Input(
+                values.participantId(),
+                values.action(),
+                values.amount(),
+                values.currency(),
+                request.extensionList(),
+                userContext.userId()));
 
-        this.participantHubClient.postParticipantBalance(
-            participantId, accountId.toString(), hubRequest);
-
-        var response = new Response(transferId, "ACCEPTED");
+        Response response = new Response(output.status());
 
         LOG.info("Post Participant Balance Response : [{}]",
                  this.objectMapper.writeValueAsString(response));
 
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Request(
-        @JsonProperty("externalReference")
-        String externalReference,
+        @JsonProperty("participantId")
+        String participantId,
 
-        @NotBlank
-        @Pattern(
-            regexp = "^(recordFundsIn|recordFundsOutPrepareReserve)$",
-            message = "Action must be recordFundsIn or recordFundsOutPrepareReserve.")
         @JsonProperty("action")
         String action,
 
-        @NotBlank
-        @JsonProperty("reason")
-        String reason,
-
-        @NotBlank
-        @DecimalMin(value = "0.0001", message = "Amount must be greater than zero.")
-        @Pattern(
-            regexp = MOJALOOP_AMOUNT_FORMAT,
-            message = "Amount must use the valid Mojaloop amount format.")
         @JsonProperty("amount")
         String amount,
 
-        @NotNull
         @JsonProperty("currency")
-        Currency currency,
+        String currency,
 
         @JsonProperty("extensionList")
-        ExtensionList extensionList) implements Serializable {
-
-    }
+        ExtensionList extensionList) implements Serializable { }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(@JsonProperty("transferId") String transferId,
-                           @JsonProperty("status") String status) implements Serializable {
-
-    }
+    public record Response(
+        @JsonProperty("status")
+        String status) implements Serializable { }
 
 }

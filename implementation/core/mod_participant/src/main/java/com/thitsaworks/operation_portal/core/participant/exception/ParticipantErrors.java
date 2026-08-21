@@ -24,6 +24,9 @@ public class ParticipantErrors {
     public static final ErrorMessage EMAIL_NOT_FOUND = new ErrorMessage("EMAIL_NOT_FOUND", "System cannot find the email with provided ID : [{0}].");
     public static final ErrorMessage LIQUIDITY_PROFILE_NOT_FOUND = new ErrorMessage("LIQUIDITY_PROFILE_NOT_FOUND", "System cannot find the liquidity profile with provided ID : [{0}].");
     public static final ErrorMessage PARTICIPANT_NOT_FOUND = new ErrorMessage("PARTICIPANT_NOT_FOUND", "System cannot find the participant with provided ID : [{0}].");
+    public static final ErrorMessage PARTICIPANT_ACCOUNT_NOT_FOUND = new ErrorMessage("PARTICIPANT_ACCOUNT_NOT_FOUND", "Settlement and position accounts were not found for participant [{0}] and currency [{1}].");
+    public static final ErrorMessage PARTICIPANT_ACCOUNT_INACTIVE = new ErrorMessage("PARTICIPANT_ACCOUNT_INACTIVE", "Participant account for [{0}] and currency [{1}] is inactive.");
+    public static final ErrorMessage INVALID_PARTICIPANT_ACCOUNT_DATA = new ErrorMessage("INVALID_PARTICIPANT_ACCOUNT_DATA", "Participant account information is incomplete for participant [{0}] and currency [{1}].");
     public static final ErrorMessage USER_NOT_FOUND = new ErrorMessage("USER_NOT_FOUND", "System cannot find the user with provided ID : [{0}].");
     public static final ErrorMessage PARTICIPANT_NDC_NOT_FOUND = new ErrorMessage("PARTICIPANT_NDC_NOT_FOUND", "System cannot find the participant ndc with provided ID : [{0}].");
     public static final ErrorMessage ANNOUNCEMENT_NOT_FOUND = new ErrorMessage("ANNOUNCEMENT_NOT_FOUND", "System cannot find the announcement with provided ID : [{0}].");
@@ -41,6 +44,14 @@ public class ParticipantErrors {
     public static final ErrorMessage INSUFFICIENT_BALANCE = new ErrorMessage("INSUFFICIENT_BALANCE", "Amount is invalid. Transaction amount cannot exceed the available balance.");
     public static final ErrorMessage BALANCE_BELOW_NDC = new ErrorMessage("BALANCE_BELOW_NDC", "Amount is invalid. Balance after this transaction cannot be lower than the NDC.");
     public static final ErrorMessage BALANCE_BELOW_CURRENT_POSITION = new ErrorMessage("BALANCE_BELOW_CURRENT_POSITION", "Amount is invalid. Balance after this transaction cannot be lower than the Current Position.");
+    public static final ErrorMessage PARTICIPANT_BALANCE_PARTICIPANT_REQUIRED = new ErrorMessage("PARTICIPANT_BALANCE_PARTICIPANT_REQUIRED", "participantId is required.");
+    public static final ErrorMessage INVALID_PARTICIPANT_BALANCE_ACTION = new ErrorMessage("INVALID_PARTICIPANT_BALANCE_ACTION", "Action must be DEPOSIT or WITHDRAW.");
+    public static final ErrorMessage PARTICIPANT_BALANCE_AMOUNT_REQUIRED = new ErrorMessage("PARTICIPANT_BALANCE_AMOUNT_REQUIRED", "Amount is required.");
+    public static final ErrorMessage INVALID_PARTICIPANT_BALANCE_AMOUNT = new ErrorMessage("INVALID_PARTICIPANT_BALANCE_AMOUNT", "Amount must be greater than zero.");
+    public static final ErrorMessage INVALID_PARTICIPANT_BALANCE_AMOUNT_FORMAT = new ErrorMessage("INVALID_PARTICIPANT_BALANCE_AMOUNT_FORMAT", "Amount must use a valid numeric format.");
+    public static final ErrorMessage INVALID_PARTICIPANT_BALANCE_AMOUNT_SCALE = new ErrorMessage("INVALID_PARTICIPANT_BALANCE_AMOUNT_SCALE", "Amount must contain at most 18 integer digits and 4 decimal digits.");
+    public static final ErrorMessage PARTICIPANT_BALANCE_CURRENCY_REQUIRED = new ErrorMessage("PARTICIPANT_BALANCE_CURRENCY_REQUIRED", "Currency is required.");
+    public static final ErrorMessage INVALID_PARTICIPANT_BALANCE_CURRENCY = new ErrorMessage("INVALID_PARTICIPANT_BALANCE_CURRENCY", "Currency must be a valid ISO 4217 currency code.");
     public static final ErrorMessage ORG_INSUFFICIENT_BALANCE = new ErrorMessage("ORG_INSUFFICIENT_BALANCE", "The {0} organization does not have sufficient balance to perform this action.");
     public static final ErrorMessage NDC_BELOW_CURRENT_POSITION = new ErrorMessage("NDC_BELOW_CURRENT_POSITION", "Amount is invalid. This transaction amount results in NDC lower than the Current Position.");
 
