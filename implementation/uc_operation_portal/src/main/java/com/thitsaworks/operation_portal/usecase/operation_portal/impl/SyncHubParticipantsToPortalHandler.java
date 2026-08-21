@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -74,12 +75,13 @@ public class SyncHubParticipantsToPortalHandler
                                                    .getAllParticipants()
                                                    .stream()
                                                    .map(pd -> pd.participantName().getValue())
+                                                   .map(name -> name.toLowerCase(Locale.ROOT))
                                                    .collect(Collectors.toSet());
 
         List<CreatedParticipantInfo> createdParticipantInfoList = new ArrayList<>();
 
         for (HubParticipantData hubParticipant : hubParticipantDataList) {
-            if (!existingParticipantNames.contains(hubParticipant.name())) {
+            if (!existingParticipantNames.contains(hubParticipant.name().toLowerCase(Locale.ROOT))) {
 
                 CreateParticipantCommand.Output output = this.createParticipantCommand.execute(
                     new CreateParticipantCommand.Input(
